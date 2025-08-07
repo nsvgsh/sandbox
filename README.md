@@ -1,6 +1,6 @@
 # TapStarrr
 
-Telegram lacks well-executed hyper-casual games with simple, rewarding mechanics. TapStarrr fills that gap with a lightning-fast clicker experience delivering instant gratification directly inside Telegram chats.
+Telegram lacks well-executed hyper-casual games with simple, rewarding mechanics. TapStarrr fills that gap with a lightning-fast clicker experience delivering instant gratification directly inside Telegram Mini App.
 
 Tech stack  |  Details
 ----------- | ---------------------------------------------------
