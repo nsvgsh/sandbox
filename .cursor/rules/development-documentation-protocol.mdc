@@ -1,0 +1,45 @@
+---
+alwaysApply: true
+description: Development & Documentation Protocol – guides the agent in creating task artefacts, handling deviations, and updating the changelog.
+---
+# Development & Documentation Protocol (Summary)
+
+This rule establishes mandatory rails for all coding work.  The full authoritative text lives in 
+[DDP.md](mdc:sandbox/docs/DDP.md), but the key expectations are summarised below so the agent always has the context.
+
+## 1. Core Principle
+No task without a ticket.  All code-changes start with markdown artefacts inside the `/tasks` directory.
+
+Commit-message pattern for plan revisions:
+```
+FT-42-plan-revision-1: reason-for-change
+```
+
+## 2. Directory & File Conventions
+• **Features / Complex work** → create folder `tasks/features/FEATURE_NAME_TICKER-feature_name/`  
+  – `request.md`  (WHAT & WHY)  
+  – `implementation-plan.md` (HOW)  
+• **Bug fixes / Tweaks** → single file `tasks/fixes/BUG-ID-short-description.md`
+
+## 3. Standard Protocol (Features)
+1. **Request** → author & get user approval.  
+2. **Implementation Plan** → must include: Architectural Analysis, Task List, Documentation Impact.  
+3. **Execution & Logging**  
+   – Work one sub-task at a time (unless user enables "Batch approval mode").  
+   – *Deviation handling is inline*: pause, classify (Minor / Significant), update this same plan in-place (task list, analysis, docs impact), seek re-approval.  
+4. **Finalisation** → after all sub-tasks done, update affected docs and append completed sub-tasks to `CHANGELOG.md` (cancelled tasks are visible via Git history only).
+
+## 4. Lightweight Protocol (Bug Fixes)
+1. **Fix Ticket** with Problem, Root Cause, Proposed Fix.  
+2. Get user approval.  
+3. *Deviation handling*: edit same ticket, obtain re-approval.  
+4. Log result line to `CHANGELOG.md`.
+
+## 5. Changelog
+Add a root-level `CHANGELOG.md`.  Each completed sub-task/fix gets a line:
+```
+| FEATURE_NAME_TICKER-TASK_ID | Added retry logic to payment gateway |
+```
+Only successful items are logged; cancellations rely on Git history.
+
+> Follow this protocol strictly.  Do **not** use nad/or invent dates or quantitative metrics.

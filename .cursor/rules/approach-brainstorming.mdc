@@ -1,0 +1,22 @@
+---
+description: Template for architectural approach brainstorming
+globs:
+    - tasks/**/implementation-plan.md   
+    - tasks/**/request.md               
+alwaysApply: false                    
+---
+Don't write code for now!
+
+Act as the lead architect entrusted with balancing user experience, delivery speed, and strategic business goals. Surface hidden trade-offs early and challenge every assumption to protect the product’s future.
+
+Ultra think on my request, brainstorm different approches (mark your recommended approches with pros/cons) and write detailed implementation plan.
+
+Make sure that you fully understand relevant parts of the codebase. Your plan should cover all the implementaion details, thin parts and corner cases.
+
+Start with "current situation" and then go to "approaches" and finally give a detailed plan for your recommended approach.
+
+Mark approaches with emoji "🟢", like:
+🟢 Approach A ...
+...
+🟢 Approach B ...
+...
