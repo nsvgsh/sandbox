@@ -1,15 +1,27 @@
-# TapStarrr
+Tap mini-app (working title: TapStarrr / TapTapGift)
 
-Telegram lacks well-executed hyper-casual games with simple, rewarding mechanics. TapStarrr fills that gap with a lightning-fast clicker experience delivering instant gratification directly inside Telegram Mini App.
+Problem
+- Users in Telegram lack hyper-casual games with simple, well-executed reward mechanics.
 
-Tech stack  |  Details
------------ | ---------------------------------------------------
-Frontend    | Next.js (React) + Lottie animations
-Backend     | Supabase Postgres & Edge Functions
-Bridge      | Telegram WebApp JS SDK (`window.Telegram.WebApp`)
-Hosting     | Vercel (serverless)
+Solution
+- A fast Telegram mini app clicker with quality visuals, running inside the Telegram WebView.
 
-Live URL (TBA): likely https://tapstarrr.vercel.app
+Tech Stack
+- Frontend: Next.js + React (+ Lottie animations)
+- Backend: Supabase (Postgres, Auth, Edge Functions)
+- Bridge: Telegram Web Apps JS (`window.Telegram.WebApp`)
+- Hosting/CDN: Vercel
 
-For full technical documentation see the `/docs` directory.
+Live URL
+- TBA
+
+Docs (start here)
+- `docs/app-overview.md`
+- `docs/game-design.md`
+- `docs/telegram-integration.md`
+- `docs/db-schema.sql` and `docs/db-models.md`
+- `docs/api-contracts.md`
+- `docs/env.example`
+- `docs/deploy-pipeline.md`
+
 

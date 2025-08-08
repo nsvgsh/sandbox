@@ -1,29 +1,23 @@
-# Game Design
+Game Design (v1 scope)
 
-## Core Loop
-1. Tap the central element to earn **Coins**.
-2. When Coins ≥ `1 000 × current level`, you level-up automatically; excess Coins carry over.
-3. After each level-up a rewarded ad offers **2× Coins**.
-4. Every 5 levels unlocks a **task bundle**; completing its tasks grants a **Ticket**.
-5. Repeat – leaderboard ranks by total lifetime levels.
+Core Loop
+- Open mini-app → tap main element to earn Coins → auto level-up when threshold is met → optional rewarded ad to 2× recent gain → repeat; daily tasks can boost efficiency.
 
-## Progression Formula
-```
-level_n_threshold = 1_000 * n
-```
+Progression
+- Level n requires 1000 × n Coins (linear escalation).
+- Level-up converts required Coins; excess carries over; +1 Ticket per level.
+- Every 5 levels unlock a task bundle; completing bundle grants a one-off Ticket reward.
+- Leaderboard ranks by lifetime total Levels.
 
-## Currencies
-| Name     | Earned via                        | Spent / Usage                             |
-| -------- | --------------------------------- | ----------------------------------------- |
-| Coins    | Taps, rewarded ads               | Consumed automatically on level-up        |
-| Levels   | Threshold met                    | Non-spendable metric for progression      |
-| Tickets  | Task bundles, ads                | Not spendable in v1 (saved for v2)        |
+Currencies
+- Coins: earned per tap = 1 × (1 + multiplier_from_tasks); auto-spent on level-up.
+- Levels: auto-earned at thresholds; not spent.
+- Tickets: +1 per level-up, +5 per completed bundle, +20 from rewarded ads; no sinks in v1.
 
-## v1 Scope (Hard Exclusions)
-* No PvP, guilds, gacha, premium currency, IAP.
-* No offline income, cloud sync, push notifications.
-* No interstitials or offerwalls – only rewarded ads.
+Out of Scope (v1 hard cut-offs)
+- PvP, guilds/clans, premium currency/IAP, offline income, skin rarity/gacha, cross-account cloud save, push notifications, complex ad formats.
 
-## Wireframes / Mocks
-See `/docs/UI-mocks-wireframes/` for reference screenshots of **Home**, **Offers**, and **Wallet** screens.
+Wireframes
+- ASCII wireframes are under `docs/UI-mocks-wireframes/wireframes/`.
+
 

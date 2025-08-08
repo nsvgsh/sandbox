@@ -20,7 +20,7 @@ Upon receiving a request, first classify it:
 This protocol is for substantial work that requires architectural consideration and detailed planning. It produces a `Task Package`—a dedicated directory containing all necessary artifacts for the task.
 
 -  **Stage 0: Directory**. Create a directory called as a fueature name (includes short name, a ticker, that will apply for corrsponding tasks) in the project in the folder 'features' 
--   **Stage 1: Request**. Create an Request in `tasks/features/{ticker-feature_name}/`. The Request focuses on the "what" and "why", not the technical implementation. Await user approval.
+-   **Stage 1: Request**. Create an Request in `tasks/features/{ticker-feature_name}/` (`ticker` is a short form of the feature_name by analogy with the stock exchange, usually doesn't contain any numbers). The Request focuses on the "what" and "why", not the technical implementation. Await user approval.
 -   **Stage 2: Implementation Plan**. Create a plan in `tasks/features/{ticker-feature_name}/`. The plan MUST include:
     1.  Architectural Analysis (cross-reference existing docs as mandated by `architecture-analysis.mdc`).
     2.  List of tasks. The boundry of the task should be designed such that the requestor could test the application and check the correctness.
