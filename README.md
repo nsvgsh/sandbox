@@ -1,27 +1,18 @@
-Tap mini-app (working title: TapStarrr / TapTapGift)
+# Tap Mini App (working title: TapStarrr)
 
-Problem
-- Users in Telegram lack hyper-casual games with simple, well-executed reward mechanics.
+- Problem: Telegram users lack high‑quality hyper‑casual games with simple, transparent reward mechanics.
+- Solution: A fast Telegram Mini App clicker with polished visuals and tight feedback.
+- Stack: Next.js (React) on Vercel; Supabase (Postgres, Auth, Edge Functions); Telegram Web Apps bridge; Sentry (client). Animations: CSS transforms + Framer Motion; optional Rive for compact sequences. Audio via WebAudio.
+- Live URL: TBA (e.g., TapStarrr or TapTapGift)
 
-Solution
-- A fast Telegram mini app clicker with quality visuals, running inside the Telegram WebView.
+## Docs
+- docs/app-overview.md
+- docs/game-design.md
+- docs/telegram-integration.md
+- docs/db-models.md + docs/db-schema.sql
+- docs/api-contracts.md
+- docs/env.example
+- docs/deploy-pipeline.md
 
-Tech Stack
-- Frontend: Next.js + React (+ Lottie animations)
-- Backend: Supabase (Postgres, Auth, Edge Functions)
-- Bridge: Telegram Web Apps JS (`window.Telegram.WebApp`)
-- Hosting/CDN: Vercel
-
-Live URL
-- TBA
-
-Docs (start here)
-- `docs/app-overview.md`
-- `docs/game-design.md`
-- `docs/telegram-integration.md`
-- `docs/db-schema.sql` and `docs/db-models.md`
-- `docs/api-contracts.md`
-- `docs/env.example`
-- `docs/deploy-pipeline.md`
-
+Scope note: v1 avoids payments/Stars, complex ads, PvP, clans, and other heavy systems. See game design for exact inclusions and exclusions.
 

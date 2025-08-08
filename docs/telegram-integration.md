@@ -1,25 +1,21 @@
-Telegram Integration
+# Telegram integration
 
-Deep-link Patterns
-- `t.me/<bot>/<short_name>?startapp=<campaign_id>&mode=<compact|fullscreen>`
-- On first load, client posts `{ campaign_id, tg_user_id }` to `/track/lead` (Supabase Edge) for attribution.
+## Deep-link patterns (v1)
+- Direct Mini App (main only, single app under bot):
+  `t.me/<bot_username>?startapp[=<campaign_id>]&mode=<compact|fullscreen>`
+- Attachment menu variants: `t.me/<bot_username>?startattach[=<start_parameter>]` and chat-scoped variants.
+- Param exposure: read `tgWebAppStartParam` for routing/attribution; `initDataUnsafe.start_param` only for attachment-menu links.
 
-Web Apps JS API Usage (v1)
-- `Telegram.WebApp.ready()` — handshake / disable loading bar
-- `Telegram.WebApp.expand()`, `close()` — viewport control
-- `Telegram.WebApp.BackButton` — navigation
-- `Telegram.WebApp.onEvent('viewportChanged')` — safe-area paddings
-- `Telegram.WebApp.HapticFeedback.*` — tactile feedback
-- Not in v1: `MainButton`, `CloudStorage`, payments/Stars
+## JS API usage (subset)
+- Telegram.WebApp.ready(), expand(), close()
+- Telegram.WebApp.BackButton
+- Telegram.WebApp.onEvent('viewportChanged')
+- HapticFeedback deferred in v1
 
-Auth: initData Validation
-- Endpoint: `POST /auth/tg` (Supabase Edge Function, TypeScript)
-- Library: `@telegram-apps/init-data-node`
-- Client sends `Authorization: tma <initDataRaw>`
-- Server validates HMAC-SHA-256 with bot token, `expiresIn: 3600`; on success parse user, upsert DB, issue Supabase JWT
-- Security: pass SHA-256 hashed bot token with `{ tokenHashed: true }`
+## initData validation
+- Client sends initDataRaw on first launch
+- Edge Function validates HMAC-SHA-256 and TTL, issues JWT, upserts user
+- Never trust `start_param` prior to validation
 
-Payments / Stars
-- Not included in v1 (deferred).
-
-
+## Payments & Stars
+- Out of scope in v1 (pure ad-monetised loop)

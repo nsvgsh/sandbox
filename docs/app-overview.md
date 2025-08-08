@@ -1,19 +1,33 @@
-App Overview
+# App overview
 
-Components
-- Next.js frontend (Telegram WebView)
-- Supabase (Postgres + Edge Functions)
-- Telegram Bot / WebApp bridge
-- Vercel (hosting/CDN)
+## Components
+- Next.js frontend (Mini App UI) on Vercel Edge
+- Telegram WebApp bridge + Telegram Bot (entry)
+- Supabase: Postgres (RLS), Auth, Edge Functions, Storage
+- Sentry (client)
 
-Data Flow (one line per arrow)
-- Telegram client → Telegram Bot → WebApp launch → Next.js UI
-- Next.js (client) ↔ Supabase (Edge Functions, REST)
-- Supabase DB → Next.js UI (reads)
-- Vercel → Next.js build/artifacts
+## High‑level flows
+- Telegram client → Bot deep link (startapp/startattach) → WebApp launch
+- WebApp reads URL GET `tgWebAppStartParam` for initial routing
+- Attachment‑menu launches populate `initDataUnsafe.start_param`
+- WebApp → Supabase Edge Function: validate `initData`
+- Edge Function → WebApp: user/session payload → issue Supabase JWT
+- WebApp ↔ Supabase client SDK: RLS‑protected reads
+- WebApp → Edge Functions: secure mutations / anti‑cheat paths
+- Vercel CDN/Edge → WebApp: static assets and chunks
+- Supabase Storage → WebApp: media/assets
 
-Notes
-- No payments, error tracking, or feature flags in v1.
-- Analytics via SQL over Supabase data. CDN via Vercel.
+## External integrations
+- Analytics: minimal (event tables in Supabase)
+- Payments: none in v1
+- Error tracking: Sentry (light client init)
+- CDN: Vercel default
 
+## Deep links (reference)
+- Direct Mini App: `t.me/<bot_username>?startapp[=<campaign_id>]&mode=<mode>`
+- Attachment menu: `t.me/<bot_username>?startattach[=<start_parameter>]` (and variants)
+- Param exposure: prefer `tgWebAppStartParam`; `initDataUnsafe.start_param` only via attachment menu
 
+## Security
+- Always validate `WebApp.initData` (`hash`, `signature`) server‑side before trusting params
+- Do not trust `start_param` until validation completes

@@ -1,110 +1,138 @@
--- Minimal declarative schema for v1
--- Assumes Postgres (Supabase). Keep concise; migrations will refine.
-
-create extension if not exists pgcrypto;
-
-do $$ begin
-  create type ad_event_type as enum ('rewarded');
-exception when duplicate_object then null; end $$;
-
-create table if not exists players (
-  id uuid primary key default gen_random_uuid(),
-  tg_user_id bigint unique not null,
-  username text,
-  coins bigint not null default 0,
-  level integer not null default 0,
-  tickets integer not null default 0,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+-- v1 schema (skeleton)
+-- Users
+create table if not exists user_profiles (
+  user_id uuid primary key,
+  created_at timestamptz default now(),
+  locale text,
+  attribution_campaign_id text
 );
 
-create table if not exists tap_events (
-  id uuid primary key default gen_random_uuid(),
-  player_id uuid not null references players(id) on delete cascade,
-  coins_earned bigint not null,
-  created_at timestamptz not null default now()
+create table if not exists user_counters (
+  user_id uuid primary key references user_profiles(user_id),
+  coins bigint default 0,
+  tickets int default 0,
+  coin_multiplier numeric(10,4) default 1.0,
+  level int default 0,
+  total_taps bigint default 0,
+  session_epoch uuid,
+  current_session_id uuid,
+  last_applied_seq bigint default 0,
+  updated_at timestamptz default now()
 );
-create index if not exists idx_tap_events_player_created on tap_events(player_id, created_at desc);
+
+create table if not exists tap_batches (
+  batch_id uuid primary key,
+  user_id uuid references user_profiles(user_id),
+  session_id uuid,
+  client_seq bigint,
+  taps int,
+  coins_delta bigint,
+  checksum text,
+  status text check (status in ('pending','applied','dup','rejected')),
+  error_code text,
+  created_at timestamptz default now(),
+  applied_at timestamptz
+);
+create index if not exists idx_tap_batches_user_created on tap_batches(user_id, created_at);
+create index if not exists idx_tap_batches_user_seq on tap_batches(user_id, client_seq);
 
 create table if not exists level_events (
-  id uuid primary key default gen_random_uuid(),
-  player_id uuid not null references players(id) on delete cascade,
-  level_before integer not null,
-  level_after integer not null,
-  coins_spent bigint not null,
-  created_at timestamptz not null default now()
+  id bigserial primary key,
+  user_id uuid references user_profiles(user_id),
+  level int,
+  base_reward bigint,
+  reward_payload jsonb,
+  bonus_offered bool default true,
+  bonus_multiplier numeric(10,4),
+  ad_event_id uuid,
+  created_at timestamptz default now()
 );
-create unique index if not exists uq_level_events_player_after on level_events(player_id, level_after);
+create index if not exists idx_level_events_user_created on level_events(user_id, created_at desc);
 
 create table if not exists ad_events (
-  id uuid primary key default gen_random_uuid(),
-  player_id uuid not null references players(id) on delete cascade,
-  type ad_event_type not null,
-  level_after integer not null,
-  reward_tickets integer not null,
-  created_at timestamptz not null default now(),
-  unique (player_id, level_after)
+  id uuid primary key,
+  user_id uuid references user_profiles(user_id),
+  session_id uuid,
+  provider text,
+  placement text,
+  status text check (status in ('filled','closed','failed')),
+  reward_payload jsonb,
+  created_at timestamptz default now()
+);
+create index if not exists idx_ad_events_user_created on ad_events(user_id, created_at desc);
+
+create table if not exists reward_events (
+  id uuid primary key,
+  user_id uuid references user_profiles(user_id),
+  source_type text check (source_type in ('level_up','task_claim','ad_bonus','admin_grant','promo','fixup')),
+  source_ref_id text,
+  base_payload jsonb,
+  multiplier_applied numeric(10,4),
+  policy_key text,
+  effective_payload jsonb,
+  coins_delta bigint default 0,
+  tickets_delta int default 0,
+  coin_multiplier_delta numeric(10,4) default 0,
+  status text check (status in ('applied','rolled_back')) default 'applied',
+  idempotency_key text,
+  created_at timestamptz default now()
 );
 
-create table if not exists task_bundles (
-  id bigint generated always as identity primary key,
-  unlock_level integer not null,
-  multiplier numeric(6,4) not null default 0,
-  expires_at timestamptz
+create table if not exists task_definitions (
+  task_id uuid primary key,
+  unlock_level int,
+  kind text check (kind in ('in_app','social','partner')),
+  reward_payload jsonb,
+  verification text check (verification in ('none','server','external')),
+  active bool default true,
+  created_at timestamptz default now()
 );
 
 create table if not exists task_progress (
-  player_id uuid not null references players(id) on delete cascade,
-  bundle_id bigint not null references task_bundles(id) on delete cascade,
-  completed_at timestamptz,
-  primary key (player_id, bundle_id)
+  user_id uuid references user_profiles(user_id),
+  task_id uuid references task_definitions(task_id),
+  state text check (state in ('locked','available','claimed')),
+  claimed_at timestamptz,
+  primary key(user_id, task_id)
 );
 
-create table if not exists leaderboard_snap (
-  id uuid primary key default gen_random_uuid(),
-  player_id uuid not null references players(id) on delete cascade,
-  level integer not null,
-  rank integer not null,
-  captured_at timestamptz not null default now()
+create table if not exists attribution_leads (
+  user_id uuid primary key references user_profiles(user_id),
+  campaign_id text,
+  first_seen_at timestamptz default now(),
+  meta jsonb
 );
-create index if not exists idx_leaderboard_captured on leaderboard_snap(captured_at desc);
 
--- RLS policies (concise)
-alter table players enable row level security;
-alter table tap_events enable row level security;
-alter table level_events enable row level security;
-alter table ad_events enable row level security;
-alter table task_bundles enable row level security;
-alter table task_progress enable row level security;
-alter table leaderboard_snap enable row level security;
+create table if not exists leaderboard_global (
+  user_id uuid primary key references user_profiles(user_id),
+  level int,
+  updated_at timestamptz default now()
+);
+create index if not exists idx_leaderboard_level on leaderboard_global(level desc);
 
--- players: user can see/update own row (JWT sub = players.id)
-do $$ begin
-  create policy players_self_select on players for select using (id = auth.uid());
-exception when duplicate_object then null; end $$;
-do $$ begin
-  create policy players_self_update on players for update using (id = auth.uid());
-exception when duplicate_object then null; end $$;
+create table if not exists partner_postbacks (
+  id bigserial primary key,
+  user_id uuid references user_profiles(user_id),
+  provider text check (provider in ('propellerads')),
+  subid text,
+  goal int,
+  url text,
+  status text check (status in ('pending','sent','failed','duplicate')) default 'pending',
+  http_code int,
+  response_hash text,
+  attempts int default 0,
+  created_at timestamptz default now(),
+  sent_at timestamptz,
+  unique(user_id, provider, goal)
+);
 
--- event tables: user can select/insert own records
-do $$ begin
-  create policy tap_events_rw on tap_events for all using (player_id = auth.uid()) with check (player_id = auth.uid());
-exception when duplicate_object then null; end $$;
-do $$ begin
-  create policy level_events_rw on level_events for all using (player_id = auth.uid()) with check (player_id = auth.uid());
-exception when duplicate_object then null; end $$;
-do $$ begin
-  create policy ad_events_rw on ad_events for all using (player_id = auth.uid()) with check (player_id = auth.uid());
-exception when duplicate_object then null; end $$;
-
--- task_bundles: anon/public read; progress: owner-only
-do $$ begin
-  create policy task_bundles_public_read on task_bundles for select using (true);
-exception when duplicate_object then null; end $$;
-do $$ begin
-  create policy task_progress_rw on task_progress for all using (player_id = auth.uid()) with check (player_id = auth.uid());
-exception when duplicate_object then null; end $$;
-
--- leaderboard_snap: no public access by default (served via materialised view/edge)
-
-
+create table if not exists active_effects (
+  effect_id uuid primary key,
+  user_id uuid references user_profiles(user_id),
+  type text check (type in ('coin_multiplier')),
+  magnitude numeric(10,4),
+  expires_at timestamptz,
+  source_reward_event_id uuid references reward_events(id),
+  created_at timestamptz default now(),
+  unique(user_id, type, source_reward_event_id)
+);

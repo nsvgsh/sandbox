@@ -1,23 +1,34 @@
-Game Design (v1 scope)
+# Game design (v1)
 
-Core Loop
-- Open mini-app → tap main element to earn Coins → auto level-up when threshold is met → optional rewarded ad to 2× recent gain → repeat; daily tasks can boost efficiency.
+## Core loop
+Open app → tap to earn Coins → Coins auto‑convert to Levels at thresholds.
+On level‑up, offer ad‑gated bonus multiplier (configurable, e.g., ×2) to multiply level‑up reward payload.
+Optional tasks grant bonuses (including coin multipliers).
 
-Progression
-- Level n requires 1000 × n Coins (linear escalation).
-- Level-up converts required Coins; excess carries over; +1 Ticket per level.
-- Every 5 levels unlock a task bundle; completing bundle grants a one-off Ticket reward.
-- Leaderboard ranks by lifetime total Levels.
+## Progression
+- Level n requires 1,000 × n Coins (configurable; not hard‑coded).
+- Level‑up converts required Coins into one Level; excess carries over.
+- Each Level unlocks a task bundle; gating is data‑driven for future variation.
+- Global leaderboard by total Levels.
 
-Currencies
-- Coins: earned per tap = 1 × (1 + multiplier_from_tasks); auto-spent on level-up.
-- Levels: auto-earned at thresholds; not spent.
-- Tickets: +1 per level-up, +5 per completed bundle, +20 from rewarded ads; no sinks in v1.
+## Currencies
+- Coins: earned per tap (1 × coin_multiplier), tasks, level‑up rewards; spent automatically on level‑up.
+- Levels: earned at thresholds; progression metric only.
+- Tickets: granted by tasks/level‑ups; sink is gifts lottery post‑v1 (schema/UI ready; disabled in v1).
 
-Out of Scope (v1 hard cut-offs)
-- PvP, guilds/clans, premium currency/IAP, offline income, skin rarity/gacha, cross-account cloud save, push notifications, complex ad formats.
+## v1 out of scope (hard cuts)
+PvP, clans, premium currency/IAP, offline income, gacha/skins rarity, multi‑account cloud save, push re‑engagement,
+complex ad formats, Telegram Stars, crypto rewards, daily goals/streaks, advanced anti‑cheat, full haptics/music polish.
 
-Wireframes
-- ASCII wireframes are under `docs/UI-mocks-wireframes/wireframes/`.
+## Multipliers & rewards
+- Coin multiplier: persistent/timed boost; configurable.
+- Level‑up reward payload: { coins, tickets, coin_multiplier }.
+- Bonus multiplier (ad‑gated): policy‑driven application per type; skipping yields no multiplier.
 
+## Configuration policy
+Level thresholds, multipliers, unlock gates in config/constants or DB (not hard‑coded).
 
+## Open v1 stubs
+Task verification: stub interfaces and data model; actual verification TBD.
+Ads taxonomy and caps: define provider, frequency caps, fallbacks in config.
+Season mechanics: TBD; disabled in v1.
