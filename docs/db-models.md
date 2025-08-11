@@ -4,7 +4,6 @@
 - user_id (PK), created_at, locale, attribution_campaign_id
 
 ## user_counters
-- non_progress_coins (bigint, banked non-progress currency)
 - user_id (PK), coins (bigint), tickets (int), coin_multiplier (numeric), level (int), total_taps (bigint)
 - session_epoch (uuid), current_session_id (uuid), last_applied_seq (bigint), updated_at
 
@@ -13,10 +12,10 @@
 - Purpose: idempotency & audit per micro-batch
 
 ## level_events
-- id (PK), user_id, level, base_reward, reward_payload (jsonb), bonus_offered, bonus_multiplier, ad_event_id, created_at
+- id (PK), user_id, level, base_reward, reward_payload (jsonb), bonus_offered, bonus_multiplier, ad_event_id, template_id, created_at
 
 ## ad_events
-- id (PK), user_id, session_id, provider, placement, status, reward_payload (jsonb), created_at
+- id (PK), user_id, session_id, provider, placement, status ('filled'|'closed'|'failed'|'completed'|'used'), reward_payload (jsonb), created_at
 
 ## reward_events (ledger)
 - id (PK), user_id, source_type, source_ref_id, base_payload, multiplier_applied, policy_key, effective_payload,

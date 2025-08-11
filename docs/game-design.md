@@ -22,8 +22,8 @@ complex ad formats, Telegram Stars, crypto rewards, daily goals/streaks, advance
 
 ## Multipliers & rewards
 - Coin multiplier: persistent/timed boost; configurable.
-- Level‑up reward payload: { coins, tickets, coin_multiplier }.
-- Bonus multiplier (ad‑gated): policy‑driven application per type; skipping yields no multiplier.
+- Level‑up reward payload: { coins, tickets, coin_multiplier } — base is granted immediately on level-up.
+- Bonus multiplier (ad‑gated): applies the incremental portion over the granted base (e.g., x2 adds +base); skipping yields no multiplier.
 
 ## Configuration policy
 Level thresholds, multipliers, unlock gates in config/constants or DB (not hard‑coded).
@@ -35,6 +35,6 @@ Season mechanics: TBD; disabled in v1.
 
 
 ## Rewards policy (v1)
-- Level-up base reward: coins=0, tickets=3, coin_multiplier=0.
-- Claim multiplier applies per field (e.g., tickets x2).
-- Claim coins are non-progress (banked), do not affect leveling.
+- Default base: coins and/or tickets per level via templates; tickets often present; coin_multiplier optional.
+- Claim multiplier policy per field (config-driven). For multiplicative fields, only the incremental part is applied (base × (multiplier−1)).
+- Coins from claims affect progression (local v1); may be adjusted by policy in future.

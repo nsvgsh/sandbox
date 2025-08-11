@@ -12,12 +12,12 @@ Conventions
 - POST /session/claim → { sessionId, sessionEpoch, lastAppliedSeq }
 - POST /ingest/taps → { counters, nextThreshold, leveledUp? }
 - GET /counters → { counters, effects?, nextThreshold }
-- POST /ad/log → {}
+- POST /ad/log → { applied, counters? }
 - POST /level/bonus/claim → { rewardEventId, counters }
 - GET /tasks → { definitions, progress }
 - POST /tasks/{taskId}/claim → { state, rewardEventId?, counters? }
 - GET /config → { thresholds, policies, flags, monetag, leaderboard }
 - POST /track/lead → {}
-- GET /leaderboard?top=K&windowDays=1 → { top, me, activePlayers }
+- GET /leaderboard?top=K → { top, me, activePlayers }  (windowDays is configured via env)
 - POST /partners/propellerads/enqueue (service) → { queued }
 - GET /health → { ok: true }
