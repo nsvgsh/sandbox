@@ -28,6 +28,15 @@
 - Attachment menu: `t.me/<bot_username>?startattach[=<start_parameter>]` (and variants)
 - Param exposure: prefer `tgWebAppStartParam`; `initDataUnsafe.start_param` only via attachment menu
 
+## Sessions
+- Session start rotates epoch and returns `{ sessionId, sessionEpoch, lastAppliedSeq }`.
+- Session claim lets the client resume safely: if ids match, echo; else rotate.
+
+## Ads & tasks (local simulation)
+- Ad view simulation is intent‑coupled: one ad unlocks one action (`level_bonus` or `task:<id>`) within a short window.
+- Level bonus: bonus is applied after the view; UI confirm is visual only.
+- Tasks: require a recent ad for that specific task; others remain locked.
+
 ## Security
 - Always validate `WebApp.initData` (`hash`, `signature`) server‑side before trusting params
 - Do not trust `start_param` until validation completes

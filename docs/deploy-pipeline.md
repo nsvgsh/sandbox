@@ -9,6 +9,7 @@
   - NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
   - NEXT_PUBLIC_MONETAG_ZONE_ID, NEXT_PUBLIC_MONETAG_FN
   - NEXT_PUBLIC_LEADERBOARD_ACTIVE_WINDOW_DAYS
+  - NEXT_PUBLIC_DEV_TOKEN
 - Supabase Edge secrets (CLI):
   ```
   supabase link --project-ref <PROJECT_REF>
@@ -25,9 +26,11 @@
 
 ## Smoke checks
 - GET /v1/health → ok
-- POST /v1/auth/tg (staging) with sample initData → 200
-- POST /v1/session/start → POST /v1/ingest/taps → 200
-- Simulated level‑up → Monetag resolve → POST /v1/level/bonus/claim within TTL
+- POST /v1/auth/dev (local) with dev token → 200 sets cookie
+- POST /v1/session/start → returns ids; then POST /v1/session/claim with same ids → echoes; with random epoch → rotates
+- POST /v1/ingest/taps → 200 and nextThreshold
+- Level-up path: reach level, then POST /v1/ad/log with intent="level_bonus" → bonus applied; UI confirm only
+- Task path (intent-coupled): GET /v1/tasks (pick available), POST /v1/tasks/{id}/claim → 409 AD_REQUIRED; POST /v1/ad/log with intent="task:{id}" → POST /v1/tasks/{id}/claim → 200
 - GET /v1/leaderboard → top K, rank, activePlayers
 
 ## Observability & rollback

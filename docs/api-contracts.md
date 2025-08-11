@@ -14,6 +14,7 @@ Conventions
 - GET /counters → { counters, effects?, nextThreshold }
 - POST /ad/log → { applied, counters? }
   - Body accepts optional `intent`: `"level_bonus"` or `"task:<taskId>"` for intent‑coupled local simulation.
+  - When `intent='level_bonus'`, the local path may apply the bonus immediately; UI confirm is visual only.
 - POST /level/bonus/claim → { rewardEventId, counters }
 - GET /tasks → { definitions, progress }
 - POST /tasks/{taskId}/claim → { state, rewardEventId?, counters? }
