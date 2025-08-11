@@ -4,6 +4,7 @@
 - user_id (PK), created_at, locale, attribution_campaign_id
 
 ## user_counters
+- non_progress_coins (bigint, banked non-progress currency)
 - user_id (PK), coins (bigint), tickets (int), coin_multiplier (numeric), level (int), total_taps (bigint)
 - session_epoch (uuid), current_session_id (uuid), last_applied_seq (bigint), updated_at
 

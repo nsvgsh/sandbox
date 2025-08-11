@@ -3,10 +3,10 @@
 ## Core loop
 Open app → tap to earn Coins → Coins auto‑convert to Levels at thresholds.
 On level‑up, offer ad‑gated bonus multiplier (configurable, e.g., ×2) to multiply level‑up reward payload.
-Optional tasks grant bonuses (including coin multipliers).
+Optional tasks (ad-views, by default) grant bonuses (including coin multipliers).
 
 ## Progression
-- Level n requires 1,000 × n Coins (configurable; not hard‑coded).
+- Level n requires 10 × n Coins (configurable; not hard‑coded).
 - Level‑up converts required Coins into one Level; excess carries over.
 - Each Level unlocks a task bundle; gating is data‑driven for future variation.
 - Global leaderboard by total Levels.
@@ -32,3 +32,9 @@ Level thresholds, multipliers, unlock gates in config/constants or DB (not hard�
 Task verification: stub interfaces and data model; actual verification TBD.
 Ads taxonomy and caps: define provider, frequency caps, fallbacks in config.
 Season mechanics: TBD; disabled in v1.
+
+
+## Rewards policy (v1)
+- Level-up base reward: coins=0, tickets=3, coin_multiplier=0.
+- Claim multiplier applies per field (e.g., tickets x2).
+- Claim coins are non-progress (banked), do not affect leveling.
