@@ -29,6 +29,9 @@ export default function Home() {
   const [debugState, setDebugState] = useState<DebugState>(null)
   const [tasks, setTasks] = useState<any[] | null>(null)
   const [leaderboard, setLeaderboard] = useState<any | null>(null)
+  const [adUnlocks, setAdUnlocks] = useState<Record<string, number>>({})
+  const [adTTLSeconds, setAdTTLSeconds] = useState<number>(180)
+  const [pendingBonusConfirm, setPendingBonusConfirm] = useState<boolean>(false)
 
   async function devLogin() {
     const token = process.env.NEXT_PUBLIC_DEV_TOKEN || ''
@@ -41,12 +44,36 @@ export default function Home() {
     }
   }
 
+  async function resumeOrStartSession() {
+    try {
+      const stored = typeof window !== 'undefined' ? window.localStorage.getItem('session') : null
+      if (stored) {
+        const s = JSON.parse(stored) as Partial<Session>
+        const claimRes = await fetch('/api/v1/session/claim', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ sessionId: s.sessionId, sessionEpoch: s.sessionEpoch }),
+        })
+        if (claimRes.ok) {
+          const data = (await claimRes.json()) as Session
+          setSession(data)
+          if (typeof window !== 'undefined') window.localStorage.setItem('session', JSON.stringify(data))
+          setClientSeq(Number(data.lastAppliedSeq || 0))
+          await loadCounters()
+          return
+        }
+      }
+    } catch {}
+    await startSession()
+  }
+
   async function startSession() {
     const res = await fetch('/api/v1/session/start', { method: 'POST' })
     if (!res.ok) return
     const data = (await res.json()) as Session
     setSession(data)
     setClientSeq(0)
+    if (typeof window !== 'undefined') window.localStorage.setItem('session', JSON.stringify(data))
     await loadCounters()
   }
 
@@ -76,22 +103,32 @@ export default function Home() {
   }
 
   async function claimBonus(multiplier = 2) {
-    if (!leveledUp) return
-    const idem = crypto.randomUUID()
-    const res = await fetch('/api/v1/level/bonus/claim', {
+    // UI-only confirm step: bonus was already applied by ad/log with intent='level_bonus' in local flow
+    setPendingBonusConfirm(false)
+    setLeveledUp(null)
+    await loadCounters()
+  }
+
+  // Intent-coupled ad simulation for level bonus
+  async function watchAdLevelBonus() {
+    const res = await fetch('/api/v1/ad/log', {
       method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-idempotency-key': idem },
-      body: JSON.stringify({ level: leveledUp, bonusMultiplier: multiplier }),
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ provider: 'stub', placement: 'level_bonus', status: 'completed', intent: 'level_bonus', impressionId: crypto.randomUUID() }),
     })
     if (res.ok) {
-      const data = await res.json()
-      setCounters(data.counters as Counters)
-      setLeveledUp(null)
-      setNextThreshold(data.nextThreshold ?? null)
-    } else {
-      const err = await res.text()
-      alert(`Claim failed: ${err}`)
+      const data = await res.json().catch(() => ({}))
+      if (data?.counters) setCounters(data.counters as Counters)
+      setPendingBonusConfirm(true)
     }
+  }
+
+  function setUnlock(key: string) {
+    setAdUnlocks((s) => ({ ...s, [key]: Date.now() }))
+  }
+  function isUnlocked(key: string) {
+    const ts = adUnlocks[key]
+    return typeof ts === 'number' && Date.now() - ts < adTTLSeconds * 1000
   }
 
   async function loadCounters() {
@@ -112,6 +149,11 @@ export default function Home() {
     if (!res.ok) return
     const data = (await res.json()) as DebugState
     setDebugState(data)
+    try {
+      const cfg = Object.fromEntries((data.config || []).map((r: any) => [r.key, r.value])) as Record<string, any>
+      const ttl = Number(cfg['ad_ttl_seconds'] ?? 180)
+      if (!Number.isNaN(ttl)) setAdTTLSeconds(ttl)
+    } catch {}
   }
 
   async function loadTasks() {
@@ -121,17 +163,29 @@ export default function Home() {
     setTasks(data.definitions || [])
   }
 
-  async function claimTask(taskId: string) {
-    // Minimal stub flow: log ad_completed before claiming to satisfy AD_REQUIRED
+  // Watch ad for a specific task (intent-coupled)
+  async function watchAdForTask(taskId: string) {
     await fetch('/api/v1/ad/log', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ provider: 'stub', placement: 'task', status: 'completed', impressionId: crypto.randomUUID() }),
+      body: JSON.stringify({ provider: 'stub', placement: 'task_claim', status: 'completed', intent: `task:${taskId}`, impressionId: crypto.randomUUID() }),
     }).catch(() => {})
+    setUnlock(`task:${taskId}`)
+  }
+
+  async function claimTask(taskId: string) {
     const res = await fetch(`/api/v1/tasks/${taskId}/claim`, { method: 'POST' })
     if (res.ok) {
+      setAdUnlocks((s) => {
+        const n = { ...s }
+        delete n[`task:${taskId}`]
+        return n
+      })
       await loadTasks()
       await loadCounters()
+    } else {
+      const data = await res.json().catch(() => ({} as any))
+      if (data?.code === 'AD_REQUIRED') alert('Watch an ad for this task first')
     }
   }
 
@@ -142,7 +196,18 @@ export default function Home() {
     setLeaderboard(data)
   }
 
-  useEffect(() => {}, [])
+  useEffect(() => {
+    if (userId && !session) {
+      void (async () => {
+        await refreshDebug()
+        await resumeOrStartSession()
+        await loadTasks()
+        await loadLeaderboard()
+      })()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId])
+
   async function refreshAll() {
     await Promise.all([loadCounters(), loadTasks(), loadLeaderboard(), refreshDebug()])
   }
@@ -153,7 +218,7 @@ export default function Home() {
       {!userId ? (
         <button onClick={devLogin}>Dev Login</button>
       ) : !session ? (
-        <button onClick={startSession}>Start Session</button>
+        <button onClick={resumeOrStartSession}>Start / Resume Session</button>
       ) : (
         <>
           <div>user: {userId}</div>
@@ -163,7 +228,11 @@ export default function Home() {
           {leveledUp && (
             <div style={{ marginTop: 12 }}>
               <div>Level up! Reached level {leveledUp}</div>
-              <button onClick={() => claimBonus(2)} style={{ marginTop: 6 }}>Claim x2 bonus</button>
+              {!pendingBonusConfirm ? (
+                <button onClick={watchAdLevelBonus} style={{ marginTop: 6 }}>Watch ad for x2</button>
+              ) : (
+                <button onClick={() => claimBonus(2)} style={{ marginTop: 6 }}>Confirm x2</button>
+              )}
             </div>
           )}
           <pre style={{ marginTop: 16 }}>{JSON.stringify(counters, null, 2)}</pre>
@@ -173,9 +242,14 @@ export default function Home() {
               <button onClick={loadTasks}>Refresh</button>
             </div>
             <pre style={{ marginTop: 6 }}>{JSON.stringify(tasks, null, 2)}</pre>
-            {Array.isArray(tasks) && tasks.filter((t) => t.state === 'available').map((t) => (
-              <button key={t.taskId} onClick={() => claimTask(t.taskId)} style={{ marginRight: 8 }}>Claim {t.taskId.slice(0, 4)}</button>
-            ))}
+            {Array.isArray(tasks) && tasks
+              .filter((t) => t.state === 'available')
+              .map((t) => (
+                <div key={t.taskId} style={{ display: 'inline-flex', gap: 8, alignItems: 'center', marginRight: 12 }}>
+                  <button onClick={() => watchAdForTask(t.taskId)}>Watch ad</button>
+                  <button onClick={() => claimTask(t.taskId)} disabled={!isUnlocked(`task:${t.taskId}`)}>Claim {t.taskId.slice(0, 4)}</button>
+                </div>
+              ))}
           </div>
           <div style={{ marginTop: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

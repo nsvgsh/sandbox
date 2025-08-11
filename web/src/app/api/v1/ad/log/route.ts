@@ -8,19 +8,34 @@ export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
   const userId = cookieStore.get('dev_session')?.value
   if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
-  const body = (await req.json().catch(() => ({}))) as { provider?: string; placement?: string; status?: string; impressionId?: string }
+  const body = (await req.json().catch(() => ({}))) as {
+    provider?: string
+    placement?: string
+    status?: string
+    impressionId?: string
+    intent?: string // e.g. 'level_bonus' or 'task:<taskId>'
+  }
   const provider = body.provider || 'stub'
   const placement = body.placement || 'level_bonus'
   const status = body.status || 'completed'
   const impressionId = body.impressionId || randomUUID()
+  const intent = typeof body.intent === 'string' && body.intent.trim() ? body.intent.trim() : undefined
 
-  // Soft-apply path: record ad event, then auto-apply level bonus if eligible
+  // Soft-apply path: record ad event, then auto-apply level bonus only for level-bonus intent/placement
   const result = await withClient(async (c) => {
     // insert ad_event
+    const payload: Record<string, unknown> = { impressionId }
+    if (intent) payload.intent = intent
     await c.query(
       'insert into ad_events(id, user_id, session_id, provider, placement, status, reward_payload) values (gen_random_uuid(), $1, null, $2, $3, $4, $5)',
-      [userId, provider, placement, status, JSON.stringify({ impressionId })]
+      [userId, provider, placement, status, JSON.stringify(payload)]
     )
+
+    const isLevelBonusIntent = intent === 'level_bonus' || placement === 'level_bonus'
+    if (!isLevelBonusIntent) {
+      return { applied: false, code: 'NO_LEVEL_BONUS' }
+    }
+
     // TTL from config
     const { rows: adTTLRows } = await c.query("select coalesce((value)::int, 180) as ttl from game_config where key='ad_ttl_seconds'")
     const ttl = Number(adTTLRows[0]?.ttl || 180)
@@ -30,7 +45,7 @@ export async function POST(req: NextRequest) {
       [userId, ttl]
     )
     if (!evtRows[0]) return { applied: false, code: 'NOTHING_TO_APPLY' }
-    // apply incremental bonus x2 by default (can be extended to read from config or client)
+    // apply incremental bonus x2 by default
     const idem = impressionId
     const bonusMultiplier = 2
     const { rows: claimRows } = await c.query('select * from claim_level_bonus($1,$2,$3,$4::uuid)', [userId, evtRows[0].level, bonusMultiplier, idem])

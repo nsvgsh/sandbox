@@ -13,3 +13,5 @@
 | ADMIN-TOOLS | Debug state includes nextTemplates and config subset |
 | DOCS-TRACE-FOUNDATION | Added Feature Catalog under docs/feature-catalog.md |
 | SESSION-CLAIM | Added POST /v1/session/claim endpoint to safely resume sessions and return authoritative ids |
+| TASKS-VERIFY | Documented task verification policy (grant-now, record-only partner status; no reconciliation) |
+| AD-SIM-INTENT | Intent‑coupled ad simulation: ad/log accepts intent; task claim requires matching intent within TTL |

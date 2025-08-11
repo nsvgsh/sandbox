@@ -22,9 +22,10 @@ export async function POST(req: NextRequest) {
       if (isAdTask) {
         const { rows: ttlRows } = await c.query("select coalesce((value)::int, 180) as ttl from game_config where key='ad_ttl_seconds'")
         const ttl = Number(ttlRows[0]?.ttl || 180)
+        // Prefer an intent-bound ad for this task; fall back to any recent completed ad for backward compatibility
         const { rows: adRows } = await c.query(
-          "select id from ad_events where user_id=$1 and status='completed' and created_at >= now() - make_interval(secs => $2) order by created_at desc limit 1",
-          [userId, ttl]
+          "select id from ad_events where user_id=$1 and status='completed' and created_at >= now() - make_interval(secs => $2) and ((reward_payload->>'intent') = $3 or (reward_payload->>'intent') is null) order by created_at desc limit 1",
+          [userId, ttl, `task:${taskId}`]
         )
         if (!adRows[0]) throw new Error('AD_REQUIRED')
       }
