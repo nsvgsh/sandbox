@@ -11,3 +11,5 @@
 | INGEST-SOFT | Soft clamp taps and checksum awareness via game_config.ingest |
 | LEADERBOARD-META | Returned me rank and activePlayers in leaderboard |
 | ADMIN-TOOLS | Debug state includes nextTemplates and config subset |
+| DOCS-TRACE-FOUNDATION | Added Feature Catalog under docs/feature-catalog.md |
+| SESSION-CLAIM | Added POST /v1/session/claim endpoint to safely resume sessions and return authoritative ids |
