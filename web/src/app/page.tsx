@@ -249,6 +249,8 @@ export default function Home() {
   const [activeSection, setActiveSection] = useState<'home' | 'offers' | 'wallet'>('home')
   const [offersTab, setOffersTab] = useState<'available' | 'completed' | 'expired'>('available')
   const [expiredTasks, setExpiredTasks] = useState<Set<string>>(new Set())
+  const [walletAddress, setWalletAddress] = useState<string | null>(null)
+  const [walletTab, setWalletTab] = useState<'withdrawals' | 'activity' | 'airdrop'>('withdrawals')
 
   async function devLogin() {
     const token = process.env.NEXT_PUBLIC_DEV_TOKEN || process.env.DEV_TOKEN || ''
@@ -566,6 +568,14 @@ export default function Home() {
 
   useEffect(() => setMounted(true), [])
 
+  // Wallet: hydrate address from sessionStorage
+  useEffect(() => {
+    try {
+      const addr = sessionStorage.getItem('wallet:address')
+      if (addr && typeof addr === 'string') setWalletAddress(addr)
+    } catch {}
+  }, [])
+
   // Offers: tick for countdowns and prune expired unlocks; record expired for UI
   useEffect(() => {
     const id = setInterval(() => {
@@ -692,6 +702,105 @@ export default function Home() {
                       </div>
                     ))}
                   </>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeSection === 'wallet' && (
+            <div style={{ marginTop: 8 }}>
+              {/* Wallet Header */}
+              <div>
+                <div style={{ fontWeight: 800, fontSize: 18 }}>Wallet (balances)</div>
+                <div style={{ marginTop: 6, fontSize: 12, opacity: 0.8 }}>
+                  We store ONLY your public address. Keys and funds remain under your control.
+                </div>
+              </div>
+
+              {/* Connect Wallet */}
+              <div style={{ marginTop: 12 }}>
+                {!walletAddress ? (
+                  <button
+                    onClick={() => {
+                      const v = window.prompt('Enter your public wallet address (demo only):') || ''
+                      const trimmed = v.trim()
+                      if (!trimmed) return
+                      try { sessionStorage.setItem('wallet:address', trimmed) } catch {}
+                      setWalletAddress(trimmed)
+                    }}
+                    style={{ width: '100%', padding: '12px 14px', fontWeight: 700, borderRadius: 12, border: '1px solid rgba(0,0,0,0.15)' }}
+                  >
+                    CONNECT WALLET
+                  </button>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 12, border: '1px solid rgba(0,0,0,0.1)', borderRadius: 12 }}>
+                    <div>
+                      <div style={{ fontSize: 12, opacity: 0.8 }}>Connected address</div>
+                      <div style={{ fontWeight: 600 }}>{walletAddress.length > 14 ? `${walletAddress.slice(0, 6)}…${walletAddress.slice(-6)}` : walletAddress}</div>
+                    </div>
+                    <button
+                      onClick={() => { try { sessionStorage.removeItem('wallet:address') } catch {}; setWalletAddress(null) }}
+                      style={{ padding: '8px 10px', borderRadius: 10, border: '1px solid rgba(0,0,0,0.15)' }}
+                    >
+                      Disconnect
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Balances */}
+              <div style={{ marginTop: 12 }}>
+                <div style={{ fontWeight: 700, marginBottom: 6 }}>Assets</div>
+                <div style={{ display: 'grid', gap: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid rgba(0,0,0,0.1)', borderRadius: 12, padding: 10 }}>
+                    <div>◇ TON</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div>0.000</div>
+                      <button disabled style={{ opacity: 0.5, cursor: 'not-allowed' }}>DEPOSIT</button>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid rgba(0,0,0,0.1)', borderRadius: 12, padding: 10 }}>
+                    <div>₮ USDT</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div>0.000</div>
+                      <button disabled style={{ opacity: 0.5, cursor: 'not-allowed' }}>WITHDRAW</button>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid rgba(0,0,0,0.1)', borderRadius: 12, padding: 10 }}>
+                    <div>🪙 Coins</div>
+                    <div>{Number(counters?.coins ?? 0).toLocaleString()}</div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid rgba(0,0,0,0.1)', borderRadius: 12, padding: 10 }}>
+                    <div>🎟 Tickets</div>
+                    <div>{Number(counters?.tickets ?? 0).toLocaleString()}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tabs */}
+              <div style={{ marginTop: 16 }}>
+                <div role="tablist" aria-label="Wallet" style={{ display: 'flex', gap: 12, marginBottom: 8 }}>
+                  {(['withdrawals','activity','airdrop'] as const).map((tab) => (
+                    <button
+                      key={tab}
+                      role="tab"
+                      aria-selected={walletTab === tab}
+                      onClick={() => setWalletTab(tab)}
+                      style={{ fontWeight: walletTab === tab ? 700 : 500 }}
+                    >
+                      {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                    </button>
+                  ))}
+                </div>
+
+                {walletTab === 'withdrawals' && (
+                  <div style={{ opacity: 0.8 }}>(no requests yet)</div>
+                )}
+                {walletTab === 'activity' && (
+                  <div style={{ opacity: 0.8 }}>(no activity yet)</div>
+                )}
+                {walletTab === 'airdrop' && (
+                  <div style={{ opacity: 0.8 }}>(coming soon)</div>
                 )}
               </div>
             </div>
