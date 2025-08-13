@@ -11,13 +11,15 @@ export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
   const userId = cookieStore.get('dev_session')?.value
   if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
-  const { level, bonusMultiplier } = (await req.json().catch(() => ({}))) as { level?: number; bonusMultiplier?: number }
+  const { level, bonusMultiplier, impressionId } = (await req.json().catch(() => ({}))) as { level?: number; bonusMultiplier?: number; impressionId?: string }
   if (typeof level !== 'number' || typeof bonusMultiplier !== 'number') return NextResponse.json({ error: 'bad_request' }, { status: 400 })
-  const idem = req.headers.get('x-idempotency-key') || ''
+
+  // Validate there's a recent ad_event for level_bonus (and match by impressionId if provided)
+  const idem = impressionId && isUuid(impressionId) ? impressionId : (req.headers.get('x-idempotency-key') || '')
   if (!isUuid(idem)) return NextResponse.json({ error: 'bad_request', code: 'BAD_IDEMPOTENCY_KEY' }, { status: 400 })
   try {
     const row = await withClient(async (c) => {
-      const { rows } = await c.query('select * from claim_level_bonus($1,$2,$3,$4)', [userId, level, bonusMultiplier, idem])
+      const { rows } = await c.query('select * from claim_level_bonus_v3($1,$2,$3,$4::uuid,$5::uuid)', [userId, level, bonusMultiplier, idem, impressionId])
       return rows[0]
     })
     const nextThreshold = await withClient(async (c) => {

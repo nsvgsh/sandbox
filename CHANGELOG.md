@@ -15,3 +15,9 @@
 | SESSION-CLAIM | Added POST /v1/session/claim endpoint to safely resume sessions and return authoritative ids |
 | TASKS-VERIFY | Documented task verification policy (grant-now, record-only partner status; no reconciliation) |
 | AD-SIM-INTENT | Intent‑coupled ad simulation: ad/log accepts intent; task claim requires matching intent within TTL |
+| LOCAL-ENV-BOOTSTRAP-001 | Local dev via web/.env.local; setup & validation scripts |
+| API-AD-LOG-REFACTOR | /v1/ad/log records ads and returns impressionId+expiresInSec; no bonus apply on this route |
+| UI-LEVEL-BONUS-FLOW | Level-up UX: Claim | X2 bonus; Claim x2 within ad_ttl_seconds; auto-revert on expiry |
+| ADMIN-DEBUG-ADTTL | Admin debug state exposes ad_ttl_seconds |
+| CONFIG-TTL-DEFAULTS | Set local ad_ttl_seconds default to 10s; deprecated claim_ttl_seconds for bonus flow |
+| X2-POLICY-A-ONLY-001 | Added claim_level_bonus_v3 (A-only); idempotent by impressionId; mark ad_events as used; wired claim route to v3 |

@@ -16,3 +16,15 @@
 
 Scope note: v1 avoids payments/Stars, complex ads, PvP, clans, and other heavy systems. See game design for exact inclusions and exclusions.
 
+## Local Development (no shell exports)
+
+1. Inside `web/`, provision local env once:
+   - `npm run setup:env`
+2. Start dev server:
+   - `npm run dev`
+3. If you use Supabase local, ensure it's running (default `DATABASE_URL` in `web/.env.local` expects Supabase defaults).
+
+Notes:
+- `DEV_TOKEN` and `NEXT_PUBLIC_DEV_TOKEN` should match; the setup script mirrors them.
+- Edit `web/.env.local` to change local values; restart `next dev` after edits.
+

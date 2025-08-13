@@ -9,9 +9,9 @@ insert into game_config(key, value) values
   ('thresholds', '{"base":10, "growth":"linear"}'),
   ('level_bonus_policy', '{"coins":"multiply","tickets":"add","coin_multiplier":"multiply"}')
   on conflict (key) do nothing;
-insert into game_config(key, value) values ('claim_ttl_seconds', '180') on conflict (key) do nothing;
+insert into game_config(key, value) values ('claim_ttl_seconds', '10') on conflict (key) do nothing;
 insert into game_config(key, value) values ('coins_per_tap', '1') on conflict (key) do nothing;
-insert into game_config(key, value) values ('ad_ttl_seconds', '180') on conflict (key) do nothing;
+insert into game_config(key, value) values ('ad_ttl_seconds', '10') on conflict (key) do nothing;
 insert into game_config(key, value) values ('ingest', '{"max_taps_per_batch":50,"clamp_soft":true}') on conflict (key) do nothing;
 
 -- Per-level reward templates (simple variant; season/segment reserved for future)

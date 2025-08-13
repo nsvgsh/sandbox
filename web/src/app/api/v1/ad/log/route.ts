@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   const impressionId = body.impressionId || randomUUID()
   const intent = typeof body.intent === 'string' && body.intent.trim() ? body.intent.trim() : undefined
 
-  // Soft-apply path: record ad event, then auto-apply level bonus only for level-bonus intent/placement
+  // Record ad event only. Do not apply bonus here (bonus is applied on explicit Claim x2).
   const result = await withClient(async (c) => {
     // insert ad_event
     const payload: Record<string, unknown> = { impressionId }
@@ -32,24 +32,12 @@ export async function POST(req: NextRequest) {
     )
 
     const isLevelBonusIntent = intent === 'level_bonus' || placement === 'level_bonus'
-    if (!isLevelBonusIntent) {
-      return { applied: false, code: 'NO_LEVEL_BONUS' }
+    if (isLevelBonusIntent) {
+      const { rows: adTTLRows } = await c.query("select coalesce((value)::int, 180) as ttl from game_config where key='ad_ttl_seconds'")
+      const ttl = Number(adTTLRows[0]?.ttl || 180)
+      return { recorded: true, impressionId, expiresInSec: ttl }
     }
-
-    // TTL from config
-    const { rows: adTTLRows } = await c.query("select coalesce((value)::int, 180) as ttl from game_config where key='ad_ttl_seconds'")
-    const ttl = Number(adTTLRows[0]?.ttl || 180)
-    // find latest eligible level_event
-    const { rows: evtRows } = await c.query(
-      'select id, level, reward_payload from level_events where user_id=$1 and bonus_multiplier is null and created_at >= now() - make_interval(secs => $2) order by created_at desc limit 1',
-      [userId, ttl]
-    )
-    if (!evtRows[0]) return { applied: false, code: 'NOTHING_TO_APPLY' }
-    // apply incremental bonus x2 by default
-    const idem = impressionId
-    const bonusMultiplier = 2
-    const { rows: claimRows } = await c.query('select * from claim_level_bonus($1,$2,$3,$4::uuid)', [userId, evtRows[0].level, bonusMultiplier, idem])
-    return { applied: true, counters: claimRows[0] }
+    return { recorded: true, impressionId }
   })
   return NextResponse.json(result)
 }

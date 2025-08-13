@@ -20,6 +20,7 @@ type DebugState = {
 } | null
 
 export default function Home() {
+  const [mounted, setMounted] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [clientSeq, setClientSeq] = useState<number>(0)
@@ -30,11 +31,14 @@ export default function Home() {
   const [tasks, setTasks] = useState<any[] | null>(null)
   const [leaderboard, setLeaderboard] = useState<any | null>(null)
   const [adUnlocks, setAdUnlocks] = useState<Record<string, number>>({})
-  const [adTTLSeconds, setAdTTLSeconds] = useState<number>(180)
+  const [adTTLSeconds, setAdTTLSeconds] = useState<number>(10)
   const [pendingBonusConfirm, setPendingBonusConfirm] = useState<boolean>(false)
+  const [bonusImpressionId, setBonusImpressionId] = useState<string | null>(null)
+  const [bonusExpiresAt, setBonusExpiresAt] = useState<number | null>(null)
+  const [nowTick, setNowTick] = useState<number>(Date.now())
 
   async function devLogin() {
-    const token = process.env.NEXT_PUBLIC_DEV_TOKEN || ''
+    const token = process.env.NEXT_PUBLIC_DEV_TOKEN || process.env.DEV_TOKEN || ''
     const res = await fetch('/api/v1/auth/dev', { method: 'POST', headers: { 'x-dev-token': token } })
     if (res.ok) {
       const data = await res.json()
@@ -92,13 +96,38 @@ export default function Home() {
     })
     if (res.ok) {
       const data = await res.json()
-      setCounters(data.counters as Counters)
+      const c = data.counters as any
+      setCounters({
+        coins: Number(c.coins || 0),
+        tickets: Number(c.tickets || 0),
+        coinMultiplier: Number(c.coinMultiplier ?? c.coin_multiplier ?? 1),
+        level: Number(c.level || 0),
+        totalTaps: Number(c.totalTaps ?? c.total_taps ?? 0),
+      })
       setClientSeq(nextSeq)
       setLeveledUp(data.leveledUp?.level ?? null)
       setNextThreshold(data.nextThreshold ?? null)
     } else {
-      const err = await res.text()
-      alert(`Tap failed: ${err}`)
+      try {
+        if (res.status === 429) {
+          // simple backoff and one retry
+          await new Promise((r) => setTimeout(r, 200))
+          await tap()
+          return
+        }
+        const data = await res.json().catch(() => ({} as any))
+        const code = (data && (data.code as string)) || ''
+        if (res.status === 409 && (code === 'SUPERSEDED' || code === 'SEQ_REWIND')) {
+          await resumeOrStartSession()
+          await loadCounters()
+          return
+        }
+        const errText = typeof data?.error === 'string' ? data.error : await res.text()
+        alert(`Tap failed: ${errText}`)
+      } catch {
+        const err = await res.text().catch(() => 'unknown')
+        alert(`Tap failed: ${err}`)
+      }
     }
   }
 
@@ -109,17 +138,65 @@ export default function Home() {
     await loadCounters()
   }
 
-  // Intent-coupled ad simulation for level bonus
-  async function watchAdLevelBonus() {
+  // Start level bonus flow: watch ad, then enable Claim x2 for a short window
+  async function startLevelBonus() {
     const res = await fetch('/api/v1/ad/log', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ provider: 'stub', placement: 'level_bonus', status: 'completed', intent: 'level_bonus', impressionId: crypto.randomUUID() }),
     })
-    if (res.ok) {
-      const data = await res.json().catch(() => ({}))
-      if (data?.counters) setCounters(data.counters as Counters)
+    if (!res.ok) return
+    const data = await res.json().catch(() => ({} as any))
+    const imp = typeof data?.impressionId === 'string' ? data.impressionId : null
+    const ttl = Number(data?.expiresInSec ?? adTTLSeconds)
+    if (imp) {
+      setBonusImpressionId(imp)
+      const expiresAt = Date.now() + (Number.isFinite(ttl) ? ttl * 1000 : adTTLSeconds * 1000)
+      setBonusExpiresAt(expiresAt)
       setPendingBonusConfirm(true)
+    }
+  }
+
+  // Claim x2 within the ad TTL window
+  async function claimLevelBonusX2() {
+    if (!leveledUp || !bonusImpressionId) return
+    // auto-expire guard
+    if (bonusExpiresAt && Date.now() > bonusExpiresAt) {
+      setPendingBonusConfirm(false)
+      setBonusImpressionId(null)
+      setBonusExpiresAt(null)
+      return
+    }
+    const res = await fetch('/api/v1/level/bonus/claim', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-idempotency-key': bonusImpressionId },
+      body: JSON.stringify({ level: leveledUp, bonusMultiplier: 2, impressionId: bonusImpressionId }),
+    })
+    if (res.ok) {
+      const data = await res.json().catch(() => ({} as any))
+      const c = data?.counters as any
+      if (c) {
+        setCounters({
+          coins: Number(c.coins || 0),
+          tickets: Number(c.tickets || 0),
+          coinMultiplier: Number(c.coinMultiplier ?? c.coin_multiplier ?? 1),
+          level: Number(c.level || 0),
+          totalTaps: Number(c.totalTaps ?? c.total_taps ?? 0),
+        })
+      }
+      setPendingBonusConfirm(false)
+      setLeveledUp(null)
+      setBonusImpressionId(null)
+      setBonusExpiresAt(null)
+    } else {
+      const data = await res.json().catch(() => ({} as any))
+      if (data?.code === 'TTL_EXPIRED') {
+        // revert to two buttons
+        setPendingBonusConfirm(false)
+        setBonusImpressionId(null)
+        setBonusExpiresAt(null)
+        return
+      }
     }
   }
 
@@ -135,13 +212,22 @@ export default function Home() {
     const res = await fetch('/api/v1/counters')
     if (!res.ok) return
     const data = await res.json()
-    setCounters(data.counters as Counters)
+    {
+      const c = data.counters as any
+      setCounters({
+        coins: Number(c.coins || 0),
+        tickets: Number(c.tickets || 0),
+        coinMultiplier: Number(c.coinMultiplier ?? c.coin_multiplier ?? 1),
+        level: Number(c.level || 0),
+        totalTaps: Number(c.totalTaps ?? c.total_taps ?? 0),
+      })
+    }
     setNextThreshold(data.nextThreshold as NextThreshold)
   }
 
   async function refreshDebug() {
     if (!userId) return
-    const token = process.env.NEXT_PUBLIC_DEV_TOKEN || ''
+    const token = process.env.NEXT_PUBLIC_DEV_TOKEN || process.env.DEV_TOKEN || ''
     const res = await fetch('/api/v1/admin/debug/state', {
       method: 'GET',
       headers: { 'x-dev-token': token, 'x-user-id': userId },
@@ -208,8 +294,35 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId])
 
+  // Tick for countdown while waiting for Claim x2
+  useEffect(() => {
+    if (!pendingBonusConfirm || !bonusExpiresAt) return
+    const id = setInterval(() => setNowTick(Date.now()), 500)
+    return () => clearInterval(id)
+  }, [pendingBonusConfirm, bonusExpiresAt])
+
+  // Auto-revert to two-button state when countdown expires
+  useEffect(() => {
+    if (!pendingBonusConfirm || !bonusExpiresAt) return
+    if (Date.now() > bonusExpiresAt) {
+      setPendingBonusConfirm(false)
+      setBonusImpressionId(null)
+      setBonusExpiresAt(null)
+    }
+  }, [pendingBonusConfirm, bonusExpiresAt, nowTick])
+
   async function refreshAll() {
     await Promise.all([loadCounters(), loadTasks(), loadLeaderboard(), refreshDebug()])
+  }
+
+  useEffect(() => setMounted(true), [])
+
+  if (!mounted) {
+    return (
+      <main style={{ padding: 24, fontFamily: 'ui-sans-serif, system-ui' }}>
+        <h1>Local Tap App</h1>
+      </main>
+    )
   }
 
   return (
@@ -229,9 +342,14 @@ export default function Home() {
             <div style={{ marginTop: 12 }}>
               <div>Level up! Reached level {leveledUp}</div>
               {!pendingBonusConfirm ? (
-                <button onClick={watchAdLevelBonus} style={{ marginTop: 6 }}>Watch ad for x2</button>
+                <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                  <button onClick={() => { setLeveledUp(null) }}>Claim</button>
+                  <button onClick={startLevelBonus}>X2 bonus</button>
+                </div>
               ) : (
-                <button onClick={() => claimBonus(2)} style={{ marginTop: 6 }}>Confirm x2</button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
+                  <button onClick={claimLevelBonusX2} disabled={Boolean(bonusExpiresAt && Date.now() > bonusExpiresAt)}>Claim x2{bonusExpiresAt ? ` (${Math.max(0, Math.ceil((bonusExpiresAt - nowTick) / 1000))}s)` : ''}</button>
+                </div>
               )}
             </div>
           )}

@@ -34,8 +34,8 @@
 
 ## Ads & tasks (local simulation)
 - Ad view simulation is intent‑coupled: one ad unlocks one action (`level_bonus` or `task:<id>`) within a short window.
-- Level bonus: bonus is applied after the view; UI confirm is visual only.
-- Tasks: require a recent ad for that specific task; others remain locked.
+- Level bonus: on level‑up the UI shows two actions: `Claim` (acknowledge base, already granted) and `X2 bonus` (watch ad). After ad, a single `Claim x2` appears and must be pressed within `ad_ttl_seconds` to apply the incremental x2. If the timer expires, the UI returns to two actions.
+- Tasks: require a recent ad for that specific task within `ad_ttl_seconds`; others remain locked.
 
 ## Security
 - Always validate `WebApp.initData` (`hash`, `signature`) server‑side before trusting params

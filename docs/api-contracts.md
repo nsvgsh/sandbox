@@ -5,6 +5,7 @@ Conventions
 - Idempotency: `X-Idempotency-Key` on mutating POSTs (uuidv7)
 - Session: `X-Session-Id`, `X-Session-Epoch` on gameplay POSTs
 - Errors: 400/401/403/409/422/429/500
+- TTLs: `ad_ttl_seconds` (default 10s) governs all time‑gated claims (level bonus x2, tasks). `claim_ttl_seconds` is deprecated and not used for bonus claims.
 
 ## Routes
 - POST /auth/tg → { jwt, user }
@@ -12,10 +13,13 @@ Conventions
 - POST /session/claim → { sessionId, sessionEpoch, lastAppliedSeq }
 - POST /ingest/taps → { counters, nextThreshold, leveledUp? }
 - GET /counters → { counters, effects?, nextThreshold }
-- POST /ad/log → { applied, counters? }
+- POST /ad/log → { recorded, impressionId, expiresInSec? }
   - Body accepts optional `intent`: `"level_bonus"` or `"task:<taskId>"` for intent‑coupled local simulation.
-  - When `intent='level_bonus'`, the local path may apply the bonus immediately; UI confirm is visual only.
-- POST /level/bonus/claim → { rewardEventId, counters }
+  - For `intent='level_bonus'`, this route only records the ad and returns an `impressionId` and an advisory `expiresInSec` computed from `ad_ttl_seconds`. It does not apply rewards.
+- POST /level/bonus/claim → { rewardEventId?, counters }
+  - Applies the incremental x2 bonus for the most recent unclaimed level event when a recent ad (within `ad_ttl_seconds`) exists.
+  - Prefer passing the `impressionId` from `/ad/log` and use it as idempotency key.
+  - Errors: 409 `TTL_EXPIRED`, 409 `ALREADY_CLAIMED`, 404 `NOT_FOUND`.
 - GET /tasks → { definitions, progress }
 - POST /tasks/{taskId}/claim → { state, rewardEventId?, counters? }
   - Ad‑gated tasks: recent completed ad must match `intent='task:<taskId>'` within TTL; otherwise `AD_REQUIRED`.
