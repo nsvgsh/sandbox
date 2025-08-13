@@ -38,3 +38,8 @@
 - effect_id (PK), user_id, type ('coin_multiplier'), magnitude, expires_at, source_reward_event_id (FK), timestamps
 
 RLS: All user-scoped tables restricted by user_id=auth.uid(); mutations only via security-definer RPCs.
+
+Notes on migrations
+- The canonical runtime schema includes additive changes in `supabase/migrations/` that extend the baseline documented here. Notable examples:
+  - `003_x2_policy_v3.sql` normalizes `ad_events.status` to include `completed` and `used`, adds indexes on impressionId lookup, and introduces `claim_level_bonus_v3` with A‑only TTL gating, idempotency by impressionId, and ad consumption (`used`).
+  - `001_hotpath.sql` provides `game_config` defaults, the `_next_threshold` helper, session/tap functions, and ensures `level_events.template_id` exists.

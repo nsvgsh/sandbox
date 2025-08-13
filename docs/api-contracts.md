@@ -33,3 +33,8 @@ Conventions
 - Grant rewards instantly on claim based on in‑app signals; do not block on partner answers.
 - If a partner later pings, record `confirmed/rejected/unknown` for reporting only; never adjust user rewards.
 - Keep it simple: one shared marker, ignore duplicates, light caps/window via config, no periodic checks.
+
+## UI notes (local dev parity)
+- Level‑up: client shows a modal on level‑up with base reward details and a two‑step x2 flow. After ad/log, the modal displays the total x2 reward for clarity; the backend still applies only the incremental portion per `level_bonus_policy` and marks the ad as `used`.
+- Tasks (Offers): per‑task ad unlock with `intent='task:<id>'` is required; client shows `Claim (Xs)` within TTL and a success modal on claim. Expired unlocks are indicated locally in an EXPIRED tab (UI‑only).
+- TTL countdowns in the UI are advisory; the server remains authoritative on acceptance.

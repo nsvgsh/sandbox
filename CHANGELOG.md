@@ -21,3 +21,9 @@
 | ADMIN-DEBUG-ADTTL | Admin debug state exposes ad_ttl_seconds |
 | CONFIG-TTL-DEFAULTS | Set local ad_ttl_seconds default to 10s; deprecated claim_ttl_seconds for bonus flow |
 | X2-POLICY-A-ONLY-001 | Added claim_level_bonus_v3 (A-only); idempotent by impressionId; mark ad_events as used; wired claim route to v3 |
+| UI-HOME-MAIN | Main screen scaffold in-place: counters header, avatar row, Tap Area, fixed bottom navigation |
+| UI-LEVELUP-MODAL | Level-up modal with base reward reveal; x2 flow with advisory countdown and idempotent claim; shows total x2 rewards after ad-view |
+| UI-OFFERS-SCREEN | Offers screen (in-place): AVAILABLE/COMPLETED/EXPIRED tabs, intent-coupled ad unlocks with TTL, sessionStorage persistence, per-task claim countdown |
+| UI-OFFERS-CLAIM-MODAL | Task claim success popup: "congratulations!" with reward: task_reward list |
+| UI-WALLET-SCREEN | Wallet shell (in-place): connect wallet (local address only), assets (TON/USDT placeholders), Coins/Tickets, Withdrawals/Activity/Airdrop tabs |
+| UI-NAV-CLICKABLE | Bottom bar navigation made clickable; removed duplicate top navigation |

@@ -251,6 +251,7 @@ export default function Home() {
   const [expiredTasks, setExpiredTasks] = useState<Set<string>>(new Set())
   const [walletAddress, setWalletAddress] = useState<string | null>(null)
   const [walletTab, setWalletTab] = useState<'withdrawals' | 'activity' | 'airdrop'>('withdrawals')
+  const [claimSuccess, setClaimSuccess] = useState<{ taskId: string; rewardPayload: Record<string, unknown> | null } | null>(null)
 
   async function devLogin() {
     const token = process.env.NEXT_PUBLIC_DEV_TOKEN || process.env.DEV_TOKEN || ''
@@ -517,7 +518,9 @@ export default function Home() {
   async function claimTask(taskId: string) {
     const res = await fetch(`/api/v1/tasks/${taskId}/claim`, { method: 'POST' })
     if (res.ok) {
+      const t = Array.isArray(tasks) ? (tasks.find((x) => x.taskId === taskId) || null) : null
       clearUnlockForTask(taskId)
+      setClaimSuccess({ taskId, rewardPayload: t?.rewardPayload ?? null })
       await loadTasks()
       await loadCounters()
     } else {
@@ -823,6 +826,13 @@ export default function Home() {
             />
           )}
 
+          {claimSuccess && (
+            <TaskClaimModal
+              rewardPayload={claimSuccess.rewardPayload}
+              onClose={() => setClaimSuccess(null)}
+            />
+          )}
+
           {/* Developer info (kept for now, below the main scaffold) */}
           <div style={{ marginTop: 16, opacity: 0.8, fontSize: 12 }}>
             <div>user: {userId}</div>
@@ -887,5 +897,49 @@ export default function Home() {
         </>
       )}
     </main>
+  )
+}
+
+function TaskClaimModal(props: {
+  rewardPayload: Record<string, unknown> | null
+  onClose: () => void
+}) {
+  const { rewardPayload, onClose } = props
+  const overlay: React.CSSProperties = { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 60 }
+  const card: React.CSSProperties = { width: 'min(92vw, 420px)', borderRadius: 16, background: 'var(--background)', color: 'var(--foreground)', padding: 16, boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }
+  const row: React.CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'space-between' }
+  const title: React.CSSProperties = { fontWeight: 800, fontSize: 18 }
+
+  function toNumber(x: unknown): number | null {
+    const n = typeof x === 'number' ? x : typeof x === 'string' ? Number(x) : NaN
+    return Number.isFinite(n) ? n : null
+  }
+  function formatRewardList(payload: Record<string, unknown> | null): string {
+    if (!payload) return '{ unknown }'
+    const coins = toNumber(payload.coins)
+    const tickets = toNumber(payload.tickets)
+    const coinMult = toNumber((payload as any).coin_multiplier)
+    const parts: string[] = []
+    if (coins !== null) parts.push(`coins: ${coins}`)
+    if (tickets !== null) parts.push(`tickets: ${tickets}`)
+    if (coinMult !== null) parts.push(`coin_multiplier: ${coinMult}`)
+    return parts.length ? `{ ${parts.join(', ')} }` : '{ unknown }'
+  }
+
+  return (
+    <div role="dialog" aria-modal="true" aria-label="Task claimed" style={overlay} onClick={onClose}>
+      <div style={card} onClick={(e) => e.stopPropagation()}>
+        <div style={row}>
+          <div style={title}>congratulations!</div>
+          <button aria-label="Close" onClick={onClose} style={{ background: 'transparent', border: 'none', fontSize: 18, cursor: 'pointer' }}>×</button>
+        </div>
+        <div style={{ marginTop: 10 }}>
+          <div style={{ fontSize: 13 }}>reward: task_reward: {formatRewardList(rewardPayload)}</div>
+        </div>
+        <div style={{ marginTop: 12, display: 'flex', justifyContent: 'flex-end' }}>
+          <button onClick={onClose} style={{ padding: '8px 10px', borderRadius: 10, border: '1px solid rgba(0,0,0,0.15)', fontWeight: 700 }}>Close</button>
+        </div>
+      </div>
+    </div>
   )
 }

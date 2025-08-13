@@ -33,10 +33,24 @@
 - Session claim lets the client resume safely: if ids match, echo; else rotate.
 
 ## Ads & tasks (local simulation)
-- Ad view simulation is intent‑coupled: one ad unlocks one action (`level_bonus` or `task:<id>`) within a short window.
-- Level bonus: on level‑up the UI shows two actions: `Claim` (acknowledge base, already granted) and `X2 bonus` (watch ad). After ad, a single `Claim x2` appears and must be pressed within `ad_ttl_seconds` to apply the incremental x2. If the timer expires, the UI returns to two actions.
-- Tasks: require a recent ad for that specific task within `ad_ttl_seconds`; others remain locked.
+- Ad view simulation is intent‑coupled: one ad unlocks one action (`level_bonus` or `task:<id>`) within a short window configured by `ad_ttl_seconds`.
+- Level‑up bonus (UI): when `leveledUp` occurs, a modal opens that reveals the base reward (already granted) and offers `Claim` or `X2 bonus`.
+  - After ad/log with `intent='level_bonus'`, the modal switches to a single `Claim x2 (Xs)` within TTL. The UI displays the total x2 reward for clarity; the backend applies only the incremental portion per policy and idempotently by `impressionId`.
+  - On TTL expiry the modal reverts to the two‑button state.
+- Tasks (Offers UI): each task card has `Watch ad` → `Claim (Xs)` within TTL. Unlocks are intent‑bound to that specific task.
+  - On successful claim, a confirmation modal shows: header “congratulations!” and `reward: task_reward: { ... }` formatted from the task payload.
+  - Ad unlock TTLs are reflected with an advisory countdown; server remains source of truth.
+  - Locally, expired unlocks are surfaced under an EXPIRED tab; this is a UI‑only indicator.
 
 ## Security
 - Always validate `WebApp.initData` (`hash`, `signature`) server‑side before trusting params
 - Do not trust `start_param` until validation completes
+
+## UI (local dev) surfaces
+- Home (Game): Counters header (Coins/Tickets/Level), avatar/nickname, Tap Area, level‑up modal with x2 flow.
+- Offers: Tabs (AVAILABLE/COMPLETED/EXPIRED), per‑task intent‑coupled ad unlock and claim, claim‑success modal.
+- Wallet: Read‑only balances (Coins/Tickets) and placeholders for TON/USDT assets; demo “Connect wallet” stores only a public address locally; tabs (Withdrawals/Activity/Airdrop) are stubs.
+
+## Schema and migrations
+- `docs/db-schema.sql` is a baseline schema document. Authoritative schema includes additive changes in `supabase/migrations/`.
+  - Examples: `ad_events.status` extended with `completed/used`, indexes on `(reward_payload->>'impressionId')`, `claim_level_bonus_v3` (A‑only gating, idempotency, marks ads as used), `level_events.template_id` ensured.
