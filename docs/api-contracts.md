@@ -6,9 +6,11 @@ Conventions
 - Session: `X-Session-Id`, `X-Session-Epoch` on gameplay POSTs
 - Errors: 400/401/403/409/422/429/500
 - TTLs: `ad_ttl_seconds` (default 10s) governs all time‑gated claims (level bonus x2, tasks). `claim_ttl_seconds` is deprecated and not used for bonus claims.
+- Config source: clients read timers/limits from `GET /v1/config`. Any UI countdowns are advisory; the server is authoritative.
 
 ## Routes
 - POST /auth/tg → { jwt, user }
+- GET /level/last → { level, rewardPayload }
 - POST /session/start → { sessionId, sessionEpoch, lastAppliedSeq }
 - POST /session/claim → { sessionId, sessionEpoch, lastAppliedSeq }
 - POST /ingest/taps → { counters, nextThreshold, leveledUp? }
@@ -23,6 +25,9 @@ Conventions
 - GET /tasks → { definitions, progress }
 - POST /tasks/{taskId}/claim → { state, rewardEventId?, counters? }
   - Ad‑gated tasks: recent completed ad must match `intent='task:<taskId>'` within TTL; otherwise `AD_REQUIRED`.
+  - Spend‑once: the matched ad is marked `used` on successful claim.
+  - Idempotency: send `X-Idempotency-Key` (recommend using the ad `impressionId`). Duplicate claims with the same key do not grant twice.
+  - Errors: 409 `ALREADY_CLAIMED` (task already claimed), 409 `AD_REQUIRED`, 404 `NOT_FOUND`.
 - GET /config → { thresholds, policies, flags, monetag, leaderboard }
 - POST /track/lead → {}
 - GET /leaderboard?top=K → { top, me, activePlayers }  (windowDays is configured via env)
@@ -36,5 +41,5 @@ Conventions
 
 ## UI notes (local dev parity)
 - Level‑up: client shows a modal on level‑up with base reward details and a two‑step x2 flow. After ad/log, the modal displays the total x2 reward for clarity; the backend still applies only the incremental portion per `level_bonus_policy` and marks the ad as `used`.
-- Tasks (Offers): per‑task ad unlock with `intent='task:<id>'` is required; client shows `Claim (Xs)` within TTL and a success modal on claim. Expired unlocks are indicated locally in an EXPIRED tab (UI‑only).
+- Tasks (Offers): per‑task ad unlock with `intent='task:<id>'` is required; client shows `Claim (Xs)` within TTL and a success modal on claim. If TTL expires, the task remains in AVAILABLE and shows `Watch ad` again (no separate EXPIRED tab in the current UI).
 - TTL countdowns in the UI are advisory; the server remains authoritative on acceptance.

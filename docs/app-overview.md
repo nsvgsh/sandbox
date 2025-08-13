@@ -33,14 +33,13 @@
 - Session claim lets the client resume safely: if ids match, echo; else rotate.
 
 ## Ads & tasks (local simulation)
-- Ad view simulation is intent‑coupled: one ad unlocks one action (`level_bonus` or `task:<id>`) within a short window configured by `ad_ttl_seconds`.
+- Ad view simulation is intent‑coupled: one ad unlocks one action (`level_bonus` or `task:<id>`) within a short window configured by `ad_ttl_seconds` (read from `/v1/config`).
 - Level‑up bonus (UI): when `leveledUp` occurs, a modal opens that reveals the base reward (already granted) and offers `Claim` or `X2 bonus`.
   - After ad/log with `intent='level_bonus'`, the modal switches to a single `Claim x2 (Xs)` within TTL. The UI displays the total x2 reward for clarity; the backend applies only the incremental portion per policy and idempotently by `impressionId`.
   - On TTL expiry the modal reverts to the two‑button state.
 - Tasks (Offers UI): each task card has `Watch ad` → `Claim (Xs)` within TTL. Unlocks are intent‑bound to that specific task.
   - On successful claim, a confirmation modal shows: header “congratulations!” and `reward: task_reward: { ... }` formatted from the task payload.
-  - Ad unlock TTLs are reflected with an advisory countdown; server remains source of truth.
-  - Locally, expired unlocks are surfaced under an EXPIRED tab; this is a UI‑only indicator.
+  - Ad unlock TTLs use an advisory countdown; the server remains source of truth. If TTL expires, the task stays in AVAILABLE and shows `Watch ad` again (no EXPIRED tab in current UI).
 
 ## Security
 - Always validate `WebApp.initData` (`hash`, `signature`) server‑side before trusting params
@@ -48,7 +47,7 @@
 
 ## UI (local dev) surfaces
 - Home (Game): Counters header (Coins/Tickets/Level), avatar/nickname, Tap Area, level‑up modal with x2 flow.
-- Offers: Tabs (AVAILABLE/COMPLETED/EXPIRED), per‑task intent‑coupled ad unlock and claim, claim‑success modal.
+- Offers: Tabs (AVAILABLE/COMPLETED), per‑task intent‑coupled ad unlock and claim, claim‑success modal.
 - Wallet: Read‑only balances (Coins/Tickets) and placeholders for TON/USDT assets; demo “Connect wallet” stores only a public address locally; tabs (Withdrawals/Activity/Airdrop) are stubs.
 
 ## Schema and migrations

@@ -6,6 +6,7 @@
 ## user_counters
 - user_id (PK), coins (bigint), tickets (int), coin_multiplier (numeric), level (int), total_taps (bigint)
 - session_epoch (uuid), current_session_id (uuid), last_applied_seq (bigint), updated_at
+ - non_progress_coins (bigint) — present in runtime schema via migrations, reserved for future flows
 
 ## tap_batches
 - batch_id (PK), user_id, session_id, client_seq, taps, coins_delta, checksum, status, error_code, timestamps
@@ -16,6 +17,7 @@
 
 ## ad_events
 - id (PK), user_id, session_id, provider, placement, status ('filled'|'closed'|'failed'|'completed'|'used'), reward_payload (jsonb), created_at
+ - Indexes: by `(reward_payload->>'impressionId')` and `(user_id, impressionId)` for fast lookups
 
 ## reward_events (ledger)
 - id (PK), user_id, source_type, source_ref_id, base_payload, multiplier_applied, policy_key, effective_payload,

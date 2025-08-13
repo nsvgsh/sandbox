@@ -1,5 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { normalizeCounters, parsePublicConfig, fetchJsonWithRetry } from '../lib/apiClient'
+import { showNotice } from '../lib/notice'
 
 type Counters = {
   coins: number
@@ -242,13 +244,13 @@ export default function Home() {
   const [leaderboard, setLeaderboard] = useState<any | null>(null)
   const [adUnlocks, setAdUnlocks] = useState<Record<string, { impressionId: string; expiresAt: number }>>({})
   const [adTTLSeconds, setAdTTLSeconds] = useState<number>(10)
+  const [batchMinIntervalMs, setBatchMinIntervalMs] = useState<number>(100)
   const [pendingBonusConfirm, setPendingBonusConfirm] = useState<boolean>(false)
   const [bonusImpressionId, setBonusImpressionId] = useState<string | null>(null)
   const [bonusExpiresAt, setBonusExpiresAt] = useState<number | null>(null)
   const [nowTick, setNowTick] = useState<number>(Date.now())
   const [activeSection, setActiveSection] = useState<'home' | 'offers' | 'wallet'>('home')
-  const [offersTab, setOffersTab] = useState<'available' | 'completed' | 'expired'>('available')
-  const [expiredTasks, setExpiredTasks] = useState<Set<string>>(new Set())
+  const [offersTab, setOffersTab] = useState<'available' | 'completed'>('available')
   const [walletAddress, setWalletAddress] = useState<string | null>(null)
   const [walletTab, setWalletTab] = useState<'withdrawals' | 'activity' | 'airdrop'>('withdrawals')
   const [claimSuccess, setClaimSuccess] = useState<{ taskId: string; rewardPayload: Record<string, unknown> | null } | null>(null)
@@ -300,52 +302,30 @@ export default function Home() {
   async function tap() {
     if (!session) return
     const nextSeq = clientSeq + 1
-    const res = await fetch('/api/v1/ingest/taps', {
+    const { ok, status, json } = await fetchJsonWithRetry<any>('/api/v1/ingest/taps', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        taps: 1,
-        clientSeq: nextSeq,
-        sessionId: session.sessionId,
-        sessionEpoch: session.sessionEpoch,
-      }),
+      body: JSON.stringify({ taps: 1, clientSeq: nextSeq, sessionId: session.sessionId, sessionEpoch: session.sessionEpoch }),
+    }, {
+      retry429DelayMs: batchMinIntervalMs,
+      onOutdated: async () => { await resumeOrStartSession() },
     })
-    if (res.ok) {
-      const data = await res.json()
-      const c = data.counters as any
-      setCounters({
-        coins: Number(c.coins || 0),
-        tickets: Number(c.tickets || 0),
-        coinMultiplier: Number(c.coinMultiplier ?? c.coin_multiplier ?? 1),
-        level: Number(c.level || 0),
-        totalTaps: Number(c.totalTaps ?? c.total_taps ?? 0),
-      })
+    if (ok) {
+      const data = json
+      const c = normalizeCounters(data.counters)
+      setCounters(c)
       setClientSeq(nextSeq)
-      setLeveledUp(data.leveledUp?.level ?? null)
-      if (data.leveledUp?.level) {
+      setLeveledUp(data?.leveledUp?.level ?? null)
+      if (data?.leveledUp?.level) {
         try { await refreshDebug() } catch {}
       }
-      setNextThreshold(data.nextThreshold ?? null)
+      setNextThreshold(data?.nextThreshold ?? null)
     } else {
       try {
-        if (res.status === 429) {
-          // simple backoff and one retry
-          await new Promise((r) => setTimeout(r, 200))
-          await tap()
-          return
-        }
-        const data = await res.json().catch(() => ({} as any))
-        const code = (data && (data.code as string)) || ''
-        if (res.status === 409 && (code === 'SUPERSEDED' || code === 'SEQ_REWIND')) {
-          await resumeOrStartSession()
-          await loadCounters()
-          return
-        }
-        const errText = typeof data?.error === 'string' ? data.error : await res.text()
-        alert(`Tap failed: ${errText}`)
+        const errText = typeof json?.error === 'string' ? json.error : 'Something went wrong. Please try again.'
+        showNotice(errText)
       } catch {
-        const err = await res.text().catch(() => 'unknown')
-        alert(`Tap failed: ${err}`)
+        showNotice('Something went wrong. Please try again.')
       }
     }
   }
@@ -386,14 +366,15 @@ export default function Home() {
       setBonusExpiresAt(null)
       return
     }
-    const res = await fetch('/api/v1/level/bonus/claim', {
+    const { ok, json } = await fetchJsonWithRetry<any>('/api/v1/level/bonus/claim', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-idempotency-key': bonusImpressionId },
       body: JSON.stringify({ level: leveledUp, bonusMultiplier: 2, impressionId: bonusImpressionId }),
+    }, {
+      onOutdated: async () => { await resumeOrStartSession() },
     })
-    if (res.ok) {
-      const data = await res.json().catch(() => ({} as any))
-      const c = data?.counters as any
+    if (ok) {
+      const c = json?.counters as any
       if (c) {
         setCounters({
           coins: Number(c.coins || 0),
@@ -408,10 +389,20 @@ export default function Home() {
       setBonusImpressionId(null)
       setBonusExpiresAt(null)
     } else {
-      const data = await res.json().catch(() => ({} as any))
-      if (data?.code === 'TTL_EXPIRED') {
+      const code = json?.code as string | undefined
+      if (code === 'TTL_EXPIRED') {
+        try { console.log(JSON.stringify({ event: 'TTLExpired', action: 'bonus_claim', level: leveledUp })) } catch {}
         // revert to two buttons
         setPendingBonusConfirm(false)
+        setBonusImpressionId(null)
+        setBonusExpiresAt(null)
+        return
+      } else if (code === 'ALREADY_CLAIMED') {
+        // treat as success
+        try { console.log(JSON.stringify({ event: 'AlreadyClaimed', action: 'bonus_claim', level: leveledUp })) } catch {}
+        await loadCounters()
+        setPendingBonusConfirm(false)
+        setLeveledUp(null)
         setBonusImpressionId(null)
         setBonusExpiresAt(null)
         return
@@ -448,18 +439,12 @@ export default function Home() {
   }
 
   async function loadCounters() {
-    const res = await fetch('/api/v1/counters')
-    if (!res.ok) return
-    const data = await res.json()
+    const { ok, json } = await fetchJsonWithRetry<any>('/api/v1/counters', { method: 'GET' })
+    if (!ok) return
+    const data = json
     {
-      const c = data.counters as any
-      setCounters({
-        coins: Number(c.coins || 0),
-        tickets: Number(c.tickets || 0),
-        coinMultiplier: Number(c.coinMultiplier ?? c.coin_multiplier ?? 1),
-        level: Number(c.level || 0),
-        totalTaps: Number(c.totalTaps ?? c.total_taps ?? 0),
-      })
+      const c = normalizeCounters(data.counters)
+      setCounters(c)
     }
     setNextThreshold(data.nextThreshold as NextThreshold)
   }
@@ -474,12 +459,7 @@ export default function Home() {
     if (!res.ok) return
     const data = (await res.json()) as DebugState
     setDebugState(data)
-    if (!data) return
-    try {
-      const cfg = Object.fromEntries((data.config || []).map((r: any) => [r.key, r.value])) as Record<string, any>
-      const ttl = Number(cfg['ad_ttl_seconds'] ?? 180)
-      if (!Number.isNaN(ttl)) setAdTTLSeconds(ttl)
-    } catch {}
+    // Do not set TTL from debug; TTL is sourced from public config only now
   }
 
   async function loadTasks() {
@@ -516,16 +496,25 @@ export default function Home() {
   }
 
   async function claimTask(taskId: string) {
-    const res = await fetch(`/api/v1/tasks/${taskId}/claim`, { method: 'POST' })
-    if (res.ok) {
+    const unlock = readUnlockForTask(taskId)
+    const headers: Record<string, string> = {}
+    if (unlock?.impressionId) headers['x-idempotency-key'] = unlock.impressionId
+    if (unlock?.impressionId) { try { console.log(JSON.stringify({ event: 'TaskClaimIdemKeyUsed', taskId: taskId.slice(0,8), idem: unlock.impressionId.slice(0,8) })) } catch {} }
+    const { ok, json } = await fetchJsonWithRetry<any>(`/api/v1/tasks/${taskId}/claim`, { method: 'POST', headers }, {
+      onOutdated: async () => { await resumeOrStartSession() },
+    })
+    if (ok) {
       const t = Array.isArray(tasks) ? (tasks.find((x) => x.taskId === taskId) || null) : null
       clearUnlockForTask(taskId)
       setClaimSuccess({ taskId, rewardPayload: t?.rewardPayload ?? null })
       await loadTasks()
       await loadCounters()
     } else {
-      const data = await res.json().catch(() => ({} as any))
-      if (data?.code === 'AD_REQUIRED') alert('Watch an ad for this task first')
+      const code = (json && (json.code as string)) || ''
+      if (code === 'AD_REQUIRED') {
+        try { console.log(JSON.stringify({ event: 'task_claim_ad_required', taskId: taskId.slice(0,8) })) } catch {}
+        showNotice('Watch an ad for this offer first.')
+      }
     }
   }
 
@@ -547,6 +536,21 @@ export default function Home() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId])
+
+  // When leveledUp fires, fetch public reward reveal for modal (fallback remains debug data in props)
+  useEffect(() => {
+    if (!leveledUp) return
+    void (async () => {
+      try {
+        const res = await fetch('/api/v1/level/last')
+        if (!res.ok) return
+        const data = await res.json().catch(() => null)
+        if (data && typeof data.level === 'number') {
+          setDebugState((s) => ({ ...(s || { counters: null, lastLevel: null, leaderboard: null, config: [] as any[] }), lastLevel: { level: data.level, reward_payload: data.rewardPayload, bonus_multiplier: null } }))
+        }
+      } catch {}
+    })()
+  }, [leveledUp])
 
   // Tick for countdown while waiting for Claim x2
   useEffect(() => {
@@ -571,6 +575,20 @@ export default function Home() {
 
   useEffect(() => setMounted(true), [])
 
+  // Read public config once and cache timers/limits
+  useEffect(() => {
+    void (async () => {
+      try {
+        const res = await fetch('/api/v1/config')
+        if (!res.ok) return
+        const obj = await res.json()
+        const cfg = parsePublicConfig(obj)
+        setAdTTLSeconds(cfg.adTTLSeconds)
+        setBatchMinIntervalMs(cfg.batchMinIntervalMs)
+      } catch {}
+    })()
+  }, [])
+
   // Wallet: hydrate address from sessionStorage
   useEffect(() => {
     try {
@@ -583,20 +601,14 @@ export default function Home() {
   useEffect(() => {
     const id = setInterval(() => {
       setNowTick(Date.now())
-      const ttl = Number.isFinite(adTTLSeconds) ? adTTLSeconds : 180
-      const newlyExpired: string[] = []
       setAdUnlocks((prev) => {
         const next: typeof prev = { ...prev }
         for (const [key, u] of Object.entries(prev)) {
           if (!u || typeof u.expiresAt !== 'number') continue
           if (Date.now() > u.expiresAt) {
-            newlyExpired.push(key)
             delete next[key]
             try { sessionStorage.removeItem(`unlock:${key}`) } catch {}
           }
-        }
-        if (newlyExpired.length) {
-          setExpiredTasks((s) => new Set([...Array.from(s), ...newlyExpired.map((k) => k.replace(/^task:/, ''))]))
         }
         return next
       })
@@ -634,7 +646,7 @@ export default function Home() {
             <div style={{ marginTop: 8 }}>
               {/* Tabs */}
               <div role="tablist" aria-label="Offers" style={{ display: 'flex', gap: 12, marginBottom: 8 }}>
-                {(['available','completed','expired'] as const).map((tab) => (
+                {(['available','completed'] as const).map((tab) => (
                   <button
                     key={tab}
                     role="tab"
@@ -691,21 +703,7 @@ export default function Home() {
                   </>
                 )}
 
-                {offersTab === 'expired' && (
-                  <>
-                    {expiredTasks.size === 0 && <div style={{ opacity: 0.7 }}>No expired unlocks</div>}
-                    {Array.isArray(tasks) && tasks.filter((t) => expiredTasks.has(t.taskId)).map((t) => (
-                      <div key={t.taskId} style={{ border: '1px solid rgba(0,0,0,0.1)', borderRadius: 12, padding: 12, marginBottom: 8 }}>
-                        <div style={{ fontWeight: 600, marginBottom: 4 }}>Offer</div>
-                        <div style={{ fontSize: 12, opacity: 0.8 }}>Reward: {JSON.stringify(t.rewardPayload)}</div>
-                        <div style={{ marginTop: 6, fontSize: 12, opacity: 0.8 }}>Unlock expired. Watch an ad again to claim.</div>
-                        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                          <button onClick={() => watchAdForTask(t.taskId)}>Watch ad</button>
-                        </div>
-                      </div>
-                    ))}
-                  </>
-                )}
+                {/* No EXPIRED tab for now by product decision */}
               </div>
             </div>
           )}
@@ -752,7 +750,7 @@ export default function Home() {
               </div>
 
               {/* Balances */}
-              <div style={{ marginTop: 12 }}>
+            <div style={{ marginTop: 12 }}>
                 <div style={{ fontWeight: 700, marginBottom: 6 }}>Assets</div>
                 <div style={{ display: 'grid', gap: 8 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid rgba(0,0,0,0.1)', borderRadius: 12, padding: 10 }}>

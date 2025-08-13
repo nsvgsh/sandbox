@@ -23,7 +23,13 @@
 | X2-POLICY-A-ONLY-001 | Added claim_level_bonus_v3 (A-only); idempotent by impressionId; mark ad_events as used; wired claim route to v3 |
 | UI-HOME-MAIN | Main screen scaffold in-place: counters header, avatar row, Tap Area, fixed bottom navigation |
 | UI-LEVELUP-MODAL | Level-up modal with base reward reveal; x2 flow with advisory countdown and idempotent claim; shows total x2 rewards after ad-view |
-| UI-OFFERS-SCREEN | Offers screen (in-place): AVAILABLE/COMPLETED/EXPIRED tabs, intent-coupled ad unlocks with TTL, sessionStorage persistence, per-task claim countdown |
+| UI-OFFERS-SCREEN | Offers screen (in-place): AVAILABLE/COMPLETED tabs, intent-coupled ad unlocks with TTL, sessionStorage persistence, per-task claim countdown |
 | UI-OFFERS-CLAIM-MODAL | Task claim success popup: "congratulations!" with reward: task_reward list |
 | UI-WALLET-SCREEN | Wallet shell (in-place): connect wallet (local address only), assets (TON/USDT placeholders), Coins/Tickets, Withdrawals/Activity/Airdrop tabs |
 | UI-NAV-CLICKABLE | Bottom bar navigation made clickable; removed duplicate top navigation |
+| TASKS-IDEMPOTENCY-004 | Added claim_task_v2 with idempotency key; task claim marks matched ad as used (spend-once) |
+| LEVEL-REVEAL-ENDPOINT | Added GET /v1/level/last for public reward reveal |
+| CONFIG-SOURCE-PUBLIC | UI reads ad_ttl_seconds and batch_min_interval_ms only from GET /v1/config |
+| CLIENT-HELPER | Unified counters shape and calm retry helper (one retry for 429/409/network) adopted across taps/bonus/tasks |
+| UI-OFFERS-BEHAVIOR-UPDATE | Removed EXPIRED tab; on TTL expiry tasks stay in AVAILABLE and show Watch ad again |
+| OBS-CLIENT-TELEMETRY | Added minimal client logs: TooFastRetry, OutOfDateRefresh, NetRetry, TTLExpired, AlreadyClaimed, TaskClaimIdemKeyUsed, AdRequired |
