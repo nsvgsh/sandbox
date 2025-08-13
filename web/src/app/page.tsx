@@ -97,7 +97,7 @@ function TapArea({ onTap, next }: { onTap: () => void; next: NextThreshold }) {
   )
 }
 
-function BottomNav({ active }: { active: 'home' | 'offers' | 'wallet' }) {
+function BottomNav({ active, onSelect }: { active: 'home' | 'offers' | 'wallet'; onSelect: (s: 'home' | 'offers' | 'wallet') => void }) {
   const bar: React.CSSProperties = {
     position: 'fixed',
     left: 0,
@@ -109,8 +109,16 @@ function BottomNav({ active }: { active: 'home' | 'offers' | 'wallet' }) {
     borderTop: '1px solid rgba(0,0,0,0.1)',
     background: 'var(--background)'
   }
+  const btn: React.CSSProperties = { background: 'transparent', border: 'none', padding: 8, cursor: 'pointer' }
   const item = (key: 'home' | 'offers' | 'wallet', label: string) => (
-    <div style={{ opacity: active === key ? 1 : 0.6, fontWeight: active === key ? 700 : 500 }}>{label}</div>
+    <button
+      type="button"
+      aria-current={active === key ? 'page' : undefined}
+      onClick={() => onSelect(key)}
+      style={{ ...btn, opacity: active === key ? 1 : 0.6, fontWeight: active === key ? 700 : 500 }}
+    >
+      {label}
+    </button>
   )
   return (
     <nav style={bar} aria-label="Main tabs">
@@ -232,12 +240,15 @@ export default function Home() {
   const [debugState, setDebugState] = useState<DebugState>(null)
   const [tasks, setTasks] = useState<any[] | null>(null)
   const [leaderboard, setLeaderboard] = useState<any | null>(null)
-  const [adUnlocks, setAdUnlocks] = useState<Record<string, number>>({})
+  const [adUnlocks, setAdUnlocks] = useState<Record<string, { impressionId: string; expiresAt: number }>>({})
   const [adTTLSeconds, setAdTTLSeconds] = useState<number>(10)
   const [pendingBonusConfirm, setPendingBonusConfirm] = useState<boolean>(false)
   const [bonusImpressionId, setBonusImpressionId] = useState<string | null>(null)
   const [bonusExpiresAt, setBonusExpiresAt] = useState<number | null>(null)
   const [nowTick, setNowTick] = useState<number>(Date.now())
+  const [activeSection, setActiveSection] = useState<'home' | 'offers' | 'wallet'>('home')
+  const [offersTab, setOffersTab] = useState<'available' | 'completed' | 'expired'>('available')
+  const [expiredTasks, setExpiredTasks] = useState<Set<string>>(new Set())
 
   async function devLogin() {
     const token = process.env.NEXT_PUBLIC_DEV_TOKEN || process.env.DEV_TOKEN || ''
@@ -405,12 +416,32 @@ export default function Home() {
     }
   }
 
-  function setUnlock(key: string) {
-    setAdUnlocks((s) => ({ ...s, [key]: Date.now() }))
+  function setUnlockForTask(taskId: string, impressionId: string, ttlSec: number) {
+    const expiresAt = Date.now() + ttlSec * 1000
+    const key = `task:${taskId}`
+    try { sessionStorage.setItem(`unlock:${key}`, JSON.stringify({ impressionId, expiresAt })) } catch {}
+    setAdUnlocks((s) => ({ ...s, [key]: { impressionId, expiresAt } }))
   }
-  function isUnlocked(key: string) {
-    const ts = adUnlocks[key]
-    return typeof ts === 'number' && Date.now() - ts < adTTLSeconds * 1000
+  function readUnlockForTask(taskId: string): { impressionId: string; expiresAt: number } | null {
+    const key = `task:${taskId}`
+    const inState = adUnlocks[key]
+    if (inState) return inState
+    try {
+      const raw = sessionStorage.getItem(`unlock:${key}`)
+      if (!raw) return null
+      const parsed = JSON.parse(raw) as { impressionId?: string; expiresAt?: number }
+      if (parsed && typeof parsed.expiresAt === 'number' && typeof parsed.impressionId === 'string') return { impressionId: parsed.impressionId, expiresAt: parsed.expiresAt }
+    } catch {}
+    return null
+  }
+  function clearUnlockForTask(taskId: string) {
+    const key = `task:${taskId}`
+    try { sessionStorage.removeItem(`unlock:${key}`) } catch {}
+    setAdUnlocks((s) => {
+      const n = { ...s }
+      delete n[key]
+      return n
+    })
   }
 
   async function loadCounters() {
@@ -453,26 +484,38 @@ export default function Home() {
     if (!res.ok) return
     const data = await res.json()
     setTasks(data.definitions || [])
+    // hydrate unlocks relevant to current tasks
+    try {
+      const list = (data.definitions || []) as { taskId: string }[]
+      const nextUnlocks: Record<string, { impressionId: string; expiresAt: number }> = {}
+      for (const t of list) {
+        const u = readUnlockForTask(t.taskId)
+        if (u) nextUnlocks[`task:${t.taskId}`] = u
+      }
+      setAdUnlocks(nextUnlocks)
+    } catch {}
   }
 
   // Watch ad for a specific task (intent-coupled)
   async function watchAdForTask(taskId: string) {
-    await fetch('/api/v1/ad/log', {
+    const res = await fetch('/api/v1/ad/log', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ provider: 'stub', placement: 'task_claim', status: 'completed', intent: `task:${taskId}`, impressionId: crypto.randomUUID() }),
-    }).catch(() => {})
-    setUnlock(`task:${taskId}`)
+    }).catch(() => null)
+    let impressionId: string | null = null
+    if (res && res.ok) {
+      try { const j = await res.json(); impressionId = typeof j?.impressionId === 'string' ? j.impressionId : null } catch { impressionId = null }
+    }
+    if (!impressionId) impressionId = crypto.randomUUID()
+    const ttl = Number.isFinite(adTTLSeconds) ? adTTLSeconds : 180
+    setUnlockForTask(taskId, impressionId, ttl)
   }
 
   async function claimTask(taskId: string) {
     const res = await fetch(`/api/v1/tasks/${taskId}/claim`, { method: 'POST' })
     if (res.ok) {
-      setAdUnlocks((s) => {
-        const n = { ...s }
-        delete n[`task:${taskId}`]
-        return n
-      })
+      clearUnlockForTask(taskId)
       await loadTasks()
       await loadCounters()
     } else {
@@ -523,6 +566,31 @@ export default function Home() {
 
   useEffect(() => setMounted(true), [])
 
+  // Offers: tick for countdowns and prune expired unlocks; record expired for UI
+  useEffect(() => {
+    const id = setInterval(() => {
+      setNowTick(Date.now())
+      const ttl = Number.isFinite(adTTLSeconds) ? adTTLSeconds : 180
+      const newlyExpired: string[] = []
+      setAdUnlocks((prev) => {
+        const next: typeof prev = { ...prev }
+        for (const [key, u] of Object.entries(prev)) {
+          if (!u || typeof u.expiresAt !== 'number') continue
+          if (Date.now() > u.expiresAt) {
+            newlyExpired.push(key)
+            delete next[key]
+            try { sessionStorage.removeItem(`unlock:${key}`) } catch {}
+          }
+        }
+        if (newlyExpired.length) {
+          setExpiredTasks((s) => new Set([...Array.from(s), ...newlyExpired.map((k) => k.replace(/^task:/, ''))]))
+        }
+        return next
+      })
+    }, 500)
+    return () => clearInterval(id)
+  }, [adTTLSeconds])
+
   if (!mounted) {
     return (
       <main style={{ padding: 24, fontFamily: 'ui-sans-serif, system-ui' }}>
@@ -539,11 +607,95 @@ export default function Home() {
         <button onClick={resumeOrStartSession}>Start / Resume Session</button>
       ) : (
         <>
-          <HeaderCounters counters={counters} />
-          <AvatarRow />
-          <div style={{ marginTop: 8 }}>
-            <TapArea onTap={tap} next={nextThreshold} />
-          </div>
+          {activeSection === 'home' && (
+            <>
+              <HeaderCounters counters={counters} />
+              <AvatarRow />
+              <div style={{ marginTop: 8 }}>
+                <TapArea onTap={tap} next={nextThreshold} />
+              </div>
+            </>
+          )}
+
+          {activeSection === 'offers' && (
+            <div style={{ marginTop: 8 }}>
+              {/* Tabs */}
+              <div role="tablist" aria-label="Offers" style={{ display: 'flex', gap: 12, marginBottom: 8 }}>
+                {(['available','completed','expired'] as const).map((tab) => (
+                  <button
+                    key={tab}
+                    role="tab"
+                    aria-selected={offersTab === tab}
+                    onClick={() => setOffersTab(tab)}
+                    style={{ fontWeight: offersTab === tab ? 700 : 500 }}
+                  >
+                    {tab.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+
+              {/* Lists */}
+              <div>
+                {offersTab === 'available' && (
+                  <>
+                    {Array.isArray(tasks) && tasks.filter((t) => t.state === 'available').length === 0 && (
+                      <div style={{ opacity: 0.7 }}>No available offers</div>
+                    )}
+                    {Array.isArray(tasks) && tasks.filter((t) => t.state === 'available').map((t) => {
+                      const unlock = readUnlockForTask(t.taskId)
+                      const secondsLeft = unlock ? Math.max(0, Math.ceil((unlock.expiresAt - nowTick) / 1000)) : null
+                      return (
+                        <div key={t.taskId} style={{ border: '1px solid rgba(0,0,0,0.1)', borderRadius: 12, padding: 12, marginBottom: 8 }}>
+                          <div style={{ fontWeight: 600, marginBottom: 4 }}>Offer</div>
+                          <div style={{ fontSize: 12, opacity: 0.8 }}>Reward: {JSON.stringify(t.rewardPayload)}</div>
+                          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                            {!unlock ? (
+                              <button onClick={() => watchAdForTask(t.taskId)}>Watch ad</button>
+                            ) : (
+                              <button onClick={() => claimTask(t.taskId)} disabled={Boolean(secondsLeft !== null && secondsLeft <= 0)}>
+                                Claim{typeof secondsLeft === 'number' ? ` (${secondsLeft}s)` : ''}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </>
+                )}
+
+                {offersTab === 'completed' && (
+                  <>
+                    {Array.isArray(tasks) && tasks.filter((t) => t.state === 'claimed').length === 0 && (
+                      <div style={{ opacity: 0.7 }}>No completed offers</div>
+                    )}
+                    {Array.isArray(tasks) && tasks.filter((t) => t.state === 'claimed').map((t) => (
+                      <div key={t.taskId} style={{ border: '1px solid rgba(0,0,0,0.1)', borderRadius: 12, padding: 12, marginBottom: 8 }}>
+                        <div style={{ fontWeight: 600, marginBottom: 4 }}>Offer</div>
+                        <div style={{ fontSize: 12, opacity: 0.8 }}>Reward: {JSON.stringify(t.rewardPayload)}</div>
+                        <div style={{ marginTop: 6, fontSize: 12, opacity: 0.8 }}>Status: completed</div>
+                      </div>
+                    ))}
+                  </>
+                )}
+
+                {offersTab === 'expired' && (
+                  <>
+                    {expiredTasks.size === 0 && <div style={{ opacity: 0.7 }}>No expired unlocks</div>}
+                    {Array.isArray(tasks) && tasks.filter((t) => expiredTasks.has(t.taskId)).map((t) => (
+                      <div key={t.taskId} style={{ border: '1px solid rgba(0,0,0,0.1)', borderRadius: 12, padding: 12, marginBottom: 8 }}>
+                        <div style={{ fontWeight: 600, marginBottom: 4 }}>Offer</div>
+                        <div style={{ fontSize: 12, opacity: 0.8 }}>Reward: {JSON.stringify(t.rewardPayload)}</div>
+                        <div style={{ marginTop: 6, fontSize: 12, opacity: 0.8 }}>Unlock expired. Watch an ad again to claim.</div>
+                        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                          <button onClick={() => watchAdForTask(t.taskId)}>Watch ad</button>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
+            </div>
+          )}
           {typeof leveledUp === 'number' && (
             <LevelUpModal
               level={leveledUp}
@@ -580,7 +732,7 @@ export default function Home() {
               .map((t) => (
                 <div key={t.taskId} style={{ display: 'inline-flex', gap: 8, alignItems: 'center', marginRight: 12 }}>
                   <button onClick={() => watchAdForTask(t.taskId)}>Watch ad</button>
-                  <button onClick={() => claimTask(t.taskId)} disabled={!isUnlocked(`task:${t.taskId}`)}>Claim {t.taskId.slice(0, 4)}</button>
+                  <button onClick={() => claimTask(t.taskId)}>Claim {t.taskId.slice(0, 4)}</button>
                 </div>
               ))}
           </div>
@@ -622,7 +774,7 @@ export default function Home() {
             <div style={{ marginTop: 6 }}>{debugState?.lastLevel?.bonus_multiplier ?? 'n/a'}</div>
           </div>
 
-          <BottomNav active="home" />
+          <BottomNav active={activeSection} onSelect={setActiveSection} />
         </>
       )}
     </main>
