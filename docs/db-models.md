@@ -16,8 +16,8 @@
 - id (PK), user_id, level, base_reward, reward_payload (jsonb), bonus_offered, bonus_multiplier, ad_event_id, template_id, created_at
 
 ## ad_events
-- id (PK), user_id, session_id, provider, placement, status ('filled'|'closed'|'failed'|'completed'|'used'), reward_payload (jsonb), created_at
- - Indexes: by `(reward_payload->>'impressionId')` and `(user_id, impressionId)` for fast lookups
+- id (PK), user_id, session_id, provider, placement, status ('closed'|'failed'|'used'|'filled'|'completed'), reward_payload (jsonb), created_at
+ - Indexes: `(reward_payload->>'impressionId')` and `(user_id, (reward_payload->>'impressionId'))`
 
 ## reward_events (ledger)
 - id (PK), user_id, source_type, source_ref_id, base_payload, multiplier_applied, policy_key, effective_payload,

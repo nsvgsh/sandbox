@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
   if (!isUuid(idem)) return NextResponse.json({ error: 'bad_request', code: 'BAD_IDEMPOTENCY_KEY' }, { status: 400 })
   try {
     const row = await withClient(async (c) => {
-      const { rows } = await c.query('select * from claim_level_bonus_v3($1,$2,$3,$4::uuid,$5::uuid)', [userId, level, bonusMultiplier, idem, impressionId])
+      const { rows } = await c.query('select * from claim_level_bonus_v4($1,$2,$3,$4::uuid,$5::uuid)', [userId, level, bonusMultiplier, idem, impressionId])
       return rows[0]
     })
     const nextThreshold = await withClient(async (c) => {

@@ -32,9 +32,10 @@
 - Session start rotates epoch and returns `{ sessionId, sessionEpoch, lastAppliedSeq }`.
 - Session claim lets the client resume safely: if ids match, echo; else rotate.
 
-## Ads & tasks (local simulation)
-- Ad view simulation is intent‑coupled: one ad unlocks one action (`level_bonus` or `task:<id>`) within a short window configured by `ad_ttl_seconds` (read from `/v1/config`).
-- Level‑up bonus (UI): when `leveledUp` occurs, a modal opens that reveals the base reward (already granted) and offers `Claim` or `X2 bonus`.
+## Ads & tasks
+- Ads are intent‑coupled: one ad unlocks one action (`level_bonus` or `task:<id>`).
+- X2 bonus window: `ad_ttl_seconds` applies from ad success time (t1 = `ad_events.created_at`); base claim is ungated.
+- Level‑up bonus (UI): on level-up, modal offers `Claim` (immediate) or `X2 bonus` (watch ad → confirm within `ad_ttl_seconds`).
   - After ad/log with `intent='level_bonus'`, the modal switches to a single `Claim x2 (Xs)` within TTL. The UI displays the total x2 reward for clarity; the backend applies only the incremental portion per policy and idempotently by `impressionId`.
   - On TTL expiry the modal reverts to the two‑button state.
 - Tasks (Offers UI): each task card has `Watch ad` → `Claim (Xs)` within TTL. Unlocks are intent‑bound to that specific task.

@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { normalizeCounters, parsePublicConfig, fetchJsonWithRetry } from '../lib/apiClient'
+import { isMonetagLoaded, loadMonetagSdk, showRewardedInterstitial, categorizeMonetagError } from '../lib/ads/monetag'
 import { showNotice } from '../lib/notice'
 
 type Counters = {
@@ -244,6 +245,11 @@ export default function Home() {
   const [leaderboard, setLeaderboard] = useState<any | null>(null)
   const [adUnlocks, setAdUnlocks] = useState<Record<string, { impressionId: string; expiresAt: number }>>({})
   const [adTTLSeconds, setAdTTLSeconds] = useState<number>(10)
+  const [monetagEnabled, setMonetagEnabled] = useState<boolean>(false)
+  const [monetagZoneId, setMonetagZoneId] = useState<string | undefined>(undefined)
+  const [monetagSdkUrl, setMonetagSdkUrl] = useState<string | undefined>(undefined)
+  const [unlockPolicy, setUnlockPolicy] = useState<'any'|'valued'>('any')
+  const [logFailedAdEvents, setLogFailedAdEvents] = useState<boolean>(true)
   const [batchMinIntervalMs, setBatchMinIntervalMs] = useState<number>(100)
   const [pendingBonusConfirm, setPendingBonusConfirm] = useState<boolean>(false)
   const [bonusImpressionId, setBonusImpressionId] = useState<string | null>(null)
@@ -339,20 +345,41 @@ export default function Home() {
 
   // Start level bonus flow: watch ad, then enable Claim x2 for a short window
   async function startLevelBonus() {
-    const res = await fetch('/api/v1/ad/log', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ provider: 'stub', placement: 'level_bonus', status: 'completed', intent: 'level_bonus', impressionId: crypto.randomUUID() }),
-    })
-    if (!res.ok) return
-    const data = await res.json().catch(() => ({} as any))
-    const imp = typeof data?.impressionId === 'string' ? data.impressionId : null
-    const ttl = Number(data?.expiresInSec ?? adTTLSeconds)
-    if (imp) {
-      setBonusImpressionId(imp)
+    const impressionId = crypto.randomUUID()
+    const ymid = userId ? `${userId}:${impressionId}` : impressionId
+    try {
+      if (!monetagEnabled || !monetagZoneId || !monetagSdkUrl) throw new Error('sdk_not_loaded')
+      if (!isMonetagLoaded(monetagZoneId)) {
+        await loadMonetagSdk({ sdkUrl: monetagSdkUrl, zoneId: monetagZoneId })
+      }
+      const result = await showRewardedInterstitial(monetagZoneId, { ymid, requestVar: 'level_bonus' })
+      // unlock_policy is 'any' → proceed on any resolved close
+      const res = await fetch('/api/v1/ad/log', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          provider: 'monetag', placement: 'level_bonus', status: 'closed', intent: 'level_bonus', impressionId,
+          result,
+        }),
+      })
+      if (!res.ok) return
+      const data = await res.json().catch(() => ({} as any))
+      const ttl = Number(data?.expiresInSec ?? adTTLSeconds)
+      setBonusImpressionId(impressionId)
       const expiresAt = Date.now() + (Number.isFinite(ttl) ? ttl * 1000 : adTTLSeconds * 1000)
       setBonusExpiresAt(expiresAt)
       setPendingBonusConfirm(true)
+    } catch (e) {
+      const reason = categorizeMonetagError(e)
+      try { showNotice('No ad available. Try again later.') } catch {}
+      if (logFailedAdEvents) {
+        try {
+          await fetch('/api/v1/ad/log', {
+            method: 'POST', headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ provider: 'monetag', placement: 'level_bonus', status: 'failed', impressionId, intent: 'level_bonus', error: { reason } }),
+          })
+        } catch {}
+      }
     }
   }
 
@@ -370,8 +397,6 @@ export default function Home() {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-idempotency-key': bonusImpressionId },
       body: JSON.stringify({ level: leveledUp, bonusMultiplier: 2, impressionId: bonusImpressionId }),
-    }, {
-      onOutdated: async () => { await resumeOrStartSession() },
     })
     if (ok) {
       const c = json?.counters as any
@@ -481,18 +506,33 @@ export default function Home() {
 
   // Watch ad for a specific task (intent-coupled)
   async function watchAdForTask(taskId: string) {
-    const res = await fetch('/api/v1/ad/log', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ provider: 'stub', placement: 'task_claim', status: 'completed', intent: `task:${taskId}`, impressionId: crypto.randomUUID() }),
-    }).catch(() => null)
-    let impressionId: string | null = null
-    if (res && res.ok) {
-      try { const j = await res.json(); impressionId = typeof j?.impressionId === 'string' ? j.impressionId : null } catch { impressionId = null }
+    const impressionId = crypto.randomUUID()
+    const ymid = userId ? `${userId}:${impressionId}` : impressionId
+    try {
+      if (!monetagEnabled || !monetagZoneId || !monetagSdkUrl) throw new Error('sdk_not_loaded')
+      if (!isMonetagLoaded(monetagZoneId)) {
+        await loadMonetagSdk({ sdkUrl: monetagSdkUrl, zoneId: monetagZoneId })
+      }
+      const result = await showRewardedInterstitial(monetagZoneId, { ymid, requestVar: 'task_claim' })
+      const res = await fetch('/api/v1/ad/log', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ provider: 'monetag', placement: 'task_claim', status: 'closed', intent: `task:${taskId}`, impressionId, result }),
+      })
+      if (!res.ok) return
+      const ttl = Number.isFinite(adTTLSeconds) ? adTTLSeconds : 180
+      setUnlockForTask(taskId, impressionId, ttl)
+    } catch (e) {
+      const reason = categorizeMonetagError(e)
+      try { showNotice('No ad available. Try again later.') } catch {}
+      if (logFailedAdEvents) {
+        try {
+          await fetch('/api/v1/ad/log', {
+            method: 'POST', headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ provider: 'monetag', placement: 'task_claim', status: 'failed', impressionId, intent: `task:${taskId}`, error: { reason } }),
+          })
+        } catch {}
+      }
     }
-    if (!impressionId) impressionId = crypto.randomUUID()
-    const ttl = Number.isFinite(adTTLSeconds) ? adTTLSeconds : 180
-    setUnlockForTask(taskId, impressionId, ttl)
   }
 
   async function claimTask(taskId: string) {
@@ -585,6 +625,11 @@ export default function Home() {
         const cfg = parsePublicConfig(obj)
         setAdTTLSeconds(cfg.adTTLSeconds)
         setBatchMinIntervalMs(cfg.batchMinIntervalMs)
+        setMonetagEnabled(Boolean(cfg.monetagEnabled))
+        setMonetagZoneId(cfg.monetagZoneId)
+        setMonetagSdkUrl(cfg.monetagSdkUrl)
+        setUnlockPolicy(cfg.unlockPolicy || 'any')
+        setLogFailedAdEvents(Boolean(cfg.logFailedAdEvents))
       } catch {}
     })()
   }, [])

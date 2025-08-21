@@ -20,6 +20,11 @@ export function normalizeCounters(input: any): CountersNormalized {
 export type PublicConfig = {
   adTTLSeconds: number
   batchMinIntervalMs: number
+  monetagEnabled?: boolean
+  monetagZoneId?: string
+  monetagSdkUrl?: string
+  unlockPolicy?: 'any' | 'valued'
+  logFailedAdEvents?: boolean
 }
 
 export function parsePublicConfig(obj: Record<string, unknown>): PublicConfig {
@@ -27,9 +32,20 @@ export function parsePublicConfig(obj: Record<string, unknown>): PublicConfig {
   const adTTL = Number((obj['ad_ttl_seconds'] as any) ?? 180)
   const thresholds = (obj['thresholds'] as any) || {}
   const batchMs = Number((thresholds?.batch_min_interval_ms as any) ?? 100)
+  const monetagEnabled = Boolean((obj['monetag_enabled'] as any) ?? false)
+  const monetagZoneId = typeof obj['monetag_zone_id'] === 'string' ? (obj['monetag_zone_id'] as string) : undefined
+  const monetagSdkUrl = typeof obj['monetag_sdk_url'] === 'string' ? (obj['monetag_sdk_url'] as string) : undefined
+  const unlockPolicyRaw = (obj['unlock_policy'] as any)
+  const unlockPolicy = unlockPolicyRaw === 'valued' ? 'valued' : 'any'
+  const logFailedAdEvents = Boolean((obj['log_failed_ad_events'] as any) ?? true)
   return {
     adTTLSeconds: Number.isFinite(adTTL) ? adTTL : 180,
     batchMinIntervalMs: Number.isFinite(batchMs) ? batchMs : 100,
+    monetagEnabled,
+    monetagZoneId,
+    monetagSdkUrl,
+    unlockPolicy,
+    logFailedAdEvents,
   }
 }
 

@@ -15,12 +15,12 @@ Conventions
 - POST /session/claim → { sessionId, sessionEpoch, lastAppliedSeq }
 - POST /ingest/taps → { counters, nextThreshold, leveledUp? }
 - GET /counters → { counters, effects?, nextThreshold }
-- POST /ad/log → { recorded, impressionId, expiresInSec? }
-  - Body accepts optional `intent`: `"level_bonus"` or `"task:<taskId>"` for intent‑coupled local simulation.
-  - For `intent='level_bonus'`, this route only records the ad and returns an `impressionId` and an advisory `expiresInSec` computed from `ad_ttl_seconds`. It does not apply rewards.
+- POST /ad/log → { recorded, impressionId }
+  - Body accepts optional `intent`: `"level_bonus"` or `"task:<taskId>"`.
+  - Persists `ad_events` with `status='closed'|'failed'` and stores provider payload; does not return TTL.
 - POST /level/bonus/claim → { rewardEventId?, counters }
-  - Applies the incremental x2 bonus for the most recent unclaimed level event when a recent ad (within `ad_ttl_seconds`) exists.
-  - Prefer passing the `impressionId` from `/ad/log` and use it as idempotency key.
+  - Applies incremental x2 when a recent ad exists where `now < ad_events.created_at + ad_ttl_seconds`.
+  - Send `impressionId` from `/ad/log` and use it as idempotency key (`X-Idempotency-Key`).
   - Errors: 409 `TTL_EXPIRED`, 409 `ALREADY_CLAIMED`, 404 `NOT_FOUND`.
 - GET /tasks → { definitions, progress }
 - POST /tasks/{taskId}/claim → { state, rewardEventId?, counters? }

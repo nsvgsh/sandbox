@@ -33,3 +33,5 @@
 | CLIENT-HELPER | Unified counters shape and calm retry helper (one retry for 429/409/network) adopted across taps/bonus/tasks |
 | UI-OFFERS-BEHAVIOR-UPDATE | Removed EXPIRED tab; on TTL expiry tasks stay in AVAILABLE and show Watch ad again |
 | OBS-CLIENT-TELEMETRY | Added minimal client logs: TooFastRetry, OutOfDateRefresh, NetRetry, TTLExpired, AlreadyClaimed, TaskClaimIdemKeyUsed, AdRequired |
+| X2-FLOW-AD_TTL_FROM_T1 | X2 claim gated by ad_ttl_seconds from ad success (t1); base claim ungated; added claim_level_bonus_v4; simplified /v1/ad/log; updated docs |
+| AD-MONETAG-INT-SDK | Integrated Monetag Rewarded Interstitial via script-tag SDK; runtime config (monetag_enabled, monetag_zone_id, monetag_sdk_url); server logs closed/failed with provider payload; client countdown from t1; failure path does not unlock |
