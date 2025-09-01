@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sandbox • Header (Top Bar)</title>
+  <link rel="stylesheet" href="./primitives.css" />
+  <style>
+    /* Layout only; do not override component variables */
+    .topbar { 
+        display: grid; 
+        grid-template-columns: repeat(3, 1fr); 
+        gap: 24px; 
+        align-items: center; 
+        /* proportional downscale */
+        --bar-min-height: 20px;              
+        --icon-size-in: clamp(36px, 9vw, 48px);
+        --text-size: clamp(5px, 5vw, 24px);    
+
+        /* keep spacing proportional */
+        --text-left: 16px;                   
+        --text-right: 16px;                  
+        --icon-right: -20px;                 
+        }
+    .barWrap { min-width: 0; }
+    /* Container sizing: centered, width 90%, max 420px */
+    .wrap { width: 90%; max-width: 420px; margin: 0 auto; }
+    html, body { background: #ffffff; color: #082D53; }
+  </style>
+</head>
+<body>
+  <div class="screen">
+    <div class="wrap">
+      <div class="topbar">
+        <!-- Level (inline) -->
+        <div class="barWrap">
+          <div class="resourceBar" style="--bar-color:#1F273E; --icon-url:url('./assets/Icon_ImageIcon_LevelFrame1.png');">
+            <div class="resourceText">LVL 03</div>
+            <div class="resourceIcon" aria-hidden="true"></div>
+          </div>
+        </div>
+
+        <!-- Coins (inline) -->
+        <div class="barWrap">
+            <div class="resourceBar" style="
+                --bar-color:#270E0C; 
+                --icon-url:url('./assets/ResourceBar_Icon_Gold.png');
+                --icon-size-in: clamp(32px, 12vw, 60px);
+                ">
+              <div class="resourceText">9,999</div>
+              <div class="resourceIcon" aria-hidden="true"></div>
+            </div>
+          </div>
+  
+          <!-- Tickets (inline) -->
+          <div class="barWrap">
+            <div class="resourceBar" style="
+                --bar-color:#270E0C; 
+                --icon-url:url('./assets/Icon_ImageIcon_Ticket_Golden.png');
+                --icon-size-in: clamp(32px, 12vw, 46px);
+                ">
+              <div class="resourceText">123</div>
+              <div class="resourceIcon" aria-hidden="true"></div>
+            </div>
+          </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+
+

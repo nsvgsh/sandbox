@@ -1,0 +1,46 @@
+@font-face {
+  font-family: 'Lilita One';
+  src: url('../buttons/assets/LilitaOne-Regular.ttf') format('truetype');
+  font-display: swap;
+}
+
+html, body {
+  margin: 0; padding: 0; height: 100%;
+  background: #ffffff; color: #082D53;
+}
+.screen { min-height: 100%; display: grid; place-items: center; padding: 24px; }
+.wrap { width: 50%; max-width: 420px; }
+
+/* Primitives for resource bars (coins / tickets / level) */
+.resourceBar {
+  position: relative;
+  background: var(--bar-color, #270E0C);
+  border-radius: 22px;
+  min-height: var(--bar-min-height, 36px);
+  --icon-size: var(--icon-size-in, clamp(44px, 20vw, 600px));
+  padding: 8px 12px;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.35);
+}
+
+.resourceText {
+  position: absolute;
+  left: var(--text-left, 20px);
+  right: var(--text-right, 20px);
+  top: 50%; transform: translateY(-50%);
+  font-family: 'Lilita One', sans-serif;
+  font-size: var(--text-size, clamp(28px, 6vw, 40px));
+  color: var(--text-color, #ffffff);
+  line-height: 1;
+  text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000;
+  user-select: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.resourceIcon {
+  position: absolute; right: var(--icon-right, -24px); top: 50%; transform: translateY(-50%);
+  width: var(--icon-size); height: var(--icon-size);
+  background: var(--icon-url, url('./assets/ResourceBar_Icon_Gold.png')) center/contain no-repeat;
+  filter: drop-shadow(0 6px 10px rgba(0,0,0,0.35));
+  pointer-events: none;
+}
+
+

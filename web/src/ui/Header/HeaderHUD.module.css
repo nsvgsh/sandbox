@@ -1,0 +1,62 @@
+.wrap {
+  width: 90%;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.topbar {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(8px, 2vw, 12px);
+
+  /* proportional sizing tokens; tweak here globally */
+  --bar-min-height: 30px;
+  --icon-size-in: clamp(36px, 9vw, 48px);
+  --text-size: clamp(18px, 5vw, 28px);
+  --text-left: 16px;
+  --text-right: 16px;
+  --icon-right: -18px;
+}
+
+.barWrap { min-width: 0; }
+
+.resourceBar {
+  position: relative;
+  background: var(--bar-color, #270E0C);
+  border-radius: 22px;
+  min-height: var(--bar-min-height);
+  --icon-size: var(--icon-size-in);
+  padding: 8px 12px;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.35);
+}
+
+.resourceText {
+  position: absolute;
+  left: var(--text-left);
+  right: var(--text-right);
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: 'Lilita One', sans-serif;
+  font-size: var(--text-size);
+  color: #ffffff;
+  line-height: 1;
+  text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000;
+  user-select: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.resourceIcon {
+  position: absolute;
+  right: var(--icon-right);
+  top: 50%;
+  transform: translateY(-50%);
+  width: var(--icon-size);
+  height: var(--icon-size);
+  background: var(--icon-url, url('/dev/ui/header/assets/ResourceBar_Icon_Gold.png')) center/contain no-repeat;
+  filter: drop-shadow(0 6px 10px rgba(0,0,0,0.35));
+  pointer-events: none;
+}
+
+
