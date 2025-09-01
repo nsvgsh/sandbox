@@ -1,5 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { Button } from '@/ui/Button/Button'
+import { LevelUpModal } from '@/ui/Modal/Modal'
 import { normalizeCounters, parsePublicConfig, fetchJsonWithRetry } from '../lib/apiClient'
 import { isMonetagLoaded, loadMonetagSdk, showRewardedInterstitial, categorizeMonetagError } from '../lib/ads/monetag'
 import { showNotice } from '../lib/notice'
@@ -132,105 +134,7 @@ function BottomNav({ active, onSelect }: { active: 'home' | 'offers' | 'wallet';
   )
 }
 
-function LevelUpModal(props: {
-  level: number
-  rewardPayload: Record<string, unknown> | null
-  pendingConfirm: boolean
-  expiresAt: number | null
-  nowTick: number
-  onStartAd: () => void
-  onClaimX2: () => void
-  onClaimBase: () => void
-  onClose: () => void
-}) {
-  const { level, rewardPayload, pendingConfirm, expiresAt, nowTick, onStartAd, onClaimX2, onClaimBase, onClose } = props
-  const overlay: React.CSSProperties = {
-    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50
-  }
-  const card: React.CSSProperties = {
-    width: 'min(92vw, 420px)', borderRadius: 16, background: 'var(--background)', color: 'var(--foreground)', padding: 16,
-    boxShadow: '0 8px 24px rgba(0,0,0,0.2)'
-  }
-  const row: React.CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }
-  const title: React.CSSProperties = { fontWeight: 800, fontSize: 18 }
-  const closeBtn: React.CSSProperties = { background: 'transparent', border: 'none', fontSize: 18, cursor: 'pointer' }
-  const rewardBox: React.CSSProperties = { marginTop: 8, padding: 12, borderRadius: 12, background: 'rgba(0,0,0,0.04)' }
-  const actions: React.CSSProperties = { display: 'flex', gap: 8, marginTop: 12 }
-  const primary: React.CSSProperties = { padding: '10px 12px', borderRadius: 10, border: '1px solid rgba(0,0,0,0.15)', fontWeight: 700, cursor: 'pointer' }
-  const secondary: React.CSSProperties = { ...primary, background: 'transparent' }
-
-  const secondsLeft = expiresAt ? Math.max(0, Math.ceil((expiresAt - nowTick) / 1000)) : null
-
-  function toNumber(x: unknown): number | null {
-    const n = typeof x === 'number' ? x : typeof x === 'string' ? Number(x) : NaN
-    return Number.isFinite(n) ? n : null
-  }
-  function formatRewardList(payload: Record<string, unknown> | null): string {
-    if (!payload) return '{ unknown }'
-    const coins = toNumber(payload.coins)
-    const tickets = toNumber(payload.tickets)
-    const coinMult = toNumber((payload as any).coin_multiplier)
-    const parts: string[] = []
-    if (coins !== null) parts.push(`coins: ${coins}`)
-    if (tickets !== null) parts.push(`tickets: ${tickets}`)
-    if (coinMult !== null) parts.push(`coin_multiplier: ${coinMult}`)
-    return parts.length ? `{ ${parts.join(', ')} }` : '{ unknown }'
-  }
-  function computeX2Total(payload: Record<string, unknown> | null): Record<string, number> | null {
-    if (!payload) return null
-    const coins = toNumber(payload.coins)
-    const tickets = toNumber(payload.tickets)
-    const coinMult = toNumber((payload as any).coin_multiplier)
-    const out: Record<string, number> = {}
-    // x2 total equals base + incremental → effectively doubling present fields
-    if (coins !== null) out.coins = Math.floor(coins * 2)
-    if (tickets !== null) out.tickets = Math.floor(tickets * 2)
-    if (coinMult !== null) out.coin_multiplier = coinMult * 2
-    return Object.keys(out).length ? out : null
-  }
-
-  return (
-    <div role="dialog" aria-modal="true" aria-label="Level up" style={overlay} onClick={onClose}>
-      <div style={card} onClick={(e) => e.stopPropagation()}>
-        <div style={row}>
-          <div style={title}>Level up! Reached level {level}</div>
-          <button aria-label="Close" style={closeBtn} onClick={onClose}>×</button>
-        </div>
-        <div style={rewardBox}>
-          {!pendingConfirm ? (
-            <>
-              <div style={{ fontWeight: 600, marginBottom: 4 }}>reward: base reward:</div>
-              <div style={{ fontSize: 13 }}>{formatRewardList(rewardPayload)}</div>
-              <div style={{ marginTop: 6, fontSize: 12, opacity: 0.8 }}>Base is already granted. Claim x2 adds the incremental part per policy.</div>
-            </>
-          ) : (
-            <>
-              <div style={{ fontWeight: 600, marginBottom: 4 }}>reward: x2 reward:</div>
-              <div style={{ fontSize: 13 }}>{formatRewardList(computeX2Total(rewardPayload))}</div>
-              <div style={{ marginTop: 6, fontSize: 12, opacity: 0.8 }}>Applies incremental portion based on policy (coins/coin_multiplier multiplicative, tickets additive).</div>
-            </>
-          )}
-        </div>
-        {!pendingConfirm ? (
-          <div style={actions}>
-            <button style={secondary} onClick={onClaimBase}>Claim</button>
-            <button style={primary} onClick={onStartAd}>X2 bonus</button>
-          </div>
-        ) : (
-          <div style={actions}>
-            <button
-              style={primary}
-              disabled={Boolean(expiresAt && Date.now() > expiresAt)}
-              onClick={onClaimX2}
-            >
-              Claim x2{typeof secondsLeft === 'number' ? ` (${secondsLeft}s)` : ''}
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
+// Legacy inline LevelUpModal removed in favor of '@/ui/Modal/Modal'
 
 export default function Home() {
   const [mounted, setMounted] = useState(false)
@@ -852,21 +756,27 @@ export default function Home() {
             </div>
           )}
           {typeof leveledUp === 'number' && (
-            <LevelUpModal
-              level={leveledUp}
-              rewardPayload={
-                (debugState?.lastLevel && debugState.lastLevel.level === leveledUp
-                  ? (debugState.lastLevel.reward_payload as Record<string, unknown> | null)
-                  : null) ?? null
-              }
-              pendingConfirm={pendingBonusConfirm}
-              expiresAt={bonusExpiresAt}
-              nowTick={nowTick}
-              onStartAd={startLevelBonus}
-              onClaimX2={claimLevelBonusX2}
-              onClaimBase={async () => { setLeveledUp(null); await loadCounters() }}
-              onClose={() => { setLeveledUp(null) }}
-            />
+            pendingBonusConfirm ? (
+              <LevelUpModal
+                level={leveledUp}
+                rewards={{
+                  coins: Number(((debugState?.lastLevel?.reward_payload as any)?.coins) ?? 0) * 2,
+                  tickets: Number(((debugState?.lastLevel?.reward_payload as any)?.tickets) ?? 0) * 2,
+                }}
+                onClaimBase={async () => { /* not used in confirm state */ }}
+                onStartAd={claimLevelBonusX2}
+              />
+            ) : (
+              <LevelUpModal
+                level={leveledUp}
+                rewards={{
+                  coins: Number(((debugState?.lastLevel?.reward_payload as any)?.coins) ?? 0),
+                  tickets: Number(((debugState?.lastLevel?.reward_payload as any)?.tickets) ?? 0),
+                }}
+                onClaimBase={async () => { setLeveledUp(null); await loadCounters() }}
+                onStartAd={startLevelBonus}
+              />
+            )
           )}
 
           {claimSuccess && (

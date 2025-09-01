@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Unity Button Export</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lilita+One&display=swap" rel="stylesheet">
+  <style>
+    .btn-main {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 200px;
+      height: 80px;
+      border: 20px solid transparent; /* adjust with Unity border values */
+      border-image-source: url("assets/Button01_Green.png");
+      border-image-slice: 20 fill;    /* Unity border values here */
+      border-image-repeat: stretch;   /* same as Unity Sliced mode */
+      background-color: transparent;  /* keep transparent background */
+      cursor: pointer;
+
+      /* Text style */
+      font-family: 'Lilita One', sans-serif;
+      font-size: 32px;   /* adjust to match Unity’s look */
+      color: white;      /* TMP vertex color */
+      text-shadow: 
+        -2px -2px 0 black,
+        2px -2px 0 black,
+        -2px  2px 0 black,
+        2px  2px 0 black; /* fake outline like TMP */
+      background-color: transparent;
+    }
+  </style>
+</head>
+<body>
+  <button class="btn-main">2x Reward</button>
+</body>
+</html>
+
+

@@ -1,0 +1,50 @@
+@font-face {
+  font-family: 'Lilita One';
+  src: url('/dev/ui/buttons/assets/LilitaOne-Regular.ttf') format('truetype');
+  font-display: swap;
+}
+
+.buttonBase {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 20px solid transparent;
+  border-image-slice: 20 fill;
+  border-image-repeat: stretch;
+  background-color: transparent;
+  cursor: pointer;
+  user-select: none;
+
+  /* defaults; can be overridden via style props */
+  width: 200px;
+  height: 80px;
+
+  font-family: 'Lilita One', sans-serif;
+  font-size: 32px;
+  color: #ffffff;
+  text-shadow:
+    -2px -2px 0 #000,
+     2px -2px 0 #000,
+    -2px  2px 0 #000,
+     2px  2px 0 #000;
+}
+
+.primary {
+  border-image-source: url('/dev/ui/buttons/assets/Button01_Orange.Png');
+}
+
+.confirm {
+  border-image-source: url('/dev/ui/buttons/assets/Button01_Green.Png');
+}
+
+.pressed {
+  transform: translateY(1px);
+}
+
+.disabled {
+  opacity: 0.75;
+  cursor: default;
+  pointer-events: none;
+}
+
+

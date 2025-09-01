@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sandbox • Button (Confirm / Green)</title>
+  <style>
+    /* Requires: assets/LilitaOne-Regular.ttf and assets/Button01_Green.Png */
+    @font-face {
+      font-family: 'Lilita One';
+      src: url('assets/LilitaOne-Regular.ttf') format('truetype');
+      font-display: swap;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #0f1012;
+      color: #fff;
+      height: 100%;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;
+    }
+
+    .page {
+      min-height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-main {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 200px;
+      height: 80px;
+      border: 20px solid transparent;
+      border-image-source: url("assets/Button01_Green.Png");
+      border-image-slice: 20 fill;
+      border-image-repeat: stretch;
+      background-color: transparent;
+      cursor: pointer;
+
+      font-family: 'Lilita One', sans-serif;
+      font-size: 32px;
+      color: #ffffff;
+      text-shadow:
+        -2px -2px 0 #000,
+         2px -2px 0 #000,
+        -2px  2px 0 #000,
+         2px  2px 0 #000;
+      user-select: none;
+    }
+
+    .btn-main:active { transform: translateY(1px); }
+
+    .note { position: fixed; bottom: 12px; left: 12px; font-size: 12px; opacity: 0.7; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <button class="btn-main">2x Reward</button>
+  </div>
+  <div class="note">Place assets in ./assets (LilitaOne-Regular.ttf, Button01_Green.Png)</div>
+</body>
+</html>
+
+
