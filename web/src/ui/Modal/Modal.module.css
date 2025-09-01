@@ -7,23 +7,31 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: radial-gradient(60% 50% at 50% 40%, #074274 0%, #082D53 60%, #082D53 100%);
+  background: rgba(0,0,0,0.6);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 16px 16px 24px;
+  padding: calc(16px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));
 }
 
 .card {
   width: min(92vw, 460px);
+  max-height: calc(90dvh - (env(safe-area-inset-top) + env(safe-area-inset-bottom)));
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding: 20px 16px 16px;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  background: radial-gradient(60% 50% at 50% 40%, #074274 0%, #082D53 60%, #082D53 100%);
   color: #ffffff; /* Force modal copy to white regardless of page theme */
   text-align: center;
 }
 
 .headline {
   font-family: 'Lilita One', sans-serif;
-  font-size: 20px;
+  font-size: clamp(16px, 2.2vw, 20px);
   letter-spacing: 0.5px;
   text-shadow: 0 2px 0 rgba(0,0,0,0.35);
   opacity: 0.95;
@@ -32,8 +40,8 @@
 
 .shield {
   position: relative;
-  width: 180px;
-  height: 216px;
+  width: clamp(120px, 32vw, 180px);
+  height: clamp(144px, 38vw, 216px);
   margin: 16px auto 8px auto;
   background: url('/dev/ui/modal/assets/Icon_ImageIcon_LevelFrame1.png') center/contain no-repeat;
   filter: drop-shadow(0 10px 20px rgba(0,0,0,0.35));
@@ -46,7 +54,7 @@
   align-items: center;
   justify-content: center;
   font-family: 'Lilita One', sans-serif;
-  font-size: 88px;
+  font-size: clamp(56px, 12vw, 88px);
   line-height: 1;
   color: #ffffff;
   text-shadow: -3px -3px 0 #000, 3px -3px 0 #000, -3px 3px 0 #000, 3px 3px 0 #000;
@@ -89,9 +97,9 @@
 
 .frameItem {
   position: relative;
-  width: 120px;
-  height: 120px;
-  border: 26px solid transparent;
+  width: clamp(84px, 24vw, 120px);
+  height: clamp(84px, 24vw, 120px);
+  border: clamp(16px, 5vw, 26px) solid transparent;
   border-image-source: url('/dev/ui/modal/assets/ItemFrame03_Single_Navy.png');
   border-image-slice: 26 fill;
   border-image-repeat: stretch;
@@ -111,11 +119,11 @@
   padding-top: 4px;
 }
 
-.frameIcon { font-size: 28px; }
+.frameIcon { font-size: clamp(20px, 6vw, 28px); }
 
 .frameText {
   font-family: 'Lilita One', sans-serif;
-  font-size: 20px;
+  font-size: clamp(16px, 4.8vw, 20px);
   color: #ffffff;
   text-shadow: -1.5px -1.5px 0 #000, 1.5px -1.5px 0 #000, -1.5px 1.5px 0 #000, 1.5px 1.5px 0 #000;
 }

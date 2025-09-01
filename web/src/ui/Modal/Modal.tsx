@@ -13,15 +13,15 @@ export interface LevelUpModalProps {
 
 export const LevelUpModal: React.FC<LevelUpModalProps> = ({ level, rewards, onClaimBase, onStartAd }) => {
   return (
-    <div role="dialog" aria-modal="true" aria-label="Level up" className={styles.overlay}>
+    <div role="dialog" aria-modal="true" aria-labelledby="levelup-title" aria-describedby="levelup-rewards" className={styles.overlay}>
       <div className={styles.card}>
-        <div className={styles.headline}>You have reached the Next Level!</div>
+        <div className={styles.headline} id="levelup-headline">You have reached the Next Level!</div>
         <div className={styles.shield}>
           <div className={styles.levelNum}>{level}</div>
         </div>
-        <div className={styles.title}>LEVEL UP!</div>
+        <div className={styles.title} id="levelup-title">LEVEL UP!</div>
 
-        <div className={styles.rewardsBox}>
+        <div className={styles.rewardsBox} id="levelup-rewards">
           <span className={styles.rewardsLabel}>REWARDS</span>
           <div className={styles.rewardsRow}>
             {typeof rewards.coins === "number" && (
