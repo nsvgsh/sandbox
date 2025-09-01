@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { Button } from '@/ui/Button/Button'
+import { CoinsBar } from '@/ui/Header/CoinsBar'
 import { LevelUpModal } from '@/ui/Modal/Modal'
 import { normalizeCounters, parsePublicConfig, fetchJsonWithRetry } from '../lib/apiClient'
 import { isMonetagLoaded, loadMonetagSdk, showRewardedInterstitial, categorizeMonetagError } from '../lib/ads/monetag'
@@ -583,7 +584,9 @@ export default function Home() {
         <>
           {activeSection === 'home' && (
             <>
-              <HeaderCounters counters={counters} />
+              <div style={{ marginBottom: 8 }}>
+                <CoinsBar value={Number(counters?.coins ?? 0)} />
+              </div>
               <AvatarRow />
               <div style={{ marginTop: 8 }}>
                 <TapArea onTap={tap} next={nextThreshold} />

@@ -1,0 +1,48 @@
+@font-face {
+  font-family: 'Lilita One';
+  src: url('/dev/ui/buttons/assets/LilitaOne-Regular.ttf') format('truetype');
+  font-display: swap;
+}
+
+.wrap { width: 50%; max-width: 420px; }
+
+.coinsBar {
+  position: relative;
+  background: #270E0C;
+  border-radius: 22px;
+  min-height: 36px;
+  --icon-size: clamp(44px, 20vw, 60px);
+  padding: 8px 12px;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.35);
+}
+
+.coinsText {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: 'Lilita One', sans-serif;
+  font-size: clamp(28px, 6vw, 40px);
+  color: #ffffff;
+  line-height: 1;
+  text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000;
+  user-select: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.coinIcon {
+  position: absolute;
+  right: -24px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: var(--icon-size);
+  height: var(--icon-size);
+  background: url('/dev/ui/header/assets/ResourceBar_Icon_Gold.png') center/contain no-repeat;
+  filter: drop-shadow(0 6px 10px rgba(0,0,0,0.35));
+  pointer-events: none;
+}
+
+
