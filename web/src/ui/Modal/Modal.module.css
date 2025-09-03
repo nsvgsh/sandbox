@@ -95,39 +95,6 @@
   flex-wrap: wrap;
 }
 
-.frameItem {
-  position: relative;
-  width: clamp(84px, 24vw, 120px);
-  height: clamp(84px, 24vw, 120px);
-  border: clamp(16px, 5vw, 26px) solid transparent;
-  border-image-source: url('/dev/ui/modal/assets/ItemFrame03_Single_Navy.png');
-  border-image-slice: 26 fill;
-  border-image-repeat: stretch;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 6px 14px rgba(0,0,0,0.25);
-  background: transparent;
-}
-
-.frameInner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding-top: 4px;
-}
-
-.frameIcon { font-size: clamp(20px, 6vw, 28px); }
-
-.frameText {
-  font-family: 'Lilita One', sans-serif;
-  font-size: clamp(16px, 4.8vw, 20px);
-  color: #ffffff;
-  text-shadow: -1.5px -1.5px 0 #000, 1.5px -1.5px 0 #000, -1.5px 1.5px 0 #000, 1.5px 1.5px 0 #000;
-}
-
 .actions {
   display: flex;
   justify-content: center;
@@ -138,3 +105,48 @@
 .actionsItem { flex: 1 1 0; max-width: 280px; }
 
 
+
+/* Reward button styles adapted from bottomnav, scoped to the modal */
+.rewardBtn {
+  position: relative;
+  display: inline-block;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  line-height: 0;
+  width: clamp(120px, 28vw, 160px);
+}
+
+.rewardBtnBg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.rewardBtnOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 22%;
+  pointer-events: none;
+}
+
+.rewardBtnIcon {
+  display: block;
+  width: 60%;
+  height: auto;
+  margin-bottom: 16%;
+}
+
+/* Reuse font preferences from bottomnav; only font-size will vary via inline style */
+.rewardBtnLabel {
+  font-family: 'Lilita One', sans-serif;
+  font-weight: 400;
+  letter-spacing: -0.025em;
+  color: #ffffff;
+  -webkit-text-stroke: 0.025em #000000;
+  filter: drop-shadow(0 0.05em 0 #000000);
+}
