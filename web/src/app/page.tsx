@@ -6,6 +6,7 @@ import { LevelUpModal } from '@/ui/Modal/Modal'
 import { normalizeCounters, parsePublicConfig, fetchJsonWithRetry } from '../lib/apiClient'
 import { isMonetagLoaded, loadMonetagSdk, showRewardedInterstitial, categorizeMonetagError } from '../lib/ads/monetag'
 import { showNotice } from '../lib/notice'
+import { BottomNavShadow } from '@/ui/BottomNav/BottomNavShadow'
 
 type Counters = {
   coins: number
@@ -26,37 +27,37 @@ type DebugState = {
 } | null
 
 // Lightweight presentational scaffolding components for the main screen (Home/Game)
-function HeaderCounters({ counters }: { counters: Counters }) {
-  const coins = Number(counters?.coins ?? 0)
-  const tickets = Number(counters?.tickets ?? 0)
-  const level = Number(counters?.level ?? 0)
-  const boxStyle: React.CSSProperties = {
-    flex: 1,
-    padding: 12,
-    borderRadius: 12,
-    border: '1px solid rgba(0,0,0,0.1)',
-    background: 'rgba(0,0,0,0.02)'
-  }
-  const rowStyle: React.CSSProperties = { display: 'flex', gap: 8 }
-  const labelStyle: React.CSSProperties = { fontSize: 12, opacity: 0.8 }
-  const valueStyle: React.CSSProperties = { fontWeight: 700, marginTop: 4 }
-  return (
-    <div style={rowStyle}>
-      <div style={boxStyle}>
-        <div style={labelStyle}>🪙 Coins</div>
-        <div style={valueStyle}>{coins.toLocaleString()}</div>
-      </div>
-      <div style={boxStyle}>
-        <div style={labelStyle}>🎟 Tickets</div>
-        <div style={valueStyle}>{tickets.toLocaleString()}</div>
-      </div>
-      <div style={boxStyle}>
-        <div style={labelStyle}>🆙 Level</div>
-        <div style={valueStyle}>{level.toLocaleString(undefined, { minimumIntegerDigits: 2 })}</div>
-      </div>
-    </div>
-  )
-}
+// function HeaderCounters({ counters }: { counters: Counters }) {
+//   const coins = Number(counters?.coins ?? 0)
+//   const tickets = Number(counters?.tickets ?? 0)
+//   const level = Number(counters?.level ?? 0)
+//   const boxStyle: React.CSSProperties = {
+//     flex: 1,
+//     padding: 12,
+//     borderRadius: 12,
+//     border: '1px solid rgba(0,0,0,0.1)',
+//     background: 'rgba(0,0,0,0.02)'
+//   }
+//   const rowStyle: React.CSSProperties = { display: 'flex', gap: 8 }
+//   const labelStyle: React.CSSProperties = { fontSize: 12, opacity: 0.8 }
+//   const valueStyle: React.CSSProperties = { fontWeight: 700, marginTop: 4 }
+//   return (
+//     <div style={rowStyle}>
+//       <div style={boxStyle}>
+//         <div style={labelStyle}>🪙 Coins</div>
+//         <div style={valueStyle}>{coins.toLocaleString()}</div>
+//       </div>
+//       <div style={boxStyle}>
+//         <div style={labelStyle}>🎟 Tickets</div>
+//         <div style={valueStyle}>{tickets.toLocaleString()}</div>
+//       </div>
+//       <div style={boxStyle}>
+//         <div style={labelStyle}>🆙 Level</div>
+//         <div style={valueStyle}>{level.toLocaleString(undefined, { minimumIntegerDigits: 2 })}</div>
+//       </div>
+//     </div>
+//   )
+// }
 
 function AvatarRow() {
   const row: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 12, padding: '10px 2px' }
@@ -103,37 +104,7 @@ function TapArea({ onTap, next }: { onTap: () => void; next: NextThreshold }) {
   )
 }
 
-function BottomNav({ active, onSelect }: { active: 'home' | 'offers' | 'wallet'; onSelect: (s: 'home' | 'offers' | 'wallet') => void }) {
-  const bar: React.CSSProperties = {
-    position: 'fixed',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    display: 'flex',
-    justifyContent: 'space-around',
-    padding: '10px 16px',
-    borderTop: '1px solid rgba(0,0,0,0.1)',
-    background: 'var(--background)'
-  }
-  const btn: React.CSSProperties = { background: 'transparent', border: 'none', padding: 8, cursor: 'pointer' }
-  const item = (key: 'home' | 'offers' | 'wallet', label: string) => (
-    <button
-      type="button"
-      aria-current={active === key ? 'page' : undefined}
-      onClick={() => onSelect(key)}
-      style={{ ...btn, opacity: active === key ? 1 : 0.6, fontWeight: active === key ? 700 : 500 }}
-    >
-      {label}
-    </button>
-  )
-  return (
-    <nav style={bar} aria-label="Main tabs">
-      {item('home', '🏠 Home')}
-      {item('offers', '🎁 Offers')}
-      {item('wallet', '👛 Wallet')}
-    </nav>
-  )
-}
+// Inline BottomNav replaced by Shadow DOM component
 
 // Legacy inline LevelUpModal removed in favor of '@/ui/Modal/Modal'
 
@@ -575,7 +546,14 @@ export default function Home() {
   }
 
   return (
-    <main style={{ padding: 16, paddingBottom: 72, fontFamily: 'ui-sans-serif, system-ui', maxWidth: 520, margin: '0 auto' }}>
+    <main style={{
+      padding: 16,
+      paddingBottom: 'calc(var(--bottomnav-height, 132px) + env(safe-area-inset-bottom))',
+      fontFamily: 'ui-sans-serif, system-ui',
+      maxWidth: 520,
+      margin: '0 auto',
+      minHeight: 'calc(100dvh - (var(--bottomnav-height, 132px) + env(safe-area-inset-bottom)))'
+    }}>
       {!userId ? (
         <button onClick={devLogin}>Dev Login</button>
       ) : !session ? (
@@ -793,7 +771,7 @@ export default function Home() {
             />
           )}
 
-          {/* Developer info (kept for now, below the main scaffold) */}
+          {/* Developer info (kept for now, below the main scaffold)
           <div style={{ marginTop: 16, opacity: 0.8, fontSize: 12 }}>
             <div>user: {userId}</div>
             <div style={{ marginTop: 4 }}>session: {session.sessionId.slice(0, 8)} / epoch: {session.sessionEpoch.slice(0, 8)}</div>
@@ -851,9 +829,9 @@ export default function Home() {
           <div style={{ marginTop: 12 }}>
             <div style={{ fontWeight: 600 }}>Bonus multiplier (last event)</div>
             <div style={{ marginTop: 6 }}>{debugState?.lastLevel?.bonus_multiplier ?? 'n/a'}</div>
-          </div>
+          </div> */}
 
-          <BottomNav active={activeSection} onSelect={setActiveSection} />
+          <BottomNavShadow active={activeSection} onSelect={setActiveSection} />
         </>
       )}
     </main>

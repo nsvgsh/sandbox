@@ -1,0 +1,91 @@
+@font-face {
+  font-family: 'Lilita One';
+  src: url('../buttons/assets/LilitaOne-Regular.ttf') format('truetype');
+  font-display: swap;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #ffffff;
+  color: #000000;
+  height: 100%;
+}
+
+.page {
+  min-height: 100%;
+  padding-bottom: calc(var(--bottomnav-height, 132px) + env(safe-area-inset-bottom));
+}
+
+/* Clickable image button; sized relative to bottomNav width */
+.imgBtn {
+  position: relative;
+  display: inline-block;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  line-height: 0;
+  width: 24%;
+}
+
+/* Background image fills the button; aspect preserved */
+.btnBg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Overlay stack anchored to bottom: icon above, label below */
+.btnOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: var(--overlay-bottom, 22%);
+  pointer-events: none;
+}
+
+.btnIcon {
+  display: block;
+  width: var(--icon-width, 60%);
+  height: auto;
+  margin-bottom: var(--icon-gap, 16%);
+}
+
+.btnLabel {
+  font-family: 'Lilita One', sans-serif;
+  font-size: clamp(10px, 5vw, 18px);
+  font-weight: var(--label-weight, 400);
+  letter-spacing: -0.025em;;
+  color: var(--label-color, #ffffff);
+  -webkit-text-stroke: 0.025em #000000;
+  filter: drop-shadow(0 0.05em 0 #000000);
+}
+
+.bottomNav {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 0;
+  width: min(100vw, 420px);
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-end;
+  padding: 0 env(safe-area-inset-right) calc(12px + env(safe-area-inset-bottom)) env(safe-area-inset-left);
+  height: 4%;
+}
+
+/* Landscape/short-height adjustment */
+@media (max-height: 480px) {
+  .btnOverlay {
+    padding-bottom: 14%;
+  }
+  .btnLabel {
+    font-size: clamp(24px, 4vw, 36px);
+  }
+}
+
+

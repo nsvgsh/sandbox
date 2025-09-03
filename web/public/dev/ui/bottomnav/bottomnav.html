@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sandbox • BottomNav (one HTML + one CSS)</title>
+  <link rel="stylesheet" href="./bottomnav.css">
+</head>
+<body>
+  <div class="page">
+    
+  </div>
+
+  <template id="btn-template">
+    <button class="imgBtn" type="button">
+      <img class="btnBg" src="assets/Button03_Blue.png" alt="" draggable="false">
+      <div class="btnOverlay">
+        <img class="btnIcon" alt="" draggable="false">
+        <span class="btnLabel"></span>
+      </div>
+    </button>
+  </template>
+
+  <nav class="bottomNav" role="navigation" id="nav"></nav>
+
+  <script type="module">
+    const items = [
+      { label: 'TAP',    icon: 'assets/Icon_ImageIcon_GemGold.png' },
+      { label: 'EARN',   icon: 'assets/Icon_ImageIcon_Gift_Purple.png' },
+      { label: 'WALLET', icon: 'assets/Icon_wallet_whisk.png' },
+    ];
+
+    const tpl = document.getElementById('btn-template');
+    const nav = document.getElementById('nav');
+
+    items.forEach(({ label, icon }) => {
+      const node = tpl.content.firstElementChild.cloneNode(true);
+      node.querySelector('.btnLabel').textContent = label;
+      node.querySelector('.btnIcon').src = icon;
+      nav.appendChild(node);
+    });
+  </script>
+</body>
+</html>

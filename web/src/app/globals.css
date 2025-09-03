@@ -1,14 +1,24 @@
 /*
   Single-source theme tokens (game palette)
-  Edit these two lines to change global colors app-wide.
+  Edit these tokens to change global colors app-wide.
 */
 :root {
-  --theme-background: #ffffff; /* page background */
-  --theme-foreground: #082D53; /* default text color */
-
-  /* Legacy aliases (do not use in new code). Kept to avoid breakage. */
-  --background: var(--theme-background);
-  --foreground: var(--theme-foreground);
+  /* Solid color used by components that need a color (not an image/gradient) */
+  --theme-background: #23558e; /* page background (solid) */
+  /* Page gradient background: bottom (#275c99) → top (#162e54) */
+  --theme-background-gradient: linear-gradient(
+    to top, 
+    #275d99 0%, 
+    #23558e 39%, 
+    #1c4171 74%, 
+    #152d56 100%
+  );
+  --theme-foreground: #ffffff; /* default text color */
+  
+  /* Component tokens */
+  --bottomnav-background: #0E233D;
+  --bottomnav-foreground: var(--theme-foreground);
+  --bottomnav-height: 6dvh;
 }
 
 html,
@@ -19,7 +29,7 @@ body {
 
 body {
   color: var(--theme-foreground);
-  background: var(--theme-background);
+  background: var(--theme-background-gradient);
   font-family: Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -37,3 +47,15 @@ a {
 }
 
 /* OS color scheme hints disabled – the app uses a fixed game palette */
+
+/* Bottom navigation gradient overlay (top→bottom) */
+.bottomNav {
+  position: fixed;
+}
+.bottomNav::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, #000000 0%, #ffffff00 2%);
+  pointer-events: none;
+}

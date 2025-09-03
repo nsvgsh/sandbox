@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sandbox • BottomNav Button03 Blue</title>
+  <style>
+    @font-face {
+      font-family: 'Lilita One';
+      src: url('../buttons/assets/LilitaOne-Regular.ttf') format('truetype');
+      font-display: swap;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: rgb(255, 255, 255);
+      color: rgb(0, 0, 0);
+      height: 100%;
+    }
+
+    .page {
+      min-height: 100%;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    /* Clickable image button; image renders at intrinsic size without modification */
+    .imgBtn {
+      position: relative;
+      display: inline-block;
+      background: transparent;
+      border: 0;
+      padding: 0;
+      cursor: pointer;
+      line-height: 0;
+    }
+
+    /* Background image sizing (separate class to avoid overriding icon) */
+    .btnBg {
+      display: block;
+      width: var(--btn-width, auto); 
+      height: auto;                  /* preserve aspect ratio */
+    }
+
+    /* Overlay stack anchored to bottom: icon above, label below */
+    .btnOverlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      padding-bottom: var(--overlay-bottom, 20%);
+      pointer-events: none; /* pass clicks to button */
+    }
+
+    .btnIcon {
+      display: block;
+      width: var(--icon-width, 60%);
+      height: auto; /* preserve aspect ratio */
+      margin-bottom: var(--icon-gap, 12%);
+    }
+
+    .btnLabel {
+      font-family: 'Lilita One', sans-serif;
+      font-size: var(--label-size, 40px);
+      font-weight: var(--label-weight, 400);
+      letter-spacing: -2px;
+      color: var(--label-color, #ffffff);
+      -webkit-text-stroke: 1px #000000;
+      filter: drop-shadow(0 2px 0 #000000);
+    }
+  </style>
+
+</head>
+<body>
+  <div class="page">
+    <button class="imgBtn" aria-label="BottomNav Button" style="--btn-width: 280px;">
+      <img class="btnBg" src="assets/Button03_Blue.png" alt="" draggable="false" />
+      <div class="btnOverlay">
+        <img class="btnIcon" src="assets/Icon_ImageIcon_Gift_Purple.png" alt="" draggable="false" />
+        <span class="btnLabel">EARN</span>
+      </div>
+    </button>
+  </div>
+</body>
+<!-- ui/ sandbox: bottomnav/button03.html -->
+</html>
+
+

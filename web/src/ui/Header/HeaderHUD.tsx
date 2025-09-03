@@ -19,8 +19,10 @@ export const HeaderHUD: React.FC<{ counters: Counters | null }>
           <div className={styles.resourceBar} style={{
             // Level visual overrides
             // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-            ["--bar-color" as any]: "#103528",
+            ["--bar-color" as any]: "#0B143B",
             ["--icon-url" as any]: "url('/dev/ui/header/assets/Icon_ImageIcon_LevelFrame1.png')",
+            ["--icon-size-in" as any]: "11vw",
+            ["--icon-right" as any]: "-12px",
           }}>
             <div className={styles.resourceText}>{`LVL ${level.toLocaleString(undefined, { minimumIntegerDigits: 1 })}`}</div>
             <div className={styles.resourceIcon} aria-hidden="true" />
@@ -31,6 +33,8 @@ export const HeaderHUD: React.FC<{ counters: Counters | null }>
         <div className={styles.barWrap}>
           <div className={styles.resourceBar} style={{
             ["--bar-color" as any]: "#270E0C",
+            ["--icon-size-in" as any]: "16vw",
+            // ["--icon-right" as any]: "-12px",
           }}>
             <div className={styles.resourceText}>{coins.toLocaleString()}</div>
             <div className={styles.resourceIcon} aria-hidden="true" />
@@ -40,8 +44,9 @@ export const HeaderHUD: React.FC<{ counters: Counters | null }>
         {/* Tickets */}
         <div className={styles.barWrap}>
           <div className={styles.resourceBar} style={{
-            ["--bar-color" as any]: "#1c0f30",
-            ["--icon-url" as any]: "url('/dev/ui/header/assets/Icon_ImageIcon_Ticket_Golden.png')",
+            ["--bar-color" as any]: "#270E0C",
+            ["--icon-url" as any]: "url('/dev/ui/header/assets/Whisk_Purple_Ticket.png')",
+            ["--icon-size-in" as any]: "22vw",
           }}>
             <div className={styles.resourceText}>{tickets.toLocaleString()}</div>
             <div className={styles.resourceIcon} aria-hidden="true" />

@@ -35,3 +35,8 @@
 | OBS-CLIENT-TELEMETRY | Added minimal client logs: TooFastRetry, OutOfDateRefresh, NetRetry, TTLExpired, AlreadyClaimed, TaskClaimIdemKeyUsed, AdRequired |
 | X2-FLOW-AD_TTL_FROM_T1 | X2 claim gated by ad_ttl_seconds from ad success (t1); base claim ungated; added claim_level_bonus_v4; simplified /v1/ad/log; updated docs |
 | AD-MONETAG-INT-SDK | Integrated Monetag Rewarded Interstitial via script-tag SDK; runtime config (monetag_enabled, monetag_zone_id, monetag_sdk_url); server logs closed/failed with provider payload; client countdown from t1; failure path does not unlock |
+| UI-GRADIENT-0001 | Applied bottom-to-top page background gradient (#275c99 → #162e54); preserved solid background token for components |
+| UI-BOTTOMNAV-0001 | Introduced bottom nav color tokens and applied in page |
+| UI-BOTTOMNAV-0002 | Added --bottomnav-height token; nav uses fixed height; main layout references token |
+| UI-BOTTOMNAV-0003 | Replaced inline shadow with .bottomNav::before gradient overlay |
+| UI-BOTTOMNAV-SANDBOX | Added single-file bottomnav sandbox (template + inline script) |
