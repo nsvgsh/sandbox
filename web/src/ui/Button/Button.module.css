@@ -8,7 +8,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 20px solid transparent;
+  border: 10px solid transparent;
   border-image-slice: 20 fill;
   border-image-repeat: stretch;
   background-color: transparent;
@@ -19,14 +19,16 @@
   width: 200px;
   height: 80px;
 
-  font-family: 'Lilita One', sans-serif;
-  font-size: 32px;
+  font-family: 'Lilita One';
+  font-size: 9vw;
+  font-weight: 400;
+  letter-spacing: -0.025em;
   color: #ffffff;
-  text-shadow:
+  /* text-shadow:
     -2px -2px 0 #000,
      2px -2px 0 #000,
     -2px  2px 0 #000,
-     2px  2px 0 #000;
+     2px  2px 0 #000; */
 }
 
 .primary {

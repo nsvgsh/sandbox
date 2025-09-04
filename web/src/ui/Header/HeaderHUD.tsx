@@ -33,7 +33,7 @@ export const HeaderHUD: React.FC<{ counters: Counters | null }>
         <div className={styles.barWrap}>
           <div className={styles.resourceBar} style={{
             ["--bar-color" as any]: "#270E0C",
-            ["--icon-size-in" as any]: "16vw",
+            ["--icon-size-in" as any]: "13vw",
             // ["--icon-right" as any]: "-12px",
           }}>
             <div className={styles.resourceText}>{coins.toLocaleString()}</div>

@@ -56,13 +56,13 @@ html, body {
 }
 
 .btnLabel {
-  font-family: 'Lilita One', sans-serif;
+  font-family: 'Lilita One';
   font-size: clamp(10px, 5vw, 18px);
-  font-weight: var(--label-weight, 400);
-  letter-spacing: -0.025em;;
+  font-weight: 400;
+  letter-spacing: -0.025em;
   color: var(--label-color, #ffffff);
-  -webkit-text-stroke: 0.025em #000000;
-  filter: drop-shadow(0 0.05em 0 #000000);
+  -webkit-text-stroke: 0.015em #000000;
+  filter: drop-shadow(0 0.08em 0 #000000);
 }
 
 .bottomNav {
