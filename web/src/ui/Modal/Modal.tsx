@@ -32,7 +32,7 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({ level, rewards, onCl
                   <img className={styles.rewardBtnIcon} src="dev/ui/header/assets/ResourceBar_Icon_Gold.Png" 
                   style={{width: "50%" }} 
                   alt="" draggable={false} />
-                  <span className={styles.rewardBtnLabel} style={{ WebkitTextStroke: "0.015em #000000", fontSize: "7vw" }}>{rewards.coins.toLocaleString()}</span>
+                  <span className={styles.rewardBtnLabel} style={{ WebkitTextStroke: "0.015em #000000" }}>{rewards.coins.toLocaleString()}</span>
                 </div>
               </div>
             )}
@@ -43,7 +43,7 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({ level, rewards, onCl
                   <img className={styles.rewardBtnIcon} src="/dev/ui/header/assets/Whisk_Purple_Ticket.png" 
                   // style={{ marginBottom: "12%", width: "90%" }} 
                   alt="" draggable={false} />
-                  <span className={styles.rewardBtnLabel} style={{ WebkitTextStroke: "0.015em #000000", fontSize: "7vw" }}>{rewards.tickets}</span>
+                  <span className={styles.rewardBtnLabel} style={{ WebkitTextStroke: "0.015em #000000" }}>{rewards.tickets}</span>
                 </div>
               </div>
             )}
@@ -68,7 +68,7 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({ level, rewards, onCl
             <Button variant="confirm" width="100%" height={55} onClick={onStartAd}>
               <span
                 style={{
-                  fontSize: "8vw",
+                  fontSize: "7.48vw",
                   WebkitTextStroke: "0.015em #000000",
                   filter: "drop-shadow(0 0.08em 0 #000000)",
                   transform: 'translateY(-2px)' // down; use negative to move up

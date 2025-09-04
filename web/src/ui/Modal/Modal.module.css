@@ -111,7 +111,7 @@
   align-items: stretch;     /* stretch children to full row height */
   padding: 8px;             /* internal paddings as requested */
   min-height: 0;            /* allow shrinking inside flex column parent */
-  overflow: auto;           /* scroll if content exceeds available height */
+  overflow: hidden;         /* prevent scroll within rewards bar */
 }
 
 .actions {
@@ -148,7 +148,8 @@
   grid-template-rows: 1fr auto; /* icon area + label area */
   justify-items: center;
   align-items: center;
-  padding-bottom: 12%;
+  container-type: size; /* enable cqh for label sizing */
+  padding-bottom: 6cqh;
 }
 
 .rewardBtnIcon {
@@ -168,4 +169,5 @@
   filter: drop-shadow(0 0.08em 0 #000000);
   align-self: end;   /* places label in bottom row (auto) */
   justify-self: center;
+  font-size: min(28cqh, 28cqw); /* tie to overlay height */
 }
