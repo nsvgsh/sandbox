@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Button } from '@/ui/Button/Button'
 import { HeaderHUD } from '@/ui/Header/HeaderHUD'
 import { LevelUpModal } from '@/ui/Modal/Modal'
@@ -118,6 +118,8 @@ export default function Home() {
   const [nextThreshold, setNextThreshold] = useState<NextThreshold>(null)
   const [debugState, setDebugState] = useState<DebugState>(null)
   const [tasks, setTasks] = useState<any[] | null>(null)
+  const [tasksLoading, setTasksLoading] = useState<boolean>(false)
+  const tasksLoadInFlightRef = useRef<boolean>(false)
   const [leaderboard, setLeaderboard] = useState<any | null>(null)
   const [adUnlocks, setAdUnlocks] = useState<Record<string, { impressionId: string; expiresAt: number }>>({})
   const [adTTLSeconds, setAdTTLSeconds] = useState<number>(10)
@@ -364,20 +366,28 @@ export default function Home() {
   }
 
   async function loadTasks() {
-    const res = await fetch('/api/v1/tasks')
-    if (!res.ok) return
-    const data = await res.json()
-    setTasks(data.definitions || [])
-    // hydrate unlocks relevant to current tasks
+    if (tasksLoadInFlightRef.current) return
+    tasksLoadInFlightRef.current = true
+    setTasksLoading(true)
     try {
-      const list = (data.definitions || []) as { taskId: string }[]
-      const nextUnlocks: Record<string, { impressionId: string; expiresAt: number }> = {}
-      for (const t of list) {
-        const u = readUnlockForTask(t.taskId)
-        if (u) nextUnlocks[`task:${t.taskId}`] = u
-      }
-      setAdUnlocks(nextUnlocks)
-    } catch {}
+      const res = await fetch('/api/v1/tasks')
+      if (!res.ok) return
+      const data = await res.json()
+      setTasks(data.definitions || [])
+      // hydrate unlocks relevant to current tasks
+      try {
+        const list = (data.definitions || []) as { taskId: string }[]
+        const nextUnlocks: Record<string, { impressionId: string; expiresAt: number }> = {}
+        for (const t of list) {
+          const u = readUnlockForTask(t.taskId)
+          if (u) nextUnlocks[`task:${t.taskId}`] = u
+        }
+        setAdUnlocks(nextUnlocks)
+      } catch {}
+    } finally {
+      tasksLoadInFlightRef.current = false
+      setTasksLoading(false)
+    }
   }
 
   // Watch ad for a specific task (intent-coupled)
@@ -537,6 +547,28 @@ export default function Home() {
     return () => clearInterval(id)
   }, [adTTLSeconds])
 
+  // Refresh tasks when entering EARN (offers) section
+  useEffect(() => {
+    if (activeSection !== 'offers') return
+    void loadTasks()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSection])
+
+  // Refresh tasks when level changes (gating depends on level)
+  const lastLevelRef = useRef<number | null>(null)
+  useEffect(() => {
+    const currentLevel = typeof counters?.level === 'number' ? counters.level : null
+    if (currentLevel === null) return
+    if (lastLevelRef.current === null) {
+      lastLevelRef.current = currentLevel
+      return
+    }
+    if (currentLevel !== lastLevelRef.current) {
+      lastLevelRef.current = currentLevel
+      void loadTasks()
+    }
+  }, [counters?.level])
+
   if (!mounted) {
     return (
       <main style={{ padding: 24, fontFamily: 'ui-sans-serif, system-ui' }}>
@@ -578,6 +610,9 @@ export default function Home() {
 
           {activeSection === 'offers' && (
             <div style={{ marginTop: 8 }}>
+              {tasksLoading && (
+                <div style={{ opacity: 0.7, marginBottom: 8 }}>Loading offers…</div>
+              )}
               {/* Tabs */}
               <div role="tablist" aria-label="Offers" style={{ display: 'flex', gap: 12, marginBottom: 8 }}>
                 {(['available','completed'] as const).map((tab) => (

@@ -40,3 +40,4 @@
 | UI-BOTTOMNAV-0002 | Added --bottomnav-height token; nav uses fixed height; main layout references token |
 | UI-BOTTOMNAV-0003 | Replaced inline shadow with .bottomNav::before gradient overlay |
 | UI-BOTTOMNAV-SANDBOX | Added single-file bottomnav sandbox (template + inline script) |
+| OFFERS-REFRESH-0001 | EARN: refresh tasks on entry and on level change |
