@@ -46,7 +46,7 @@ export const HeaderHUD: React.FC<{ counters: Counters | null }>
           <div className={styles.resourceBar} style={{
             ["--bar-color" as any]: "#270E0C",
             ["--icon-url" as any]: "url('/dev/ui/header/assets/Whisk_Purple_Ticket.png')",
-            ["--icon-size-in" as any]: "22vw",
+            ["--icon-size-in" as any]: "18vw",
           }}>
             <div className={styles.resourceText}>{tickets.toLocaleString()}</div>
             <div className={styles.resourceIcon} aria-hidden="true" />
