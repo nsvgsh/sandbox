@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sandbox • Earn (Offers)</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="page">
+    <main class="container" role="main">
+      <section aria-label="Available offers">
+        <ul class="tiles" id="tiles-available" aria-label="Available tasks">
+          <li class="tile">
+            <div class="tile-badge" aria-hidden="true">
+              <img class="tile-badge-img" src="../earn/assets/CardFrame01_Icon.png" alt="" />
+              <span class="tile-badge-text">1</span>
+            </div>
+            <div class="tile-card" role="group" aria-label="Offer">
+              <div class="icon-wrap">
+                <img class="icon" src="assets/Icon_Chest.Png" alt="Reward chest" draggable="false" />
+              </div>
+              <button class="cta" type="button" aria-label="Get offer"><span class="cta-label">Open</span></button>
+            </div>
+          </li>
+
+          <li class="tile">
+            <div class="tile-badge" aria-hidden="true">
+              <img class="tile-badge-img" src="../earn/assets/CardFrame01_Icon.png" alt="" />
+              <span class="tile-badge-text">22</span>
+            </div>
+            <div class="tile-card" role="group" aria-label="Offer">
+              <div class="icon-wrap">
+                <img class="icon" src="assets/Icon_Chest.Png" alt="Reward chest" draggable="false" />
+              </div>
+              <button class="cta" type="button" aria-label="Get offer"><span class="cta-label">Open</span></button>
+            </div>
+          </li>
+        </ul>
+      </section>
+    </main>
+
+    <nav class="bottomnav" aria-label="Bottom navigation">
+      <button class="navbtn" aria-label="Home">🏠<span>Home</span></button>
+      <button class="navbtn is-active" aria-label="Offers">🎁<span>Offers</span></button>
+      <button class="navbtn" aria-label="Wallet">👛<span>Wallet</span></button>
+    </nav>
+  </div>
+
+  <script>
+    (function() {
+      const options = ['assets/Icon_Target.Png', 'assets/Icon_Chest.Png'];
+      document.querySelectorAll('.tile-card .icon').forEach((img) => {
+        const pick = options[Math.random() < 0.5 ? 0 : 1];
+        img.setAttribute('src', pick);
+      });
+    })();
+  </script>
+</body>
+</html>
+

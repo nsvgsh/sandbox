@@ -7,6 +7,7 @@ import { normalizeCounters, parsePublicConfig, fetchJsonWithRetry } from '../lib
 import { isMonetagLoaded, loadMonetagSdk, showRewardedInterstitial, categorizeMonetagError } from '../lib/ads/monetag'
 import { showNotice } from '../lib/notice'
 import { BottomNavShadow } from '@/ui/BottomNav/BottomNavShadow'
+import { EarnGrid } from '@/ui/earn/EarnGrid/EarnGrid'
 
 type Counters = {
   coins: number
@@ -610,70 +611,19 @@ export default function Home() {
 
           {activeSection === 'offers' && (
             <div style={{ marginTop: 8 }}>
-              {tasksLoading && (
-                <div style={{ opacity: 0.7, marginBottom: 8 }}>Loading offers…</div>
-              )}
-              {/* Tabs */}
-              <div role="tablist" aria-label="Offers" style={{ display: 'flex', gap: 12, marginBottom: 8 }}>
-                {(['available','completed'] as const).map((tab) => (
-                  <button
-                    key={tab}
-                    role="tab"
-                    aria-selected={offersTab === tab}
-                    onClick={() => setOffersTab(tab)}
-                    style={{ fontWeight: offersTab === tab ? 700 : 500 }}
-                  >
-                    {tab.toUpperCase()}
-                  </button>
-                ))}
-              </div>
-
-              {/* Lists */}
-              <div>
-                {offersTab === 'available' && (
-                  <>
-                    {Array.isArray(tasks) && tasks.filter((t) => t.state === 'available').length === 0 && (
-                      <div style={{ opacity: 0.7 }}>No available offers</div>
-                    )}
-                    {Array.isArray(tasks) && tasks.filter((t) => t.state === 'available').map((t) => {
-                      const unlock = readUnlockForTask(t.taskId)
-                      const secondsLeft = unlock ? Math.max(0, Math.ceil((unlock.expiresAt - nowTick) / 1000)) : null
-                      return (
-                        <div key={t.taskId} style={{ border: '1px solid rgba(0,0,0,0.1)', borderRadius: 12, padding: 12, marginBottom: 8 }}>
-                          <div style={{ fontWeight: 600, marginBottom: 4 }}>Offer</div>
-                          <div style={{ fontSize: 12, opacity: 0.8 }}>Reward: {JSON.stringify(t.rewardPayload)}</div>
-                          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                            {!unlock ? (
-                              <button onClick={() => watchAdForTask(t.taskId)}>Watch ad</button>
-                            ) : (
-                              <button onClick={() => claimTask(t.taskId)} disabled={Boolean(secondsLeft !== null && secondsLeft <= 0)}>
-                                Claim{typeof secondsLeft === 'number' ? ` (${secondsLeft}s)` : ''}
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </>
-                )}
-
-                {offersTab === 'completed' && (
-                  <>
-                    {Array.isArray(tasks) && tasks.filter((t) => t.state === 'claimed').length === 0 && (
-                      <div style={{ opacity: 0.7 }}>No completed offers</div>
-                    )}
-                    {Array.isArray(tasks) && tasks.filter((t) => t.state === 'claimed').map((t) => (
-                      <div key={t.taskId} style={{ border: '1px solid rgba(0,0,0,0.1)', borderRadius: 12, padding: 12, marginBottom: 8 }}>
-                        <div style={{ fontWeight: 600, marginBottom: 4 }}>Offer</div>
-                        <div style={{ fontSize: 12, opacity: 0.8 }}>Reward: {JSON.stringify(t.rewardPayload)}</div>
-                        <div style={{ marginTop: 6, fontSize: 12, opacity: 0.8 }}>Status: completed</div>
-                      </div>
-                    ))}
-                  </>
-                )}
-
-                {/* No EXPIRED tab for now by product decision */}
-              </div>
+              <EarnGrid
+                loading={tasksLoading}
+                available={Array.isArray(tasks) ? tasks.filter((t) => t.state === 'available') : []}
+                completed={Array.isArray(tasks) ? tasks.filter((t) => t.state === 'claimed') : []}
+                activeTab={offersTab}
+                onTabChange={setOffersTab}
+                onWatch={(taskId) => watchAdForTask(taskId)}
+                onClaim={(taskId) => claimTask(taskId)}
+                secondsLeft={(taskId) => {
+                  const unlock = readUnlockForTask(taskId)
+                  return unlock ? Math.max(0, Math.ceil((unlock.expiresAt - nowTick) / 1000)) : null
+                }}
+              />
             </div>
           )}
 

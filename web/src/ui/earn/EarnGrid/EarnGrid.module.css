@@ -1,0 +1,39 @@
+.container {
+  inline-size: clamp(0px, 100%, 420px);
+  min-width: 0;
+  margin: 0 auto;
+  padding: 12px 12px calc(var(--bottomnav-height, 132px) + env(safe-area-inset-bottom));
+}
+
+.header {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.tabBtn {
+  appearance: none;
+  border: 1px solid rgba(0,0,0,0.15);
+  background: var(--background);
+  color: var(--foreground);
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-weight: 600;
+}
+
+.tabBtnActive {
+  border-color: var(--accent, #ffd54a);
+  outline: 2px solid var(--accent, #ffd54a);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: clamp(12px, 4cqw, 20px);
+  container-type: inline-size;
+  padding: 16px 12px;
+}
+
+.empty {
+  opacity: 0.7;
+}

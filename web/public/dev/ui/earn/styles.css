@@ -1,0 +1,213 @@
+@font-face {
+  font-family: 'Lilita One';
+  src: url('../buttons/assets/LilitaOne-Regular.ttf') format('truetype');
+  font-display: swap;
+}
+
+/* Normalize box sizing to keep padding inside declared widths */
+*, *::before, *::after { box-sizing: border-box; }
+
+:root {
+  --bg: #0b0c10;
+  --fg: #e8e8e8;
+  --muted: #9aa0a6;
+  --accent: #ffd54a;
+  --tab-active: #1e2430;
+  --card-border: #262b36;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--fg);
+  height: 100%;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, 'Lilita One', sans-serif;
+  overflow-x: hidden; /* prevent horizontal shift from protruding badges */
+}
+
+.page {
+  min-height: 100%;
+  display: grid;
+  grid-template-rows: 1fr auto;
+}
+
+.container {
+  inline-size: clamp(0px, 100%, 420px);
+  min-width: 0; /* allow shrink inside grid */
+  margin: 0 auto;
+  padding: 12px 12px calc(96px + env(safe-area-inset-bottom));
+}
+
+/* Tiles-only layout */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: clamp(12px, 4cqw, 20px); /* relative to .tiles width */
+  container-type: inline-size;  /* enable cqw for descendants and gap */
+  list-style: none;
+  margin: 0;
+  padding: 16px 12px;
+}
+
+.tile {
+  position: relative;
+  overflow: visible; /* allow badge to protrude */
+  container-type: inline-size;
+}
+
+/* Badge */
+.tile-badge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: translate(-30%, -30%);
+  display: inline-block;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.tile-badge-img {
+  height: clamp(24px, 23cqw, 160px);
+  width: auto;
+  display: block;
+}
+
+.tile-badge-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translate(-0.2cqw, -0.6cqw);
+  font-family: 'Lilita One', sans-serif;
+  font-size: clamp(12px, 12cqw, 84px);
+  font-weight: 400;
+  color: #ffffff;
+  -webkit-text-stroke: 0.015em #000000;
+  filter: drop-shadow(0 0.08em 0 #000000);
+  line-height: 1;
+}
+
+/* Tile card rendered from Button03_Blue.png (no underlay) */
+.tile-card {
+  --cta-bottom: 12%;              /* bottom padding of CTA relative to tile height */
+  --cta-height: 20%;             /* CTA height relative to tile height */
+  --icon-gap-from-cta-top: 8%;   /* gap between CTA top and icon bottom */
+  --cta-nudge: 1.0;             /* fraction of CTA height used to nudge label */
+
+  width: 100%;
+  aspect-ratio: 130 / 140; /* preserve tile ratio across page sizes */
+  position: relative;       /* containing block for absolute children */
+  background: transparent;
+  border-radius: 0;
+  background-image: url('assets/Button03_Blue.png');
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  background-position: center;
+  padding: clamp(14px, 6cqw, 20px);
+}
+
+/* Absolute CTA positioned from tile bottom and centered (9-slice art) */
+.cta {
+  --cta-slice: clamp(6px, 4cqw, 14px);
+  appearance: none;
+  color: #ffffff;
+  height: var(--cta-height);
+  width: 80%;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: var(--cta-bottom);
+  padding: 0 12px; /* horizontal only */
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border-radius: 0;
+  border: var(--cta-slice) solid transparent;
+  border-image-source: url('assets/Button01_Green.Png');
+  border-image-slice: 24 fill;
+  border-image-repeat: stretch;
+}
+
+/* CTA text styles isolated; vertical nudge relative to CTA height */
+.cta-label {
+  font-family: 'Lilita One';
+  font-size: clamp(0px, 6vw, 26px);
+  font-weight: 400;
+  letter-spacing: -0.025em;
+  color: #ffffff;
+  -webkit-text-stroke: 0.03em #000000;
+  filter: drop-shadow(0 0.08em 0 #000000);
+  position: relative;
+  top: calc(-1 * var(--cta-nudge) * var(--cta-height));
+}
+
+/* Icon positioned by bottom offset from CTA top (no transform scaling) */
+.tile-card .icon {
+  position: absolute;
+  bottom: calc(var(--cta-bottom) + var(--cta-height) + var(--icon-gap-from-cta-top));
+  left: 0;
+  right: 0;
+  margin-left: auto;
+  margin-right: auto;
+  height: auto;
+  width: clamp(56px, 60cqw, 110px);
+  display: block;
+}
+
+/* Legacy wrapper retained but inert */
+.icon-wrap { position: static; }
+
+.bottomnav {
+  position: sticky;
+  bottom: 0;
+  padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, rgba(11,12,16,0) 0%, rgba(11,12,16,0.9) 40%, rgba(11,12,16,1) 100%);
+  /* mirror container constraints */
+  width: 100%;
+  max-width: 420px;
+  min-width: 0; /* prevent forcing extra width */
+  margin: 0 auto;
+  /* layout for direct children buttons */
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.bottomnav-inner {
+  width: 100%;
+  max-width: 420px;
+  min-width: 0;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.navbtn {
+  appearance: none;
+  border: 1px solid var(--card-border);
+  background: var(--tab-active);
+  color: var(--fg);
+  border-radius: 12px;
+  padding: 8px 10px;
+  display: grid;
+  place-items: center;
+  gap: 4px;
+  font-weight: 700;
+}
+
+.navbtn span {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.navbtn.is-active {
+  outline: 2px solid var(--accent);
+}
+
+
