@@ -2,6 +2,7 @@
 
 import React from "react";
 import styles from "./HeaderHUD.module.css";
+import { HudBar } from './HudBar/HudBar'
 
 type Counters = { coins: number; tickets: number; level: number };
 
@@ -14,44 +15,9 @@ export const HeaderHUD: React.FC<{ counters: Counters | null }>
   return (
     <div className={styles.wrap}>
       <div className={styles.topbar}>
-        {/* Level */}
-        <div className={styles.barWrap}>
-          <div className={styles.resourceBar} style={{
-            // Level visual overrides
-            // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-            ["--bar-color" as any]: "#0B143B",
-            ["--icon-url" as any]: "url('/dev/ui/header/assets/Icon_ImageIcon_LevelFrame1.png')",
-            ["--icon-size-in" as any]: "11vw",
-            ["--icon-right" as any]: "-12px",
-          }}>
-            <div className={styles.resourceText}>{`LVL ${level.toLocaleString(undefined, { minimumIntegerDigits: 1 })}`}</div>
-            <div className={styles.resourceIcon} aria-hidden="true" />
-          </div>
-        </div>
-
-        {/* Coins */}
-        <div className={styles.barWrap}>
-          <div className={styles.resourceBar} style={{
-            ["--bar-color" as any]: "#270E0C",
-            ["--icon-size-in" as any]: "13vw",
-            // ["--icon-right" as any]: "-12px",
-          }}>
-            <div className={styles.resourceText}>{coins.toLocaleString()}</div>
-            <div className={styles.resourceIcon} aria-hidden="true" />
-          </div>
-        </div>
-
-        {/* Tickets */}
-        <div className={styles.barWrap}>
-          <div className={styles.resourceBar} style={{
-            ["--bar-color" as any]: "#270E0C",
-            ["--icon-url" as any]: "url('/dev/ui/header/assets/Whisk_Purple_Ticket.png')",
-            ["--icon-size-in" as any]: "18vw",
-          }}>
-            <div className={styles.resourceText}>{tickets.toLocaleString()}</div>
-            <div className={styles.resourceIcon} aria-hidden="true" />
-          </div>
-        </div>
+        <HudBar label="Level" value={`LVL ${level.toLocaleString(undefined, { minimumIntegerDigits: 1 })}`} iconSrc="/ui/header/Icon_ImageIcon_LevelFrame1.png" tone="purple" />
+        <HudBar label="Coins" value={coins.toLocaleString()} iconSrc="/ui/header/ResourceBar_Icon_Gold.png" tone="gold" />
+        <HudBar label="Tickets" value={tickets.toLocaleString()} iconSrc="/ui/header/Whisk_Purple_Ticket.png" tone="gold" style={{ ['--icon-size' as any]: 'clamp(36px, 12cqw, 56px)' }} />
       </div>
     </div>
   );

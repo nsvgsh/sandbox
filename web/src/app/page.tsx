@@ -8,6 +8,8 @@ import { isMonetagLoaded, loadMonetagSdk, showRewardedInterstitial, categorizeMo
 import { showNotice } from '../lib/notice'
 import { BottomNavShadow } from '@/ui/BottomNav/BottomNavShadow'
 import { EarnGrid } from '@/ui/earn/EarnGrid/EarnGrid'
+import { Wallet } from '@/ui/wallet/Wallet/Wallet'
+import { ScreenContainer } from '@/ui/ScreenContainer/ScreenContainer'
 
 type Counters = {
   coins: number
@@ -578,13 +580,14 @@ export default function Home() {
     )
   }
 
+  const isWallet = activeSection === 'wallet'
   return (
     <main style={{
-      padding: 16,
-      paddingBottom: 'calc(var(--bottomnav-height, 132px) + env(safe-area-inset-bottom))',
+      padding: 0,
+      paddingBottom: 0,
       fontFamily: 'ui-sans-serif, system-ui',
-      maxWidth: 520,
-      margin: '0 auto',
+      maxWidth: undefined,
+      margin: undefined,
       minHeight: 'calc(100dvh - (var(--bottomnav-height, 132px) + env(safe-area-inset-bottom)))'
     }}>
       {!userId ? (
@@ -594,7 +597,7 @@ export default function Home() {
       ) : (
         <>
           {activeSection === 'home' && (
-            <>
+            <ScreenContainer>
               <div style={{ marginBottom: 8 }}>
                 <HeaderHUD counters={counters ? {
                   coins: Number(counters.coins ?? 0),
@@ -606,123 +609,43 @@ export default function Home() {
               <div style={{ marginTop: 8 }}>
                 <TapArea onTap={tap} next={nextThreshold} />
               </div>
-            </>
+            </ScreenContainer>
           )}
 
           {activeSection === 'offers' && (
-            <div style={{ marginTop: 8 }}>
-              <EarnGrid
-                loading={tasksLoading}
-                available={Array.isArray(tasks) ? tasks.filter((t) => t.state === 'available') : []}
-                completed={Array.isArray(tasks) ? tasks.filter((t) => t.state === 'claimed') : []}
-                activeTab={offersTab}
-                onTabChange={setOffersTab}
-                onWatch={(taskId) => watchAdForTask(taskId)}
-                onClaim={(taskId) => claimTask(taskId)}
-                secondsLeft={(taskId) => {
-                  const unlock = readUnlockForTask(taskId)
-                  return unlock ? Math.max(0, Math.ceil((unlock.expiresAt - nowTick) / 1000)) : null
-                }}
-              />
-            </div>
+            <ScreenContainer>
+              <div style={{ marginTop: 8 }}>
+                <EarnGrid
+                  loading={tasksLoading}
+                  available={Array.isArray(tasks) ? tasks.filter((t) => t.state === 'available') : []}
+                  completed={Array.isArray(tasks) ? tasks.filter((t) => t.state === 'claimed') : []}
+                  activeTab={offersTab}
+                  onTabChange={setOffersTab}
+                  onWatch={(taskId) => watchAdForTask(taskId)}
+                  onClaim={(taskId) => claimTask(taskId)}
+                  secondsLeft={(taskId) => {
+                    const unlock = readUnlockForTask(taskId)
+                    return unlock ? Math.max(0, Math.ceil((unlock.expiresAt - nowTick) / 1000)) : null
+                  }}
+                />
+              </div>
+            </ScreenContainer>
           )}
 
           {activeSection === 'wallet' && (
-            <div style={{ marginTop: 8 }}>
-              {/* Wallet Header */}
-              <div>
-                <div style={{ fontWeight: 800, fontSize: 18 }}>Wallet (balances)</div>
-                <div style={{ marginTop: 6, fontSize: 12, opacity: 0.8 }}>
-                  We store ONLY your public address. Keys and funds remain under your control.
-                </div>
-              </div>
-
-              {/* Connect Wallet */}
-              <div style={{ marginTop: 12 }}>
-                {!walletAddress ? (
-                  <button
-                    onClick={() => {
-                      const v = window.prompt('Enter your public wallet address (demo only):') || ''
-                      const trimmed = v.trim()
-                      if (!trimmed) return
-                      try { sessionStorage.setItem('wallet:address', trimmed) } catch {}
-                      setWalletAddress(trimmed)
-                    }}
-                    style={{ width: '100%', padding: '12px 14px', fontWeight: 700, borderRadius: 12, border: '1px solid rgba(0,0,0,0.15)' }}
-                  >
-                    CONNECT WALLET
-                  </button>
-                ) : (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 12, border: '1px solid rgba(0,0,0,0.1)', borderRadius: 12 }}>
-                    <div>
-                      <div style={{ fontSize: 12, opacity: 0.8 }}>Connected address</div>
-                      <div style={{ fontWeight: 600 }}>{walletAddress.length > 14 ? `${walletAddress.slice(0, 6)}…${walletAddress.slice(-6)}` : walletAddress}</div>
-                    </div>
-                    <button
-                      onClick={() => { try { sessionStorage.removeItem('wallet:address') } catch {}; setWalletAddress(null) }}
-                      style={{ padding: '8px 10px', borderRadius: 10, border: '1px solid rgba(0,0,0,0.15)' }}
-                    >
-                      Disconnect
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Balances */}
-            <div style={{ marginTop: 12 }}>
-                <div style={{ fontWeight: 700, marginBottom: 6 }}>Assets</div>
-                <div style={{ display: 'grid', gap: 8 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid rgba(0,0,0,0.1)', borderRadius: 12, padding: 10 }}>
-                    <div>◇ TON</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div>0.000</div>
-                      <button disabled style={{ opacity: 0.5, cursor: 'not-allowed' }}>DEPOSIT</button>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid rgba(0,0,0,0.1)', borderRadius: 12, padding: 10 }}>
-                    <div>₮ USDT</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div>0.000</div>
-                      <button disabled style={{ opacity: 0.5, cursor: 'not-allowed' }}>WITHDRAW</button>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid rgba(0,0,0,0.1)', borderRadius: 12, padding: 10 }}>
-                    <div>🪙 Coins</div>
-                    <div>{Number(counters?.coins ?? 0).toLocaleString()}</div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid rgba(0,0,0,0.1)', borderRadius: 12, padding: 10 }}>
-                    <div>🎟 Tickets</div>
-                    <div>{Number(counters?.tickets ?? 0).toLocaleString()}</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Tabs */}
-              <div style={{ marginTop: 16 }}>
-                <div role="tablist" aria-label="Wallet" style={{ display: 'flex', gap: 12, marginBottom: 8 }}>
-                  {(['withdrawals','activity','airdrop'] as const).map((tab) => (
-                    <button
-                      key={tab}
-                      role="tab"
-                      aria-selected={walletTab === tab}
-                      onClick={() => setWalletTab(tab)}
-                      style={{ fontWeight: walletTab === tab ? 700 : 500 }}
-                    >
-                      {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                    </button>
-                  ))}
-                </div>
-
-                {walletTab === 'withdrawals' && (
-                  <div style={{ opacity: 0.8 }}>(no requests yet)</div>
-                )}
-                {walletTab === 'activity' && (
-                  <div style={{ opacity: 0.8 }}>(no activity yet)</div>
-                )}
-                {walletTab === 'airdrop' && (
-                  <div style={{ opacity: 0.8 }}>(coming soon)</div>
-                )}
-              </div>
+            <div>
+              <Wallet
+                address={walletAddress}
+                balances={{ ton: 0, usdt: 0, coins: Number(counters?.coins ?? 0), tickets: Number(counters?.tickets ?? 0) }}
+                onConnect={() => {
+                  const v = window.prompt('Enter your public wallet address (demo only):') || ''
+                  const trimmed = v.trim()
+                  if (!trimmed) return
+                  try { sessionStorage.setItem('wallet:address', trimmed) } catch {}
+                  setWalletAddress(trimmed)
+                }}
+                onDisconnect={() => { try { sessionStorage.removeItem('wallet:address') } catch {}; setWalletAddress(null) }}
+              />
             </div>
           )}
           {typeof leveledUp === 'number' && (

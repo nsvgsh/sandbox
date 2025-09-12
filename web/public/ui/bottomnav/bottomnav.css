@@ -75,7 +75,7 @@ html, body {
   justify-content: space-around;
   align-items: flex-end;
   padding: 0 env(safe-area-inset-right) calc(12px + env(safe-area-inset-bottom)) env(safe-area-inset-left);
-  height: 4%;
+  height: auto; /* height controlled by host via --bottomnav-height */
 }
 
 /* Landscape/short-height adjustment */

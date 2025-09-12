@@ -1,0 +1,13 @@
+.root {
+  container-type: inline-size;
+}
+
+.container {
+  inline-size: clamp(0px, 100%, 420px);
+  min-width: 0;
+  margin: 0 auto;
+  padding: 12px 12px calc(96px + env(safe-area-inset-bottom));
+  position: relative;
+}
+
+

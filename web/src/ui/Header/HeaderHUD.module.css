@@ -1,22 +1,24 @@
 .wrap {
-  width: 100%;
-  max-width: 520px;
+  container-type: inline-size;
+  inline-size: clamp(0px, 100%, 420px);
+  min-width: 0;
   margin: 0 auto;
 }
 
 .topbar {
   display: grid;
   /* grid-template-columns: repeat(3, minmax(0, 1fr)); */
-  grid-template-columns: var(--col1, minmax(0, 17fr)) var(--col2, minmax(0, 15fr)) var(--col3, minmax(0, 13fr));
-  gap: 5vw;
+  grid-template-columns: var(--col1, minmax(0, 35fr)) var(--col2, minmax(0, 37fr)) var(--col3, minmax(0, 28fr));
+  gap: 3cqw;
+  padding: 0 1cqw;
 
   /* proportional sizing tokens; tweak here globally */
-  --bar-min-height: 30px;
-  --icon-size-in: clamp(36px, 9vw, 48px);
-  --text-size: 6vw;
-  --text-left: 16px;
-  --text-right: 16px;
-  --icon-right: -18px;
+  --bar-min-height: clamp(26px, 7cqw, 34px);
+  --icon-size-in: clamp(28px, 9cqw, 42px);
+  --text-size: clamp(16px, 5.7cqw, 23px);
+  --text-left: clamp(8px, 4cqw, 16px);
+  --text-right: clamp(8px, 4cqw, 16px);
+  --icon-right: clamp(-12px, -4cqw, -18px);
 }
 
 .barWrap { min-width: 0; }
@@ -41,7 +43,7 @@
   font-size: var(--text-size);
   color: #ffffff;
   line-height: 1;
-  text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000;
+  /* text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000; */
   user-select: none;
   white-space: nowrap;
   overflow: hidden;
@@ -55,7 +57,7 @@
   transform: translateY(-50%);
   width: var(--icon-size);
   height: var(--icon-size);
-  background: var(--icon-url, url('/dev/ui/header/assets/ResourceBar_Icon_Gold.png')) center/contain no-repeat;
+  background: var(--icon-url, url('/ui/header/ResourceBar_Icon_Gold.png')) center/contain no-repeat;
   filter: drop-shadow(0 6px 10px rgba(0,0,0,0.35));
   pointer-events: none;
 }

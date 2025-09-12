@@ -74,7 +74,41 @@ export function BottomNavShadow({ active, onSelect }: { active: TabKey; onSelect
 
     const shadow = shadowRef.current
     if (!shadow) return
-    // Update active state by adjusting font-weight/opacity via style vars per button
+    function recomputeHeight() {
+      try {
+        if (!host) return
+        const nav = shadow.querySelector<HTMLElement>('nav.bottomNav')
+        const img = shadow.querySelector<HTMLImageElement>('img.btnBg')
+        if (!nav || !img) return
+        const btnEl = shadow.querySelector<HTMLButtonElement>('button.imgBtn')
+        const navWidth = nav.clientWidth
+        const measuredBtnWidth = btnEl ? btnEl.clientWidth : 0
+        const btnWidth = measuredBtnWidth > 0 ? measuredBtnWidth : navWidth * 0.24
+        const nw = img.naturalWidth
+        const nh = img.naturalHeight
+        if (!nw || !nh) return
+        const btnBgHeight = btnWidth * (nh / nw)
+        const pb = parseFloat(getComputedStyle(nav).paddingBottom || '0')
+        const h = Math.round(pb + btnBgHeight / 3)
+        host.style.height = `${h}px`
+        try { document.documentElement.style.setProperty('--bottomnav-height', `${h}px`) } catch {}
+      } catch {}
+    }
+    const bg = shadow.querySelector<HTMLImageElement>('img.btnBg')
+    if (bg) {
+      if (bg.complete) {
+        recomputeHeight()
+      } else {
+        bg.addEventListener('load', recomputeHeight, { once: true })
+      }
+    }
+    const ro = new ResizeObserver(() => recomputeHeight())
+    const navEl = shadow.querySelector<HTMLElement>('nav.bottomNav')
+    const firstBtn = shadow.querySelector<HTMLButtonElement>('button.imgBtn')
+    if (navEl) ro.observe(navEl)
+    if (firstBtn) ro.observe(firstBtn)
+    window.addEventListener('resize', recomputeHeight)
+    // Update active state (visual emphasis can be added later)
     const buttons = shadow.querySelectorAll<HTMLButtonElement>('button.imgBtn')
     buttons.forEach((btn) => {
       const key = btn.getAttribute('data-key') as TabKey | null
@@ -87,6 +121,10 @@ export function BottomNavShadow({ active, onSelect }: { active: TabKey; onSelect
         label.style.fontWeight = '400'
       }
     })
+    return () => {
+      try { window.removeEventListener('resize', recomputeHeight) } catch {}
+      try { ro.disconnect() } catch {}
+    }
   }, [active, onSelect])
 
   return (

@@ -1,0 +1,42 @@
+.cta {
+  --cta-slice: clamp(6px, 4cqw, 14px);
+  --cta-nudge: 0.18;
+  appearance: none;
+  color: #ffffff;
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 14 / 3;
+  container-type: inline-size;
+  --cta-height: calc(100cqw * 3 / 17);
+  padding: 0 12px;
+  cursor: pointer;
+  position: relative;
+  display: block;
+  background: transparent;
+  border-radius: 0;
+  border: var(--cta-slice) solid transparent;
+  border-image-source: url('/ui/wallet/Button01_Yellow.Png');
+  border-image-slice: 24 fill;
+  border-image-repeat: stretch;
+}
+
+.label {
+  font-family: 'Lilita One';
+  font-size: clamp(0px, calc(var(--cta-height) * 0.65), 27px);
+  font-weight: 400;
+  letter-spacing: -0.025em;
+  color: #ffffff;
+  -webkit-text-stroke: 0.018em #000000;
+  filter: drop-shadow(0 0.07em 0 #000000);
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  white-space: nowrap;
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transform: translateY(calc(-1 * var(--cta-nudge, 0.18) * 100%));
+}
+
+

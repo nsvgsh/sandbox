@@ -1,0 +1,59 @@
+.pair { 
+  position: relative; 
+  display: inline-flex; 
+  align-items: center; 
+  gap: var(--pair-gap, clamp(6px, 1cqw, 12px));
+  min-width: 0; 
+  padding: 8px 12px 8px 0; 
+}
+
+.pair::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 100%;
+  /* Bar height tied to text size globally; adjustable via --bar-scale */
+  height: calc(var(--text-size, clamp(12px, 6cqw, 20px)) * var(--bar-scale, 1.8));
+  background: var(--bar-color, #270E0C);
+  border-radius: var(--bar-radius, 22px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.35);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.icon {
+  position: relative;
+  z-index: 1;
+  display: block;
+  /* Icon size tied to text size; override with --icon-size or --icon-scale */
+  width: var(--icon-size, calc(var(--text-size, clamp(12px, 6cqw, 20px)) * var(--icon-scale, 1.8)));
+  height: var(--icon-size, calc(var(--text-size, clamp(12px, 6cqw, 20px)) * var(--icon-scale, 1.8)));
+  object-fit: contain;
+  filter: drop-shadow(0 6px 10px rgba(0,0,0,0.35));
+}
+
+.text {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  font-family: 'Lilita One', sans-serif;
+  font-size: var(--text-size, clamp(12px, 6cqw, 20px));
+  color: #ffffff;
+  line-height: 1;
+  /* text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000; */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: 'Lilita One';
+  letter-spacing: -0.025em;
+  /* -webkit-text-stroke: 0.01em #000000; */
+  filter: drop-shadow(0 0.07em 0 #000000);
+}
+
+.frame { display: none; }
+
+.skeleton { background: linear-gradient(90deg, rgba(255,255,255,0.06), rgba(0,0,0,0.10)); }
+
+
