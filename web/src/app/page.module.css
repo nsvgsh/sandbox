@@ -56,6 +56,19 @@
   font-weight: 600;
 }
 
+.playerLabel {
+  font-family: 'Lilita One', sans-serif;
+  font-size: clamp(12px, 6cqw, 20px);
+  color: #ffffff;
+  line-height: 1;
+  letter-spacing: -0.025em;
+  -webkit-text-stroke: 0.015em #000000;
+  filter: drop-shadow(0 0.07em 0 #000000);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .ctas {
   display: flex;
   gap: 16px;

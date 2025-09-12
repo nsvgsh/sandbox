@@ -1,6 +1,5 @@
 'use client'
 import { useEffect, useState, useRef } from 'react'
-import { Button } from '@/ui/Button/Button'
 import { HeaderHUD } from '@/ui/Header/HeaderHUD'
 import { LevelUpModal } from '@/ui/Modal/Modal'
 import { normalizeCounters, parsePublicConfig, fetchJsonWithRetry } from '../lib/apiClient'
@@ -10,6 +9,8 @@ import { BottomNavShadow } from '@/ui/BottomNav/BottomNavShadow'
 import { EarnGrid } from '@/ui/earn/EarnGrid/EarnGrid'
 import { Wallet } from '@/ui/wallet/Wallet/Wallet'
 import { ScreenContainer } from '@/ui/ScreenContainer/ScreenContainer'
+import pageStyles from './page.module.css'
+import { EmojiClicker } from '@/ui/Clicker'
 
 type Counters = {
   coins: number
@@ -29,38 +30,7 @@ type DebugState = {
   nextTemplates?: { level: number; templateId: string | null; payload: unknown }[]
 } | null
 
-// Lightweight presentational scaffolding components for the main screen (Home/Game)
-// function HeaderCounters({ counters }: { counters: Counters }) {
-//   const coins = Number(counters?.coins ?? 0)
-//   const tickets = Number(counters?.tickets ?? 0)
-//   const level = Number(counters?.level ?? 0)
-//   const boxStyle: React.CSSProperties = {
-//     flex: 1,
-//     padding: 12,
-//     borderRadius: 12,
-//     border: '1px solid rgba(0,0,0,0.1)',
-//     background: 'rgba(0,0,0,0.02)'
-//   }
-//   const rowStyle: React.CSSProperties = { display: 'flex', gap: 8 }
-//   const labelStyle: React.CSSProperties = { fontSize: 12, opacity: 0.8 }
-//   const valueStyle: React.CSSProperties = { fontWeight: 700, marginTop: 4 }
-//   return (
-//     <div style={rowStyle}>
-//       <div style={boxStyle}>
-//         <div style={labelStyle}>🪙 Coins</div>
-//         <div style={valueStyle}>{coins.toLocaleString()}</div>
-//       </div>
-//       <div style={boxStyle}>
-//         <div style={labelStyle}>🎟 Tickets</div>
-//         <div style={valueStyle}>{tickets.toLocaleString()}</div>
-//       </div>
-//       <div style={boxStyle}>
-//         <div style={labelStyle}>🆙 Level</div>
-//         <div style={valueStyle}>{level.toLocaleString(undefined, { minimumIntegerDigits: 2 })}</div>
-//       </div>
-//     </div>
-//   )
-// }
+ 
 
 function AvatarRow() {
   const row: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 12, padding: '10px 2px' }
@@ -73,39 +43,15 @@ function AvatarRow() {
     justifyContent: 'center',
     background: 'rgba(0,0,0,0.08)'
   }
-  const name: React.CSSProperties = { fontWeight: 600 }
   return (
     <div style={row}>
       <div style={avatar}>👤</div>
-      <div style={name}>Player</div>
+      <div className={pageStyles.playerLabel}>Player</div>
     </div>
   )
 }
 
-function TapArea({ onTap, next }: { onTap: () => void; next: NextThreshold }) {
-  const area: React.CSSProperties = {
-    height: 180,
-    borderRadius: 16,
-    border: '2px dashed rgba(0,0,0,0.2)',
-    background: 'rgba(0,0,0,0.03)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    userSelect: 'none',
-    cursor: 'pointer'
-  }
-  const hint: React.CSSProperties = { marginTop: 8, textAlign: 'center', opacity: 0.8, fontSize: 12 }
-  const wrapper: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: 8 }
-  const nextText = next ? `Next: L${next.level} • ${next.coins} coins` : 'Next: loading…'
-  return (
-    <div style={wrapper}>
-      <div onClick={onTap} style={area} aria-label="Tap area to earn coins">
-        <div style={{ fontSize: 18, fontWeight: 700 }}>TAP AREA</div>
-      </div>
-      <div style={hint}>{nextText}</div>
-    </div>
-  )
-}
+ 
 
 // Inline BottomNav replaced by Shadow DOM component
 
@@ -113,6 +59,7 @@ function TapArea({ onTap, next }: { onTap: () => void; next: NextThreshold }) {
 
 export default function Home() {
   const [mounted, setMounted] = useState(false)
+  const [clickerSize, setClickerSize] = useState<number>(156)
   const [userId, setUserId] = useState<string | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [clientSeq, setClientSeq] = useState<number>(0)
@@ -504,6 +451,22 @@ export default function Home() {
 
   useEffect(() => setMounted(true), [])
 
+  // Compute dynamic clicker size for ergonomics (thumb-zone sizing)
+  useEffect(() => {
+    function recalc() {
+      try {
+        const vw = typeof window !== 'undefined' ? window.innerWidth : 360
+        const vh = typeof window !== 'undefined' ? window.innerHeight : 640
+        const base = Math.min(vw, vh) * 0.4 // 40% of the smaller viewport side
+        const size = Math.max(128, Math.min(200, Math.round(base)))
+        setClickerSize(size)
+      } catch {}
+    }
+    recalc()
+    window.addEventListener('resize', recalc)
+    return () => window.removeEventListener('resize', recalc)
+  }, [])
+
   // Read public config once and cache timers/limits
   useEffect(() => {
     void (async () => {
@@ -607,7 +570,17 @@ export default function Home() {
               </div>
               <AvatarRow />
               <div style={{ marginTop: 8 }}>
-                <TapArea onTap={tap} next={nextThreshold} />
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, paddingTop: '10dvh', paddingBottom: 'calc(24px + env(safe-area-inset-bottom))' }}>
+                  <EmojiClicker
+                    size={clickerSize}
+                    onTap={() => { void tap() }}
+                    haptics={true}
+                  />
+                  <div style={{ fontSize: 12, opacity: 0.75 }}>Tap to earn coins</div>
+                  {nextThreshold ? (
+                    <div style={{ fontSize: 11, opacity: 0.6 }}>Next: L{nextThreshold.level} • {nextThreshold.coins} coins</div>
+                  ) : null}
+                </div>
               </div>
             </ScreenContainer>
           )}
