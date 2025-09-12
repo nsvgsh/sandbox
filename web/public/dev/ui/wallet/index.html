@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sandbox • Wallet</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="page">
+    <main class="container" role="main">
+      <!-- <div class="glow-shape" aria-hidden="true"></div> -->
+      <section class="panel panel-wallet" aria-label="Wallet overview">
+        <header class="header" aria-label="Wallet header">
+          <h1 class="title">Wallet</h1>
+          <p class="note" role="note">We store only your public wallet address.<br>You are the only one with access to your funds.</p>
+        </header>
+
+        <section class="connect" aria-label="Connect wallet">
+          <button class="cta" type="button" aria-label="Connect wallet"><span class="cta-label">Connect wallet</span></button>
+        </section>
+
+        <div class="divider" role="separator" aria-hidden="true"></div>
+
+        <section class="assets" aria-label="Assets">
+          <h2 class="section-title">Assets</h2>
+          <ul class="asset-list">
+          <li class="asset-row">
+            <img class="asset-icon" src="assets/Ton Icon.png" alt="TON" draggable="false" />
+            <div class="asset-label">0.000 TON</div>
+            <button class="asset-action" type="button" aria-label="Deposit TON"><span class="asset-action-label">Deposit</span></button>
+          </li>
+          <li class="asset-row">
+            <img class="asset-icon" src="assets/USDT Icons.png" alt="USDT" draggable="false" />
+            <div class="asset-label">0.000 USDT</div>
+            <button class="asset-action" type="button" aria-label="Withdraw USDT"><span class="asset-action-label">Withdraw</span></button>
+          </li>
+          <li class="asset-row">
+            <img class="asset-icon" src="assets/Icon_Golds.Png" alt="Coins" draggable="false" />
+            <div class="asset-label">12 345 Coins</div>
+            <button class="asset-action" type="button" aria-label="Convert Coins"><span class="asset-action-label">Convert</span></button>
+          </li>
+          <li class="asset-row">
+            <img class="asset-icon" src="../header/assets/Whisk_Purple_Ticket.png" alt="Tickets" draggable="false" />
+            <div class="asset-label">27 Tickets</div>
+            <button class="asset-action" type="button" aria-label="Get more Tickets"><span class="asset-action-label">Get more</span></button>
+          </li>
+          </ul>
+        </section>
+      </section>
+
+      <section class="panel panel-tabs" aria-label="Wallet tabs">
+        <section class="tabs" aria-label="Tabs">
+          <div class="tablist" role="tablist" aria-label="Wallet sections">
+            <button class="tab is-active" role="tab" aria-selected="true" aria-controls="panel-withdrawals" id="tab-withdrawals">Withdrawals</button>
+            <button class="tab" role="tab" aria-selected="false" aria-controls="panel-deposits" id="tab-deposits">Deposits</button>
+            <button class="tab" role="tab" aria-selected="false" aria-controls="panel-airdrop" id="tab-airdrop">Airdrop</button>
+          </div>
+          <div class="tabpanels">
+            <div class="tabpanel is-active" role="tabpanel" id="panel-withdrawals" aria-labelledby="tab-withdrawals">
+              <p class="empty">No withdrawal requests yet.</p>
+              <p class="info">Payouts are processed within 72 hours after request.</p>
+            </div>
+            <div class="tabpanel" role="tabpanel" id="panel-deposits" aria-labelledby="tab-deposits" hidden>
+              <p class="empty">No deposits yet.</p>
+            </div>
+            <div class="tabpanel" role="tabpanel" id="panel-airdrop" aria-labelledby="tab-airdrop" hidden>
+              <p class="empty">No airdrops available.</p>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <nav class="bottomnav" aria-label="Bottom navigation">
+      <button class="navbtn" aria-label="Home">🏠<span>Home</span></button>
+      <button class="navbtn" aria-label="Offers">🎁<span>Offers</span></button>
+      <button class="navbtn is-active" aria-label="Wallet">👛<span>Wallet</span></button>
+    </nav>
+  </div>
+
+  <script>
+    (function() {
+      var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
+      var panels = {
+        withdrawals: document.getElementById('panel-withdrawals'),
+        deposits: document.getElementById('panel-deposits'),
+        airdrop: document.getElementById('panel-airdrop')
+      };
+      function formatAssetLabels() {
+        var nodes = document.querySelectorAll('.asset-label');
+        nodes.forEach(function(node) {
+          var text = node.textContent;
+          var formatted = text.replace(/\d[\d\s]*(?:\.\d+)?/g, function(m) {
+            var cleaned = m.replace(/\s+/g, '');
+            var parts = cleaned.split('.');
+            var intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            return parts.length > 1 ? intPart + '.' + parts[1] : intPart;
+          });
+          // Ensure single space between number and trailing asset name
+          formatted = formatted.replace(/(\d(?:,\d{3})*(?:\.\d+)?)[\s]*(?=[A-Za-z])/g, '$1 ');
+          node.textContent = formatted;
+        });
+      }
+      function activate(name) {
+        tabs.forEach(function(btn){
+          var isActive = btn.id === 'tab-' + name;
+          btn.classList.toggle('is-active', isActive);
+          btn.setAttribute('aria-selected', String(isActive));
+        });
+        Object.keys(panels).forEach(function(key){
+          var panel = panels[key];
+          var show = key === name;
+          panel.classList.toggle('is-active', show);
+          panel.hidden = !show;
+        });
+      }
+      tabs.forEach(function(btn){
+        btn.addEventListener('click', function(){
+          var name = btn.id.replace('tab-','');
+          activate(name);
+        });
+      });
+      formatAssetLabels();
+    })();
+  </script>
+</body>
+</html>
+
+

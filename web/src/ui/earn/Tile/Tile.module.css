@@ -58,7 +58,7 @@
 }
 
 .ctaLabel {
-  font-family: 'Lilita One', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  font-family: 'Lilita One';
   font-size: clamp(0px, 6vw, 26px);
   font-weight: 400;
   letter-spacing: -0.025em;

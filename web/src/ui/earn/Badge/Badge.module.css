@@ -16,7 +16,7 @@
   align-items: center;
   justify-content: center;
   transform: translate(-0.2cqw, -0.6cqw);
-  font-family: 'Lilita One', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  font-family: 'Lilita One';
   font-size: clamp(12px, 12cqw, 84px);
   font-weight: 400;
   color: #ffffff;

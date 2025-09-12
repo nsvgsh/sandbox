@@ -42,5 +42,4 @@
 | UI-BOTTOMNAV-SANDBOX | Added single-file bottomnav sandbox (template + inline script) |
 | OFFERS-REFRESH-0001 | EARN: refresh tasks on entry and on level change |
 | UI-EARN-TILES | Refactored Earn sandbox to 2-column tiles, removed tabs/cards; badge and content rendered over Button03_Blue.png; no visual underlay |
-
 | UI_EARN_PHASE2-001 | Ported Earn sandbox to React components and integrated under BottomNav EARN |
