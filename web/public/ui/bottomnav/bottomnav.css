@@ -27,6 +27,8 @@ html, body {
   cursor: pointer;
   line-height: 0;
   width: 24%;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--nav-press-duration, 120ms) var(--nav-press-ease, cubic-bezier(.2,.8,.2,1));
 }
 
 /* Background image fills the button; aspect preserved */
@@ -63,19 +65,70 @@ html, body {
   color: var(--label-color, #ffffff);
   -webkit-text-stroke: 0.015em #000000;
   filter: drop-shadow(0 0.08em 0 #000000);
+  transition: color var(--nav-indicator-duration, 200ms) var(--nav-indicator-ease, cubic-bezier(.2,.8,.2,1));
 }
 
 .bottomNav {
-  position: fixed;
-  left: 50%;
-  transform: translateX(-50%);
+  position: absolute; /* inside fixed host */
+  left: 0;
+  right: 0;
   bottom: 0;
-  width: min(100vw, 420px);
+  margin-left: auto;
+  margin-right: auto;
+  width: min(100%, 420px);
   display: flex;
   justify-content: space-around;
   align-items: flex-end;
   padding: 0 env(safe-area-inset-right) calc(12px + env(safe-area-inset-bottom)) env(safe-area-inset-left);
   height: auto; /* height controlled by host via --bottomnav-height */
+  /* Indicator host */
+  --indicator-height: 3px;
+  --indicator-color: rgba(255,255,255,0.9);
+}
+
+/* Simple underline indicator per active button using pseudo-element */
+.imgBtn::after {
+  content: "";
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: max(2px, env(safe-area-inset-bottom));
+  height: var(--indicator-height);
+  background: transparent;
+  border-radius: 999px;
+  transform: scaleX(0.8);
+  opacity: 0;
+  transition: opacity var(--nav-indicator-duration, 200ms) var(--nav-indicator-ease, cubic-bezier(.2,.8,.2,1));
+}
+.imgBtn[data-state="active"]::after {
+  background: var(--indicator-color);
+  opacity: 1;
+}
+
+/* Active state styles */
+.imgBtn[data-state="active"] .btnLabel {
+  color: var(--nav-active-fg, #ffffff);
+}
+
+/* Tap effect: quick scale with reduced-motion guard */
+.imgBtn[data-pressed="true"] {
+  transform: scale(var(--nav-press-scale, 0.96));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .imgBtn {
+    transition: none;
+  }
+  .imgBtn[data-pressed="true"] {
+    transform: none;
+  }
+}
+
+/* Focus-visible ring distinct from tap overlay */
+.imgBtn:focus-visible {
+  outline: 2px solid rgba(255,255,255,0.9);
+  outline-offset: 2px;
+  border-radius: 12px;
 }
 
 /* Landscape/short-height adjustment */

@@ -27,7 +27,14 @@ export function BottomNavShadow({ active, onSelect }: { active: TabKey; onSelect
         const btn = document.createElement('button')
         btn.className = 'imgBtn'
         btn.type = 'button'
+        btn.setAttribute('aria-label', label)
         btn.addEventListener('click', (e) => { e.preventDefault(); onSelect(key) })
+        // Tap feedback: pressed state
+        const clearPressed = () => { try { btn.removeAttribute('data-pressed') } catch {} }
+        btn.addEventListener('pointerdown', () => { btn.setAttribute('data-pressed', 'true') })
+        btn.addEventListener('pointerup', clearPressed)
+        btn.addEventListener('pointercancel', clearPressed)
+        btn.addEventListener('pointerleave', clearPressed)
 
         const bg = document.createElement('img')
         bg.className = 'btnBg'
@@ -108,17 +115,20 @@ export function BottomNavShadow({ active, onSelect }: { active: TabKey; onSelect
     if (navEl) ro.observe(navEl)
     if (firstBtn) ro.observe(firstBtn)
     window.addEventListener('resize', recomputeHeight)
-    // Update active state (visual emphasis can be added later)
+    // Update active state attributes for accessibility and styling hooks
     const buttons = shadow.querySelectorAll<HTMLButtonElement>('button.imgBtn')
     buttons.forEach((btn) => {
       const key = btn.getAttribute('data-key') as TabKey | null
       if (!key) return
-      const label = btn.querySelector<HTMLElement>('.btnLabel')
-      if (!label) return
-      if (key === active) {
-        label.style.fontWeight = '400'
+      const isActive = key === active
+      if (isActive) {
+        btn.setAttribute('data-state', 'active')
+        btn.setAttribute('aria-current', 'page')
+        btn.setAttribute('aria-selected', 'true')
       } else {
-        label.style.fontWeight = '400'
+        btn.removeAttribute('data-state')
+        btn.removeAttribute('aria-current')
+        btn.setAttribute('aria-selected', 'false')
       }
     })
     return () => {

@@ -13,12 +13,15 @@
 
 .tabBtn {
   appearance: none;
-  border: 1px solid rgba(0,0,0,0.15);
+  border: 1px solid rgba(0, 0, 0, 0.449);
   background: var(--background);
-  color: var(--foreground);
+  color: #ffffff;
   border-radius: 12px;
   padding: 8px 12px;
-  font-weight: 600;
+  font-family: 'Lilita One';
+  letter-spacing: 0.025em;
+  -webkit-text-stroke: 0.04em #18345c;
+  /* filter: drop-shadow(0 0.07em 0 #000000); */
 }
 
 .tabBtnActive {
