@@ -22,7 +22,7 @@
 
 .label {
   font-family: 'Lilita One';
-  font-size: clamp(0px, calc(var(--cta-height) * 0.65), 27px);
+  font-size: clamp(0px, calc(var(--cta-height) * 0.65), 270px);
   font-weight: 400;
   letter-spacing: -0.025em;
   color: #ffffff;

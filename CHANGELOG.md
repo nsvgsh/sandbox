@@ -45,3 +45,4 @@
 | UI_EARN_PHASE2-001 | Ported Earn sandbox to React components and integrated under BottomNav EARN |
 | UI-EARN-0001 | Adjusted Earn tabs to Lilita One with stroke/shadow; empty state typography updated |
 | UI-BOTTOMNAV-active_tap_states | Added active indicator and tap feedback to bottom nav |
+| UI-LEVELUP-MODAL-POLISH-001 | Constrained modal to 420px, added 3-row grid (50/30/20), tokenized colors/typography, extracted RewardPill, removed inline styles |

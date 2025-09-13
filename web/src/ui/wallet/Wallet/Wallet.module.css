@@ -1,8 +1,4 @@
-@font-face {
-  font-family: 'Lilita One';
-  src: url('/ui/buttons/assets/LilitaOne-Regular.ttf') format('truetype');
-  font-display: swap;
-}
+/* Font-face is defined globally in globals.css; avoid duplicate declarations here */
 
 .root {
   /* Tokens mirrored from sandbox styles.css */

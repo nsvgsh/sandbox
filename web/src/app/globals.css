@@ -1,3 +1,9 @@
+@font-face {
+  font-family: 'Lilita One';
+  src: url('/dev/ui/buttons/assets/LilitaOne-Regular.ttf') format('truetype');
+  font-display: swap;
+}
+
 /*
   Single-source theme tokens (game palette)
   Edit these tokens to change global colors app-wide.
