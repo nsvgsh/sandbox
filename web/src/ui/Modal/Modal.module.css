@@ -12,10 +12,10 @@
 }
 
 .card {
-  inline-size: clamp(0px, 100%, 420px);
+  inline-size: clamp(0px, 100%, 388px);
   /* 592px @ 420px width: maintain aspect as width scales down; clamp to viewport */
   block-size: min(calc(100cqw * 592 / 420), calc(90dvh - (env(safe-area-inset-top) + env(safe-area-inset-bottom))));
-  max-height: calc(90dvh - (env(safe-area-inset-top) + env(safe-area-inset-bottom)));
+  max-height: min(592px, calc(90dvh - (env(safe-area-inset-top) + env(safe-area-inset-bottom))));
   overflow: hidden;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
