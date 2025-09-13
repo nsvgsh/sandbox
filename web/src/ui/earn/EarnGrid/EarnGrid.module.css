@@ -24,6 +24,9 @@
   /* filter: drop-shadow(0 0.07em 0 #000000); */
 }
 
+/* Tap feedback mirroring nav/buttons */
+.tabBtn[data-pressed="true"] { filter: brightness(0.95); transform: translateY(1px); }
+
 .tabBtnActive {
   border-color: var(--accent, #ffd54a);
   outline: 2px solid var(--accent, #ffd54a);

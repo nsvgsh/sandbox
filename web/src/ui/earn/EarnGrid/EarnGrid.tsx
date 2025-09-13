@@ -53,6 +53,10 @@ export function EarnGrid(props: {
             aria-selected={activeTab === tab}
             className={[styles.tabBtn, activeTab === tab ? styles.tabBtnActive : ''].join(' ')}
             onClick={() => onTabChange(tab)}
+            onPointerDown={(e) => { try { e.currentTarget.setAttribute('data-pressed', 'true') } catch {} }}
+            onPointerUp={(e) => { try { e.currentTarget.removeAttribute('data-pressed') } catch {} }}
+            onPointerCancel={(e) => { try { e.currentTarget.removeAttribute('data-pressed') } catch {} }}
+            onPointerLeave={(e) => { try { e.currentTarget.removeAttribute('data-pressed') } catch {} }}
           >
             {tab.toUpperCase()}
           </button>

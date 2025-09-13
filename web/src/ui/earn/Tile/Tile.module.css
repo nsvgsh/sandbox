@@ -57,6 +57,12 @@
   border-image-repeat: stretch;
 }
 
+/* Tap feedback mirroring Button */
+.cta[data-pressed="true"] {
+  filter: brightness(0.95);
+  transform: translate(-50%, 1px);
+}
+
 .ctaLabel {
   font-family: 'Lilita One';
   font-size: clamp(0px, 6vw, 26px);

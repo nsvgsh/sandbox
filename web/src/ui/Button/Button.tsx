@@ -35,8 +35,37 @@ export const Button: React.FC<ButtonProps> = ({
     .filter(Boolean)
     .join(" ");
 
+  const clearPressed = (el: HTMLButtonElement | null) => {
+    try { el?.removeAttribute('data-pressed') } catch {}
+  }
+  const handlePointerDown: React.PointerEventHandler<HTMLButtonElement> = (e) => {
+    try { e.currentTarget.setAttribute('data-pressed', 'true') } catch {}
+    rest.onPointerDown?.(e as any)
+  }
+  const handlePointerUp: React.PointerEventHandler<HTMLButtonElement> = (e) => {
+    clearPressed(e.currentTarget)
+    rest.onPointerUp?.(e as any)
+  }
+  const handlePointerCancel: React.PointerEventHandler<HTMLButtonElement> = (e) => {
+    clearPressed(e.currentTarget)
+    rest.onPointerCancel?.(e as any)
+  }
+  const handlePointerLeave: React.PointerEventHandler<HTMLButtonElement> = (e) => {
+    clearPressed(e.currentTarget)
+    rest.onPointerLeave?.(e as any)
+  }
+
   return (
-    <button className={`${classes}${className ? ` ${className}` : ""}`} style={inlineStyle} disabled={disabled || isLoading} {...rest}>
+    <button
+      className={`${classes}${className ? ` ${className}` : ""}`}
+      style={inlineStyle}
+      disabled={disabled || isLoading}
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerCancel}
+      onPointerLeave={handlePointerLeave}
+      {...rest}
+    >
       {isLoading ? "…" : children}
     </button>
   );

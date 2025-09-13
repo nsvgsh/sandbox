@@ -20,6 +20,8 @@
   border-image-repeat: stretch;
 }
 
+.cta[data-pressed="true"] { filter: brightness(0.95); transform: translateY(1px); }
+
 .label {
   font-family: 'Lilita One';
   font-size: clamp(0px, calc(var(--cta-height) * 0.65), 270px);
