@@ -10,9 +10,12 @@ export interface LevelUpModalProps {
   rewards: { coins?: number; tickets?: number };
   onClaimBase: () => void;
   onStartAd: () => void;
+  claimLabel?: string;
+  bonusLabel?: string;
+  singleAction?: boolean;
 }
 
-export const LevelUpModal: React.FC<LevelUpModalProps> = ({ level, rewards, onClaimBase, onStartAd }) => {
+export const LevelUpModal: React.FC<LevelUpModalProps> = ({ level, rewards, onClaimBase, onStartAd, claimLabel, bonusLabel, singleAction }) => {
   return (
     <div role="dialog" aria-modal="true" aria-labelledby="levelup-title" aria-describedby="levelup-rewards" className={styles.overlay}>
       <div className={styles.card}>
@@ -42,14 +45,16 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({ level, rewards, onCl
         <div className={styles.actions}>
           <div className={styles.actionsItem}>
             <Button variant="primary" className={styles.ctaButton} width="100%" onClick={onClaimBase}>
-              <span className={styles.actionLabel}>Claim</span>
+              <span className={styles.actionLabel}>{claimLabel ?? 'Claim'}</span>
             </Button>
           </div>
-          <div className={styles.actionsItem}>
-            <Button variant="confirm" className={styles.ctaButton} width="100%" onClick={onStartAd}>
-              <span className={styles.actionLabel}>BONUS</span>
-            </Button>
-          </div>
+          {!singleAction && (
+            <div className={styles.actionsItem}>
+              <Button variant="confirm" className={styles.ctaButton} width="100%" onClick={onStartAd}>
+                <span className={styles.actionLabel}>{bonusLabel ?? 'BONUS'}</span>
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </div>

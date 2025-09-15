@@ -39,6 +39,7 @@
 | UI-BOTTOMNAV-0001 | Introduced bottom nav color tokens and applied in page |
 | UI-BOTTOMNAV-0002 | Added --bottomnav-height token; nav uses fixed height; main layout references token |
 | UI-BOTTOMNAV-0003 | Replaced inline shadow with .bottomNav::before gradient overlay |
+| UI-MONETAG-0001 | Hardened loader (explicit fn, cache-bust, readiness) and error categories |
 | UI-BOTTOMNAV-SANDBOX | Added single-file bottomnav sandbox (template + inline script) |
 | OFFERS-REFRESH-0001 | EARN: refresh tasks on entry and on level change |
 | UI-EARN-TILES | Refactored Earn sandbox to 2-column tiles, removed tabs/cards; badge and content rendered over Button03_Blue.png; no visual underlay |

@@ -139,7 +139,7 @@
 /* Maintain CTA aspect ratio: height/width = 55/172 ≈ 0.31977 */
 .ctaButton { 
   width: 100%;
-  height: calc(100cqw * 70 / 172) !important;
+  height: clamp(0px, 100cqw * 70 / 172, 70px) !important;
 }
 
 

@@ -629,8 +629,14 @@ export default function Home() {
                   coins: Number(((debugState?.lastLevel?.reward_payload as any)?.coins) ?? 0) * 2,
                   tickets: Number(((debugState?.lastLevel?.reward_payload as any)?.tickets) ?? 0) * 2,
                 }}
-                onClaimBase={async () => { /* not used in confirm state */ }}
-                onStartAd={claimLevelBonusX2}
+                onClaimBase={claimLevelBonusX2}
+                onStartAd={async () => { setPendingBonusConfirm(false); setLeveledUp(null); setBonusImpressionId(null); setBonusExpiresAt(null); await loadCounters() }}
+                claimLabel={(() => {
+                  const secs = bonusExpiresAt ? Math.max(0, Math.ceil((bonusExpiresAt - nowTick) / 1000)) : null
+                  return secs !== null ? `Claim x2 (${secs}s)` : 'Claim x2'
+                })()}
+                bonusLabel={'Skip'}
+                singleAction={true}
               />
             ) : (
               <LevelUpModal
@@ -641,6 +647,8 @@ export default function Home() {
                 }}
                 onClaimBase={async () => { setLeveledUp(null); await loadCounters() }}
                 onStartAd={startLevelBonus}
+                claimLabel={'Claim'}
+                bonusLabel={'BONUS'}
               />
             )
           )}
