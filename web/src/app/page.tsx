@@ -480,15 +480,17 @@ export default function Home() {
     const id = setInterval(() => {
       setNowTick(Date.now())
       setAdUnlocks((prev) => {
+        let changed = false
         const next: typeof prev = { ...prev }
         for (const [key, u] of Object.entries(prev)) {
           if (!u || typeof u.expiresAt !== 'number') continue
           if (Date.now() > u.expiresAt) {
             delete next[key]
             try { sessionStorage.removeItem(`unlock:${key}`) } catch {}
+            changed = true
           }
         }
-        return next
+        return changed ? next : prev
       })
     }, 500)
     return () => clearInterval(id)

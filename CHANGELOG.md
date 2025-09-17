@@ -42,6 +42,7 @@
 | UI-MONETAG-0001 | Hardened loader (explicit fn, cache-bust, readiness) and error categories |
 | UI-BOTTOMNAV-SANDBOX | Added single-file bottomnav sandbox (template + inline script) |
 | OFFERS-REFRESH-0001 | EARN: refresh tasks on entry and on level change |
+| OFFERS-REFRESH-0002 | EARN: fixed flicker by pruning ad unlocks without unnecessary state updates |
 | UI-EARN-TILES | Refactored Earn sandbox to 2-column tiles, removed tabs/cards; badge and content rendered over Button03_Blue.png; no visual underlay |
 | UI_EARN_PHASE2-001 | Ported Earn sandbox to React components and integrated under BottomNav EARN |
 | UI-EARN-0001 | Adjusted Earn tabs to Lilita One with stroke/shadow; empty state typography updated |
