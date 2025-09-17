@@ -17,7 +17,7 @@ export type WalletProps = {
 
 export function Wallet(props: WalletProps) {
   const { address, balances, onConnect, onDisconnect } = props
-  const tabsId = useId()
+  // const tabsId = useId() // unused id
   const [activeTab, setActiveTab] = React.useState<TabsKey>('withdrawals')
 
   const labelForAddress = React.useMemo(() => {

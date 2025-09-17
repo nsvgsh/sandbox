@@ -44,8 +44,8 @@ const DEFAULT_EMOJIS = ['🍪', '🍋', '🍎', '🪙', '🎟', '⭐️', '💎'
 
 export function EmojiClicker(props: EmojiClickerProps) {
   const { assets = DEFAULT_ASSETS, emojis = DEFAULT_EMOJIS, onTap, size = 144, className, haptics = true } = props
-  const sourceList = (Array.isArray(assets) && assets.length > 0) ? assets : []
-  const labelList = sourceList.length ? sourceList.map((p) => p.split('/').pop() || 'icon') : emojis
+  const sourceList = useMemo(() => (Array.isArray(assets) && assets.length > 0) ? assets : [], [assets])
+  const labelList = useMemo(() => (sourceList.length ? sourceList.map((p) => p.split('/').pop() || 'icon') : emojis), [sourceList, emojis])
   const [currentIndex, setCurrentIndex] = useState<number>(0)
   const [tapCount, setTapCount] = useState<number>(0)
   const [isPressing, setIsPressing] = useState<boolean>(false)
