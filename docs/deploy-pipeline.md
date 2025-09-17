@@ -5,12 +5,13 @@
 - Backend: Supabase (Postgres, Auth, Edge Functions)
 
 ## Environment propagation
-- Vercel (client envs):
-  - NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
-  - NEXT_PUBLIC_MONETAG_ZONE_ID, NEXT_PUBLIC_MONETAG_FN
-  - NEXT_PUBLIC_LEADERBOARD_ACTIVE_WINDOW_DAYS
-  - NEXT_PUBLIC_DEV_TOKEN (should match DEV_TOKEN locally)
-- Supabase Edge secrets (CLI):
+- Vercel (envs used by this app):
+  - DATABASE_URL (required in prod): use Supabase Pooler connection (port 6543). SSL is enforced by the app; no need to append `sslmode=require`.
+  - NEXT_PUBLIC_LEADERBOARD_ACTIVE_WINDOW_DAYS (optional; default 1)
+  - (Reserved for future supabase-js usage) NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+  - (Reserved for admin flows) SUPABASE_SERVICE_ROLE_KEY
+  - (Reserved for Telegram login) TELEGRAM_BOT_TOKEN
+- Supabase Edge secrets (CLI) — not used by current app version, kept for reference:
   ```
   supabase link --project-ref <PROJECT_REF>
   supabase secrets set --env-file supabase/.env.local
@@ -19,10 +20,46 @@
 
 ## Build & deploy
 - Vercel: push to main triggers build; preview per PR
-- Supabase functions:
+- Supabase functions (not used in this app version):
   ```
   supabase functions deploy
   ```
+
+## Monetag (prod)
+- Configuration is sourced from DB `game_config` via `/v1/config`, not from env.
+- SQL (run once in Supabase SQL Editor):
+  ```sql
+  -- Enable Monetag
+  insert into game_config(key, value)
+  values ('monetag_enabled', 'true'::jsonb)
+  on conflict (key) do update set value = excluded.value;
+
+  -- Set main zone id (replace with your MAIN_ZONE_ID)
+  insert into game_config(key, value)
+  values ('monetag_zone_id', '"YOUR_MAIN_ZONE_ID"'::jsonb)
+  on conflict (key) do update set value = excluded.value;
+
+  -- Set SDK URL (replace with your SDK url)
+  insert into game_config(key, value)
+  values ('monetag_sdk_url', '"https://your.domain/sdk.js"'::jsonb)
+  on conflict (key) do update set value = excluded.value;
+
+  -- Optional: unlock policy (any|valued)
+  insert into game_config(key,value)
+  values ('unlock_policy', '"any"'::jsonb)
+  on conflict (key) do update set value = excluded.value;
+
+  -- Optional: log failed ad events
+  insert into game_config(key,value)
+  values ('log_failed_ad_events', 'true'::jsonb)
+  on conflict (key) do update set value = excluded.value;
+  ```
+- Checklist:
+  - [ ] `monetag_enabled` = true
+  - [ ] `monetag_zone_id` set to MAIN zone id
+  - [ ] `monetag_sdk_url` set and reachable from client
+  - [ ] `ad_ttl_seconds` has desired value (defaults seeded; adjust via SQL if needed)
+  - [ ] Smoke flows: level bonus → ad/log → bonus claim; tasks → ad/log → claim
 
 ## Smoke checks
 - GET /v1/health → ok
@@ -42,4 +79,4 @@
 - Never expose SUPABASE_SERVICE_ROLE_KEY in client
 - `.env` files never committed; manage with Supabase secrets CLI
 - Avoid logging full secrets; print truncated hashes only
- - Local dev: set both `NEXT_PUBLIC_DEV_TOKEN` and `DEV_TOKEN` to the same value so admin/debug endpoints authorize
+- Local dev: set both `NEXT_PUBLIC_DEV_TOKEN` and `DEV_TOKEN` to the same value so admin/debug endpoints authorize

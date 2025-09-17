@@ -15,8 +15,24 @@ DO $$ BEGIN
   END IF;
 END $$;
 
-ALTER TABLE ad_events
-  ADD CONSTRAINT ad_events_status_check CHECK (status IN ('closed','failed','used','filled','completed'));
+DO $$ BEGIN
+  -- ensure any previous constraint variant is removed
+  BEGIN
+    ALTER TABLE ad_events DROP CONSTRAINT IF EXISTS ad_events_status_check;
+  EXCEPTION WHEN undefined_object THEN
+  END;
+
+  -- add only if it does not already exist (v4 accepted set)
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint c
+    JOIN pg_class r ON r.oid = c.conrelid
+    WHERE r.relname = 'ad_events' AND c.conname = 'ad_events_status_check'
+  ) THEN
+    ALTER TABLE ad_events
+      ADD CONSTRAINT ad_events_status_check CHECK (status IN ('closed','failed','used','filled','completed'));
+  END IF;
+END $$;
 
 -- claim_level_bonus_v4: validates recency from ad_events.created_at against ad_ttl_seconds
 CREATE OR REPLACE FUNCTION claim_level_bonus_v4(

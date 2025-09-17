@@ -36,11 +36,12 @@ function generateWebEnv() {
 
   // Include server/client keys used by web
   const includeKeys = [
+    'DATABASE_URL',
     'DEV_TOKEN',
     'NEXT_PUBLIC_DEV_TOKEN',
     'NEXT_PUBLIC_LEADERBOARD_ACTIVE_WINDOW_DAYS',
     'NEXT_PUBLIC_SUPABASE_URL',
-    'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+    'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
   ]
   for (const key of includeKeys) {
     if (srcMap.has(key)) out.set(key, srcMap.get(key))
@@ -64,7 +65,7 @@ function generateWebEnv() {
     'NEXT_PUBLIC_DEV_TOKEN',
     'NEXT_PUBLIC_LEADERBOARD_ACTIVE_WINDOW_DAYS',
     'NEXT_PUBLIC_SUPABASE_URL',
-    'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+    'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
   ]
   const keys = Array.from(new Set([...order, ...out.keys()]))
   const lines = []
@@ -84,15 +85,28 @@ if (!fs.existsSync(envLocal)) {
   try {
     const content = fs.readFileSync(envLocal, 'utf8')
     const map = parseEnv(content)
+    const src = fs.readFileSync(docsEnvExample, 'utf8')
+    const srcMap = parseEnv(src)
+    let wrote = false
     if (map.has('DEV_TOKEN')) {
       const token = map.get('DEV_TOKEN')
       if (!map.has('NEXT_PUBLIC_DEV_TOKEN') || map.get('NEXT_PUBLIC_DEV_TOKEN') !== token) {
         map.set('NEXT_PUBLIC_DEV_TOKEN', token)
-        const order = Array.from(map.keys())
-        const updated = order.map(k => `${k}=${map.get(k)}`).join('\n') + '\n'
-        fs.writeFileSync(envLocal, updated, 'utf8')
+        wrote = true
         console.log('Synced NEXT_PUBLIC_DEV_TOKEN to match DEV_TOKEN in web/.env.local')
       }
+    }
+    // Ensure DATABASE_URL exists; if missing, add from docs/env.example or fallback
+    if (!map.has('DATABASE_URL')) {
+      const defaultDbUrl = srcMap.get('DATABASE_URL') || 'postgresql://postgres:postgres@127.0.0.1:54322/postgres'
+      map.set('DATABASE_URL', defaultDbUrl)
+      wrote = true
+      console.log('Added DATABASE_URL to web/.env.local from docs/env.example default')
+    }
+    if (wrote) {
+      const order = Array.from(map.keys())
+      const updated = order.map(k => `${k}=${map.get(k)}`).join('\n') + '\n'
+      fs.writeFileSync(envLocal, updated, 'utf8')
     }
   } catch {
     // Ignore sync errors; keep developer edits intact
