@@ -1,3 +1,4 @@
+"use client"
 import React, { useMemo, useState } from 'react'
 import type { Metadata } from 'next'
 import { EarnGrid, EarnItem } from '@/ui/earn/EarnGrid/EarnGrid'
