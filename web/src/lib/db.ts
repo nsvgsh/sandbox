@@ -1,4 +1,5 @@
-import { Pool, PoolClient } from 'pg'
+import { Pool, PoolClient, type PoolConfig } from 'pg'
+import type { ConnectionOptions } from 'tls'
 
 const connectionString = process.env.DATABASE_URL
 if (!connectionString) {
@@ -8,12 +9,13 @@ if (!connectionString) {
 }
 
 const isLocal = /localhost|127\.0\.0\.1/.test(connectionString)
-const poolConfig: any = { connectionString, max: 10 }
-if (!isLocal) {
-  poolConfig.ssl = { rejectUnauthorized: false }
+const poolConfig: PoolConfig = {
+  connectionString,
+  max: 10,
+  ssl: isLocal ? undefined : ({ rejectUnauthorized: false } as ConnectionOptions),
 }
 
-export const pgPool = new Pool(poolConfig)
+export const pgPool = new Pool(poolConfig as PoolConfig)
 
 export async function withClient<T>(fn: (c: PoolClient) => Promise<T>): Promise<T> {
   const client = await pgPool.connect()

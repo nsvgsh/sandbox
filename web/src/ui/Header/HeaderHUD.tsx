@@ -17,7 +17,7 @@ export const HeaderHUD: React.FC<{ counters: Counters | null }>
       <div className={styles.topbar}>
         <HudBar label="Level" value={`LVL ${level.toLocaleString(undefined, { minimumIntegerDigits: 1 })}`} iconSrc="/ui/header/Icon_ImageIcon_LevelFrame1.png" tone="purple" />
         <HudBar label="Coins" value={coins.toLocaleString()} iconSrc="/ui/header/ResourceBar_Icon_Gold.png" tone="gold" />
-        <HudBar label="Tickets" value={tickets.toLocaleString()} iconSrc="/ui/header/Whisk_Purple_Ticket.png" tone="gold" style={{ ['--icon-size' as any]: 'clamp(36px, 12cqw, 56px)' }} />
+        <HudBar label="Tickets" value={tickets.toLocaleString()} iconSrc="/ui/header/Whisk_Purple_Ticket.png" tone="gold" style={{ ['--icon-size' as unknown as string]: 'clamp(36px, 12cqw, 56px)' }} />
       </div>
     </div>
   );

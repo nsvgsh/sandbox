@@ -79,8 +79,7 @@ export async function preloadMonetag(
 ): Promise<MonetagResult> {
   if (!isMonetagLoaded(zoneId, opts.sdkFunctionName)) throw new Error('sdk_not_loaded')
   const fnName = resolveGlobalName(zoneId, opts.sdkFunctionName)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const fn = (window as any)[fnName] as (arg?: unknown) => Promise<MonetagResult>
+  const fn = (window as unknown as Record<string, unknown>)[fnName] as (arg?: unknown) => Promise<MonetagResult>
   const timeout = typeof opts.timeoutSec === 'number' ? opts.timeoutSec : 5
   return await fn({ type: 'preload', timeout, ymid: opts.ymid, requestVar: opts.requestVar, catchIfNoFeed: true })
 }
@@ -91,8 +90,7 @@ export async function showRewardedInterstitial(
 ): Promise<MonetagResult> {
   if (!isMonetagLoaded(zoneId, opts.sdkFunctionName)) throw new Error('sdk_not_loaded')
   const fnName = resolveGlobalName(zoneId, opts.sdkFunctionName)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const fn = (window as any)[fnName] as (arg?: unknown) => Promise<MonetagResult>
+  const fn = (window as unknown as Record<string, unknown>)[fnName] as (arg?: unknown) => Promise<MonetagResult>
   return await fn({ type: 'end', ymid: opts.ymid, requestVar: opts.requestVar, catchIfNoFeed: true })
 }
 
@@ -104,7 +102,7 @@ export function categorizeMonetagError(err: unknown):
   | 'cors'
   | 'bad_request'
   | 'unknown' {
-  const msg = typeof err === 'string' ? err : err && typeof (err as any).message === 'string' ? (err as any).message : ''
+  const msg = typeof err === 'string' ? err : err && typeof (err as { message?: string }).message === 'string' ? (err as { message: string }).message : ''
   const lower = msg.toLowerCase()
   if (lower.includes('no feed') || lower.includes('feed is empty')) return 'no_feed'
   if (lower.includes('timeout')) return 'timeout'

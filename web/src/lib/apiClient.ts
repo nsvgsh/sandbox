@@ -6,14 +6,14 @@ export type CountersNormalized = {
   totalTaps: number
 }
 
-export function normalizeCounters(input: any): CountersNormalized {
-  const c = input || {}
+export function normalizeCounters(input: unknown): CountersNormalized {
+  const c = (typeof input === 'object' && input !== null ? input as Record<string, unknown> : {})
   return {
-    coins: Number(c.coins || 0),
-    tickets: Number(c.tickets || 0),
-    coinMultiplier: Number(c.coinMultiplier ?? c.coin_multiplier ?? 1),
-    level: Number(c.level || 0),
-    totalTaps: Number(c.totalTaps ?? c.total_taps ?? 0),
+    coins: Number((c as any).coins || 0),
+    tickets: Number((c as any).tickets || 0),
+    coinMultiplier: Number((c as any).coinMultiplier ?? (c as any).coin_multiplier ?? 1),
+    level: Number((c as any).level || 0),
+    totalTaps: Number((c as any).totalTaps ?? (c as any).total_taps ?? 0),
   }
 }
 
@@ -29,15 +29,17 @@ export type PublicConfig = {
 
 export function parsePublicConfig(obj: Record<string, unknown>): PublicConfig {
   // obj is key->value map from /v1/config
-  const adTTL = Number((obj['ad_ttl_seconds'] as any) ?? 180)
-  const thresholds = (obj['thresholds'] as any) || {}
-  const batchMs = Number((thresholds?.batch_min_interval_ms as any) ?? 100)
-  const monetagEnabled = Boolean((obj['monetag_enabled'] as any) ?? false)
+  const adTTLRaw = obj['ad_ttl_seconds']
+  const adTTL = typeof adTTLRaw === 'number' ? adTTLRaw : Number(adTTLRaw ?? 180)
+  const thresholds = (obj['thresholds'] as Record<string, unknown>) || {}
+  const batchRaw = thresholds?.['batch_min_interval_ms']
+  const batchMs = typeof batchRaw === 'number' ? batchRaw : Number(batchRaw ?? 100)
+  const monetagEnabled = Boolean(obj['monetag_enabled'] ?? false)
   const monetagZoneId = typeof obj['monetag_zone_id'] === 'string' ? (obj['monetag_zone_id'] as string) : undefined
   const monetagSdkUrl = typeof obj['monetag_sdk_url'] === 'string' ? (obj['monetag_sdk_url'] as string) : undefined
-  const unlockPolicyRaw = (obj['unlock_policy'] as any)
+  const unlockPolicyRaw = obj['unlock_policy']
   const unlockPolicy = unlockPolicyRaw === 'valued' ? 'valued' : 'any'
-  const logFailedAdEvents = Boolean((obj['log_failed_ad_events'] as any) ?? true)
+  const logFailedAdEvents = Boolean(obj['log_failed_ad_events'] ?? true)
   return {
     adTTLSeconds: Number.isFinite(adTTL) ? adTTL : 180,
     batchMinIntervalMs: Number.isFinite(batchMs) ? batchMs : 100,
@@ -58,15 +60,15 @@ export type RetryOpts = {
   retry429DelayMs?: number
 }
 
-export async function fetchJsonWithRetry<T = any>(url: string, init: RequestInit, opts: RetryOpts = {}): Promise<{ ok: boolean; status: number; json: T | any | null }> {
+export async function fetchJsonWithRetry<T = unknown>(url: string, init: RequestInit, opts: RetryOpts = {}): Promise<{ ok: boolean; status: number; json: T | null }> {
   let tried429 = false
   let tried409 = false
   let triedNet = false
-  async function once(): Promise<{ ok: boolean; status: number; json: T | any | null }> {
+  async function once(): Promise<{ ok: boolean; status: number; json: T | null }> {
     try {
       const res = await fetch(url, init)
       const status = res.status
-      const json = await res.json().catch(() => null)
+      const json = await res.json().catch(() => null) as T | null
       if (res.ok) return { ok: true, status, json }
       // 429 Too fast
       if (status === 429 && !tried429) {

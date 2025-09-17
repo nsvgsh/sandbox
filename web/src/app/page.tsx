@@ -2,7 +2,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { HeaderHUD } from '@/ui/Header/HeaderHUD'
 import { LevelUpModal } from '@/ui/Modal/Modal'
-import { normalizeCounters, parsePublicConfig, fetchJsonWithRetry } from '../lib/apiClient'
+import { normalizeCounters, parsePublicConfig, fetchJsonWithRetry, type CountersNormalized } from '../lib/apiClient'
 import { isMonetagLoaded, loadMonetagSdk, showRewardedInterstitial, categorizeMonetagError } from '../lib/ads/monetag'
 import { showNotice } from '../lib/notice'
 import { BottomNavShadow } from '@/ui/BottomNav/BottomNavShadow'
@@ -23,9 +23,9 @@ type Counters = {
 type Session = { sessionId: string; sessionEpoch: string; lastAppliedSeq: number }
 type NextThreshold = { level: number; coins: number } | null
 type DebugState = {
-  counters: any | null
+  counters: CountersNormalized | null
   lastLevel: { level: number; reward_payload: Record<string, unknown> | null; bonus_multiplier: number | null } | null
-  leaderboard: any | null
+  leaderboard: unknown | null
   config: { key: string; value: unknown }[]
   nextTemplates?: { level: number; templateId: string | null; payload: unknown }[]
 } | null
@@ -67,10 +67,11 @@ export default function Home() {
   const [leveledUp, setLeveledUp] = useState<number | null>(null)
   const [nextThreshold, setNextThreshold] = useState<NextThreshold>(null)
   const [debugState, setDebugState] = useState<DebugState>(null)
-  const [tasks, setTasks] = useState<any[] | null>(null)
+  type TaskDef = { taskId: string; state: 'available' | 'claimed'; rewardPayload?: Record<string, unknown> }
+  const [tasks, setTasks] = useState<TaskDef[] | null>(null)
   const [tasksLoading, setTasksLoading] = useState<boolean>(false)
   const tasksLoadInFlightRef = useRef<boolean>(false)
-  const [leaderboard, setLeaderboard] = useState<any | null>(null)
+  const [leaderboard, setLeaderboard] = useState<unknown | null>(null)
   const [adUnlocks, setAdUnlocks] = useState<Record<string, { impressionId: string; expiresAt: number }>>({})
   const [adTTLSeconds, setAdTTLSeconds] = useState<number>(10)
   const [monetagEnabled, setMonetagEnabled] = useState<boolean>(false)
@@ -136,7 +137,7 @@ export default function Home() {
   async function tap() {
     if (!session) return
     const nextSeq = clientSeq + 1
-    const { ok, status, json } = await fetchJsonWithRetry<any>('/api/v1/ingest/taps', {
+  const { ok, json } = await fetchJsonWithRetry<unknown>('/api/v1/ingest/taps', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ taps: 1, clientSeq: nextSeq, sessionId: session.sessionId, sessionEpoch: session.sessionEpoch }),
@@ -145,7 +146,7 @@ export default function Home() {
       onOutdated: async () => { await resumeOrStartSession() },
     })
     if (ok) {
-      const data = json
+      const data = json as { counters: unknown; nextThreshold?: NextThreshold; leveledUp?: { level: number } | null }
       const c = normalizeCounters(data.counters)
       setCounters(c)
       setClientSeq(nextSeq)
@@ -156,7 +157,7 @@ export default function Home() {
       setNextThreshold(data?.nextThreshold ?? null)
     } else {
       try {
-        const errText = typeof json?.error === 'string' ? json.error : 'Something went wrong. Please try again.'
+        const errText = typeof (json as { error?: unknown })?.error === 'string' ? (json as { error?: string }).error! : 'Something went wrong. Please try again.'
         showNotice(errText)
       } catch {
         showNotice('Something went wrong. Please try again.')
@@ -221,28 +222,20 @@ export default function Home() {
       setBonusExpiresAt(null)
       return
     }
-    const { ok, json } = await fetchJsonWithRetry<any>('/api/v1/level/bonus/claim', {
+    const { ok, json } = await fetchJsonWithRetry<unknown>('/api/v1/level/bonus/claim', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-idempotency-key': bonusImpressionId },
       body: JSON.stringify({ level: leveledUp, bonusMultiplier: 2, impressionId: bonusImpressionId }),
     })
     if (ok) {
-      const c = json?.counters as any
-      if (c) {
-        setCounters({
-          coins: Number(c.coins || 0),
-          tickets: Number(c.tickets || 0),
-          coinMultiplier: Number(c.coinMultiplier ?? c.coin_multiplier ?? 1),
-          level: Number(c.level || 0),
-          totalTaps: Number(c.totalTaps ?? c.total_taps ?? 0),
-        })
-      }
+      const normalized = normalizeCounters((json as { counters?: unknown })?.counters)
+      setCounters(normalized)
       setPendingBonusConfirm(false)
       setLeveledUp(null)
       setBonusImpressionId(null)
       setBonusExpiresAt(null)
     } else {
-      const code = json?.code as string | undefined
+      const code = (json as { code?: string })?.code
       if (code === 'TTL_EXPIRED') {
         try { console.log(JSON.stringify({ event: 'TTLExpired', action: 'bonus_claim', level: leveledUp })) } catch {}
         // revert to two buttons
@@ -292,9 +285,9 @@ export default function Home() {
   }
 
   async function loadCounters() {
-    const { ok, json } = await fetchJsonWithRetry<any>('/api/v1/counters', { method: 'GET' })
+    const { ok, json } = await fetchJsonWithRetry<unknown>('/api/v1/counters', { method: 'GET' })
     if (!ok) return
-    const data = json
+    const data = json as { counters: unknown; nextThreshold?: NextThreshold }
     {
       const c = normalizeCounters(data.counters)
       setCounters(c)
@@ -322,7 +315,7 @@ export default function Home() {
     try {
       const res = await fetch('/api/v1/tasks')
       if (!res.ok) return
-      const data = await res.json()
+      const data = await res.json() as { definitions?: TaskDef[] }
       setTasks(data.definitions || [])
       // hydrate unlocks relevant to current tasks
       try {
@@ -376,7 +369,7 @@ export default function Home() {
     const headers: Record<string, string> = {}
     if (unlock?.impressionId) headers['x-idempotency-key'] = unlock.impressionId
     if (unlock?.impressionId) { try { console.log(JSON.stringify({ event: 'TaskClaimIdemKeyUsed', taskId: taskId.slice(0,8), idem: unlock.impressionId.slice(0,8) })) } catch {} }
-    const { ok, json } = await fetchJsonWithRetry<any>(`/api/v1/tasks/${taskId}/claim`, { method: 'POST', headers }, {
+    const { ok, json } = await fetchJsonWithRetry<unknown>(`/api/v1/tasks/${taskId}/claim`, { method: 'POST', headers }, {
       onOutdated: async () => { await resumeOrStartSession() },
     })
     if (ok) {
@@ -386,7 +379,7 @@ export default function Home() {
       await loadTasks()
       await loadCounters()
     } else {
-      const code = (json && (json.code as string)) || ''
+      const code = (json && (json as { code?: string }).code) || ''
       if (code === 'AD_REQUIRED') {
         try { console.log(JSON.stringify({ event: 'task_claim_ad_required', taskId: taskId.slice(0,8) })) } catch {}
         showNotice('Watch an ad for this offer first.')
@@ -422,7 +415,7 @@ export default function Home() {
         if (!res.ok) return
         const data = await res.json().catch(() => null)
         if (data && typeof data.level === 'number') {
-          setDebugState((s) => ({ ...(s || { counters: null, lastLevel: null, leaderboard: null, config: [] as any[] }), lastLevel: { level: data.level, reward_payload: data.rewardPayload, bonus_multiplier: null } }))
+          setDebugState((s) => ({ ...(s || { counters: null, lastLevel: null, leaderboard: null, config: [] as { key: string; value: unknown }[] }), lastLevel: { level: data.level, reward_payload: data.rewardPayload, bonus_multiplier: null } }))
         }
       } catch {}
     })()

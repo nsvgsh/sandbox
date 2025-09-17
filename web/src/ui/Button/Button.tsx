@@ -40,19 +40,19 @@ export const Button: React.FC<ButtonProps> = ({
   }
   const handlePointerDown: React.PointerEventHandler<HTMLButtonElement> = (e) => {
     try { e.currentTarget.setAttribute('data-pressed', 'true') } catch {}
-    rest.onPointerDown?.(e as any)
+    if (typeof rest.onPointerDown === 'function') rest.onPointerDown(e)
   }
   const handlePointerUp: React.PointerEventHandler<HTMLButtonElement> = (e) => {
     clearPressed(e.currentTarget)
-    rest.onPointerUp?.(e as any)
+    if (typeof rest.onPointerUp === 'function') rest.onPointerUp(e)
   }
   const handlePointerCancel: React.PointerEventHandler<HTMLButtonElement> = (e) => {
     clearPressed(e.currentTarget)
-    rest.onPointerCancel?.(e as any)
+    if (typeof rest.onPointerCancel === 'function') rest.onPointerCancel(e)
   }
   const handlePointerLeave: React.PointerEventHandler<HTMLButtonElement> = (e) => {
     clearPressed(e.currentTarget)
-    rest.onPointerLeave?.(e as any)
+    if (typeof rest.onPointerLeave === 'function') rest.onPointerLeave(e)
   }
 
   return (
