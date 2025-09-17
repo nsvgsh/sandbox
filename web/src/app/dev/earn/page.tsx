@@ -1,12 +1,6 @@
 "use client"
 import React, { useMemo, useState } from 'react'
-import type { Metadata } from 'next'
 import { EarnGrid, EarnItem } from '@/ui/earn/EarnGrid/EarnGrid'
-
-export const metadata: Metadata = {
-  robots: { index: false, follow: false },
-  title: 'Dev • Earn',
-}
 
 export default function DevEarnPage() {
   const [tab, setTab] = useState<'available'|'completed'>('available')
