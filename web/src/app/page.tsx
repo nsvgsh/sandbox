@@ -304,7 +304,7 @@ export default function Home() {
     // Do not set TTL from debug; TTL is sourced from public config only now
   }
 
-  async function loadTasks() {
+  const loadTasks = useCallback(async () => {
     if (tasksLoadInFlightRef.current) return
     tasksLoadInFlightRef.current = true
     setTasksLoading(true)
@@ -327,7 +327,7 @@ export default function Home() {
       tasksLoadInFlightRef.current = false
       setTasksLoading(false)
     }
-  }
+  }, [tasks])
 
   // Watch ad for a specific task (intent-coupled)
   async function watchAdForTask(taskId: string) {
