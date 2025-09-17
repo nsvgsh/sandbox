@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { HeaderHUD } from '@/ui/Header/HeaderHUD'
 import { LevelUpModal } from '@/ui/Modal/Modal'
 import { normalizeCounters, parsePublicConfig, fetchJsonWithRetry, type CountersNormalized } from '../lib/apiClient'
@@ -165,12 +165,7 @@ export default function Home() {
     }
   }
 
-  async function claimBonus(multiplier = 2) {
-    // UI-only confirm step: bonus was already applied by ad/log with intent='level_bonus' in local flow
-    setPendingBonusConfirm(false)
-    setLeveledUp(null)
-    await loadCounters()
-  }
+  // removed unused claimBonus
 
   // Start level bonus flow: watch ad, then enable Claim x2 for a short window
   async function startLevelBonus() {
@@ -438,9 +433,7 @@ export default function Home() {
     }
   }, [pendingBonusConfirm, bonusExpiresAt, nowTick])
 
-  async function refreshAll() {
-    await Promise.all([loadCounters(), loadTasks(), loadLeaderboard(), refreshDebug()])
-  }
+  // removed unused refreshAll
 
   useEffect(() => setMounted(true), [])
 
@@ -507,11 +500,11 @@ export default function Home() {
   }, [adTTLSeconds])
 
   // Refresh tasks when entering EARN (offers) section
+  const loadTasksCb = useCallback(() => { void loadTasks() }, [loadTasks])
   useEffect(() => {
     if (activeSection !== 'offers') return
-    void loadTasks()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeSection])
+    loadTasksCb()
+  }, [activeSection, loadTasksCb])
 
   // Refresh tasks when level changes (gating depends on level)
   const lastLevelRef = useRef<number | null>(null)
@@ -536,7 +529,7 @@ export default function Home() {
     )
   }
 
-  const isWallet = activeSection === 'wallet'
+  // const isWallet = activeSection === 'wallet' // unused
   return (
     <main style={{
       padding: 0,
@@ -583,8 +576,16 @@ export default function Home() {
               <div style={{ marginTop: 8 }}>
                 <EarnGrid
                   loading={tasksLoading}
-                  available={Array.isArray(tasks) ? tasks.filter((t) => t.state === 'available') : []}
-                  completed={Array.isArray(tasks) ? tasks.filter((t) => t.state === 'claimed') : []}
+                  available={Array.isArray(tasks)
+                    ? tasks
+                        .filter((t) => t.state === 'available')
+                        .map((t) => ({ taskId: t.taskId, rewardPayload: t.rewardPayload ?? null, state: t.state }))
+                    : []}
+                  completed={Array.isArray(tasks)
+                    ? tasks
+                        .filter((t) => t.state === 'claimed')
+                        .map((t) => ({ taskId: t.taskId, rewardPayload: t.rewardPayload ?? null, state: t.state }))
+                    : []}
                   activeTab={offersTab}
                   onTabChange={setOffersTab}
                   onWatch={(taskId) => watchAdForTask(taskId)}
