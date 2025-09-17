@@ -1,5 +1,5 @@
 "use client"
-import React, { useId } from 'react'
+import React from 'react'
 import styles from './Wallet.module.css'
 import { CTA } from '@/ui/wallet/components/CTA/CTA'
 import { AssetRow } from '@/ui/wallet/components/AssetRow/AssetRow'
@@ -17,7 +17,7 @@ export type WalletProps = {
 
 export function Wallet(props: WalletProps) {
   const { address, balances, onConnect, onDisconnect } = props
-  // const tabsId = useId() // unused id
+  // unused id removed
   const [activeTab, setActiveTab] = React.useState<TabsKey>('withdrawals')
 
   const labelForAddress = React.useMemo(() => {

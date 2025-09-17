@@ -126,10 +126,11 @@ export function EmojiClicker(props: EmojiClickerProps) {
   const onPointerUp = useCallback(() => setIsPressing(false), [])
   const onPointerLeave = useCallback(() => setIsPressing(false), [])
 
-  const rootStyle = useMemo<React.CSSProperties>(() => ({
+  type ClickerStyle = React.CSSProperties & { ['--shape-radius']?: string }
+  const rootStyle = useMemo<ClickerStyle>(() => ({
     width: size,
     height: size,
-    ['--shape-radius' as '--shape-radius']: `${shapeRadius}px`,
+    ['--shape-radius']: `${shapeRadius}px`,
   }), [size, shapeRadius])
 
   const mediaStyle = useMemo<React.CSSProperties>(() => ({
