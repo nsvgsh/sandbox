@@ -316,12 +316,25 @@ export default function Home() {
       // hydrate unlocks relevant to current tasks
       try {
         const list = (data.definitions || []) as { taskId: string }[]
-        const nextUnlocks: Record<string, { impressionId: string; expiresAt: number }> = {}
+        const computed: Record<string, { impressionId: string; expiresAt: number }> = {}
         for (const t of list) {
           const u = readUnlockForTask(t.taskId)
-          if (u) nextUnlocks[`task:${t.taskId}`] = u
+          if (u) computed[`task:${t.taskId}`] = u
         }
-        setAdUnlocks(nextUnlocks)
+        setAdUnlocks((prev) => {
+          const prevKeys = Object.keys(prev)
+          const nextKeys = Object.keys(computed)
+          if (prevKeys.length === nextKeys.length) {
+            let same = true
+            for (const k of nextKeys) {
+              const a = prev[k]
+              const b = computed[k]
+              if (!a || !b || a.impressionId !== b.impressionId || a.expiresAt !== b.expiresAt) { same = false; break }
+            }
+            if (same) return prev
+          }
+          return computed
+        })
       } catch {}
     } finally {
       tasksLoadInFlightRef.current = false
@@ -496,12 +509,18 @@ export default function Home() {
     return () => clearInterval(id)
   }, [adTTLSeconds])
 
-  // Refresh tasks when entering EARN (offers) section
-  const loadTasksCb = useCallback(() => { void loadTasks() }, [loadTasks])
+  // Refresh tasks when entering EARN (offers) section — once per entry
+  const offersRefreshedRef = useRef<boolean>(false)
   useEffect(() => {
-    if (activeSection !== 'offers') return
-    loadTasksCb()
-  }, [activeSection, loadTasksCb])
+    if (activeSection === 'offers') {
+      if (!offersRefreshedRef.current) {
+        offersRefreshedRef.current = true
+        void loadTasks()
+      }
+    } else {
+      offersRefreshedRef.current = false
+    }
+  }, [activeSection])
 
   // Refresh tasks when level changes (gating depends on level)
   const lastLevelRef = useRef<number | null>(null)
@@ -514,9 +533,9 @@ export default function Home() {
     }
     if (currentLevel !== lastLevelRef.current) {
       lastLevelRef.current = currentLevel
-      loadTasksCb()
+      void loadTasks()
     }
-  }, [counters?.level, loadTasksCb])
+  }, [counters?.level])
 
   if (!mounted) {
     return (
