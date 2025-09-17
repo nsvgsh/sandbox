@@ -327,7 +327,7 @@ export default function Home() {
       tasksLoadInFlightRef.current = false
       setTasksLoading(false)
     }
-  }, [tasks])
+  }, [readUnlockForTask])
 
   // Watch ad for a specific task (intent-coupled)
   async function watchAdForTask(taskId: string) {
@@ -512,9 +512,9 @@ export default function Home() {
     }
     if (currentLevel !== lastLevelRef.current) {
       lastLevelRef.current = currentLevel
-      void loadTasks()
+      loadTasksCb()
     }
-  }, [counters?.level])
+  }, [counters?.level, loadTasksCb])
 
   if (!mounted) {
     return (

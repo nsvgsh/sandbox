@@ -91,7 +91,7 @@ export function EmojiClicker(props: EmojiClickerProps) {
         hf.impactOccurred('soft')
       }
     } catch {}
-  }, [haptics, emojis.length])
+  }, [haptics])
 
   const handleTap = useCallback((ev: React.PointerEvent<HTMLDivElement>) => {
     const el = rootRef.current
@@ -120,7 +120,7 @@ export function EmojiClicker(props: EmojiClickerProps) {
       }
     }
     if (typeof onTap === 'function') onTap(currentLabel)
-  }, [currentIndex, handleHaptic, labelList, onTap, pushParticle, sourceList, tapCount])
+  }, [currentIndex, handleHaptic, labelList, onTap, pushParticle, sourceList, tapCount, emojis.length])
 
   const onPointerDown = useCallback(() => setIsPressing(true), [])
   const onPointerUp = useCallback(() => setIsPressing(false), [])
