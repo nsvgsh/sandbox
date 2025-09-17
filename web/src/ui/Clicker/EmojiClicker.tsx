@@ -52,13 +52,14 @@ export function EmojiClicker(props: EmojiClickerProps) {
   const [particles, setParticles] = useState<Particle[]>([])
   const particleIdRef = useRef<number>(1)
   const rootRef = useRef<HTMLDivElement | null>(null)
-  const mediaRef = useRef<HTMLElement | null>(null)
+  const imgRef = useRef<HTMLImageElement | null>(null)
+  const spanRef = useRef<HTMLSpanElement | null>(null)
   const [shapeRadius, setShapeRadius] = useState<number>(28)
 
   // Heuristic: adjust border radius by visual width ratio of the media (image or emoji fallback)
   useEffect(() => {
     const el = rootRef.current
-    const e = mediaRef.current
+    const e: HTMLElement | null = (imgRef.current as unknown as HTMLElement | null) || (spanRef.current as unknown as HTMLElement | null)
     if (!el || !e) return
     try {
       const rect = el.getBoundingClientRect()
@@ -152,9 +153,9 @@ export function EmojiClicker(props: EmojiClickerProps) {
         onPointerUpCapture={handleTap}
       >
         {sourceList.length ? (
-          <img ref={mediaRef as React.MutableRefObject<HTMLElement | null>} className={styles.media} style={mediaStyle} src={sourceList[currentIndex % sourceList.length]} alt="" />
+          <img ref={imgRef} className={styles.media} style={mediaStyle} src={sourceList[currentIndex % sourceList.length]} alt="" />
         ) : (
-          <span ref={mediaRef} className={styles.media} style={{ fontSize: Math.round(size * 0.44), lineHeight: 1 }}>
+          <span ref={spanRef} className={styles.media} style={{ fontSize: Math.round(size * 0.44), lineHeight: 1 }}>
             {emojis[currentIndex % emojis.length] || '🪙'}
           </span>
         )}
