@@ -31,16 +31,16 @@ const DEFAULT_ASSETS = [
 
 const DEFAULT_EMOJIS = ['🍪', '🍋', '🍎', '🪙', '🎟', '⭐️', '💎']
 
-function getRandomDifferent<T>(arr: T[], current: T): T {
-  if (!arr.length) return current
-  if (arr.length === 1) return arr[0]
-  let next = arr[Math.floor(Math.random() * arr.length)]
-  let safety = 0
-  while (next === current && safety++ < 6) {
-    next = arr[Math.floor(Math.random() * arr.length)]
-  }
-  return next
-}
+// function getRandomDifferent<T>(arr: T[], current: T): T {
+//   if (!arr.length) return current
+//   if (arr.length === 1) return arr[0]
+//   let next = arr[Math.floor(Math.random() * arr.length)]
+//   let safety = 0
+//   while (next === current && safety++ < 6) {
+//     next = arr[Math.floor(Math.random() * arr.length)]
+//   }
+//   return next
+// }
 
 export function EmojiClicker(props: EmojiClickerProps) {
   const { assets = DEFAULT_ASSETS, emojis = DEFAULT_EMOJIS, onTap, size = 144, className, haptics = true } = props
@@ -91,7 +91,7 @@ export function EmojiClicker(props: EmojiClickerProps) {
         hf.impactOccurred('soft')
       }
     } catch {}
-  }, [haptics])
+  }, [haptics, emojis.length])
 
   const handleTap = useCallback((ev: React.PointerEvent<HTMLDivElement>) => {
     const el = rootRef.current

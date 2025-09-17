@@ -71,13 +71,14 @@ export default function Home() {
   const [tasks, setTasks] = useState<TaskDef[] | null>(null)
   const [tasksLoading, setTasksLoading] = useState<boolean>(false)
   const tasksLoadInFlightRef = useRef<boolean>(false)
-  const [leaderboard, setLeaderboard] = useState<unknown | null>(null)
+  // remove unused leaderboard state to satisfy no-unused-vars
+  // const [leaderboard, setLeaderboard] = useState<unknown | null>(null)
   const [adUnlocks, setAdUnlocks] = useState<Record<string, { impressionId: string; expiresAt: number }>>({})
   const [adTTLSeconds, setAdTTLSeconds] = useState<number>(10)
   const [monetagEnabled, setMonetagEnabled] = useState<boolean>(false)
   const [monetagZoneId, setMonetagZoneId] = useState<string | undefined>(undefined)
   const [monetagSdkUrl, setMonetagSdkUrl] = useState<string | undefined>(undefined)
-  const [unlockPolicy, setUnlockPolicy] = useState<'any'|'valued'>('any')
+  // const [unlockPolicy, setUnlockPolicy] = useState<'any'|'valued'>('any')
   const [logFailedAdEvents, setLogFailedAdEvents] = useState<boolean>(true)
   const [batchMinIntervalMs, setBatchMinIntervalMs] = useState<number>(100)
   const [pendingBonusConfirm, setPendingBonusConfirm] = useState<boolean>(false)
@@ -87,7 +88,7 @@ export default function Home() {
   const [activeSection, setActiveSection] = useState<'home' | 'offers' | 'wallet'>('home')
   const [offersTab, setOffersTab] = useState<'available' | 'completed'>('available')
   const [walletAddress, setWalletAddress] = useState<string | null>(null)
-  const [walletTab, setWalletTab] = useState<'withdrawals' | 'activity' | 'airdrop'>('withdrawals')
+  // const [walletTab, setWalletTab] = useState<'withdrawals' | 'activity' | 'airdrop'>('withdrawals')
   const [claimSuccess, setClaimSuccess] = useState<{ taskId: string; rewardPayload: Record<string, unknown> | null } | null>(null)
 
   async function devLogin() {
@@ -187,7 +188,7 @@ export default function Home() {
         }),
       })
       if (!res.ok) return
-      const data = await res.json().catch(() => ({} as any))
+      const data = await res.json().catch(() => ({} as unknown))
       const ttl = Number(data?.expiresInSec ?? adTTLSeconds)
       setBonusImpressionId(impressionId)
       const expiresAt = Date.now() + (Number.isFinite(ttl) ? ttl * 1000 : adTTLSeconds * 1000)
@@ -619,10 +620,12 @@ export default function Home() {
             pendingBonusConfirm ? (
               <LevelUpModal
                 level={leveledUp}
-                rewards={{
-                  coins: Number(((debugState?.lastLevel?.reward_payload as any)?.coins) ?? 0) * 2,
-                  tickets: Number(((debugState?.lastLevel?.reward_payload as any)?.tickets) ?? 0) * 2,
-                }}
+                rewards={(() => {
+                  const rp = debugState?.lastLevel?.reward_payload as Record<string, unknown> | null
+                  const coins = typeof rp?.coins === 'number' ? rp.coins : Number(rp?.coins ?? 0)
+                  const tickets = typeof rp?.tickets === 'number' ? rp.tickets : Number(rp?.tickets ?? 0)
+                  return { coins: coins * 2, tickets: tickets * 2 }
+                })()}
                 onClaimBase={claimLevelBonusX2}
                 onStartAd={async () => { setPendingBonusConfirm(false); setLeveledUp(null); setBonusImpressionId(null); setBonusExpiresAt(null); await loadCounters() }}
                 claimLabel={(() => {
@@ -635,10 +638,12 @@ export default function Home() {
             ) : (
               <LevelUpModal
                 level={leveledUp}
-                rewards={{
-                  coins: Number(((debugState?.lastLevel?.reward_payload as any)?.coins) ?? 0),
-                  tickets: Number(((debugState?.lastLevel?.reward_payload as any)?.tickets) ?? 0),
-                }}
+                rewards={(() => {
+                  const rp = debugState?.lastLevel?.reward_payload as Record<string, unknown> | null
+                  const coins = typeof rp?.coins === 'number' ? rp.coins : Number(rp?.coins ?? 0)
+                  const tickets = typeof rp?.tickets === 'number' ? rp.tickets : Number(rp?.tickets ?? 0)
+                  return { coins, tickets }
+                })()}
                 onClaimBase={async () => { setLeveledUp(null); await loadCounters() }}
                 onStartAd={startLevelBonus}
                 claimLabel={'Claim'}
@@ -739,7 +744,7 @@ function TaskClaimModal(props: {
     if (!payload) return '{ unknown }'
     const coins = toNumber(payload.coins)
     const tickets = toNumber(payload.tickets)
-    const coinMult = toNumber((payload as any).coin_multiplier)
+    const coinMult = toNumber((payload as Record<string, unknown>).coin_multiplier)
     const parts: string[] = []
     if (coins !== null) parts.push(`coins: ${coins}`)
     if (tickets !== null) parts.push(`tickets: ${tickets}`)
