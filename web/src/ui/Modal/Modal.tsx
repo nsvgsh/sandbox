@@ -33,10 +33,10 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({ level, rewards, onCl
           <span className={styles.rewardsLabel}>REWARDS</span>
           <div className={styles.rewardsRow}>
             {typeof rewards.coins === "number" && (
-              <RewardPill iconSrc="/dev/ui/header/assets/ResourceBar_Icon_Gold.Png" label={rewards.coins.toLocaleString()} variant="blue" />
+              <RewardPill iconSrc="'/ui/header/ResourceBar_Icon_Gold.png'" label={rewards.coins.toLocaleString()} variant="blue" />
             )}
             {typeof rewards.tickets === "number" && (
-              <RewardPill iconSrc="/dev/ui/header/assets/Whisk_Purple_Ticket.png" label={rewards.tickets} variant="blue" iconWidthPercent={70} />
+              <RewardPill iconSrc="/ui/header/Whisk_Purple_Ticket.png" label={rewards.tickets} variant="blue" iconWidthPercent={70} />
             )}
           </div>
         </div>
