@@ -14,8 +14,8 @@ export type HudBarProps = {
 export function HudBar(props: HudBarProps) {
   const { label, value, iconSrc, tone = 'dark', loading, style } = props
   const barStyle = {
-    ['--bar-color' as '--bar-color']: tone === 'gold' ? '#270E0C' : tone === 'purple' ? '#0B143B' : '#270E0C',
-  } satisfies React.CSSProperties
+    ['--bar-color']: tone === 'gold' ? '#270E0C' : tone === 'purple' ? '#0B143B' : '#270E0C',
+  } as React.CSSProperties
   return (
     <div className={styles.pair} style={{ ...barStyle, ...(style || {}) }} aria-label={`${label} ${value}`}>
       <img className={styles.icon} src={iconSrc} alt="" draggable={false} />

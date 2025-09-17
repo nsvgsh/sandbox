@@ -82,8 +82,11 @@ export function EmojiClicker(props: EmojiClickerProps) {
   const handleHaptic = useCallback(() => {
     if (!haptics) return
     try {
-      const tg = typeof window !== 'undefined' ? ((window as any)?.Telegram ?? null) : null
-      const hf = tg?.WebApp?.HapticFeedback
+      type Haptic = { impactOccurred?: (s: 'soft'|'medium'|'heavy') => void }
+      type WebApp = { HapticFeedback?: Haptic }
+      type TgWindow = Window & { Telegram?: { WebApp?: WebApp } }
+      const w = (typeof window !== 'undefined' ? window : undefined) as TgWindow | undefined
+      const hf = w?.Telegram?.WebApp?.HapticFeedback
       if (hf && typeof hf.impactOccurred === 'function') {
         hf.impactOccurred('soft')
       }
@@ -126,7 +129,7 @@ export function EmojiClicker(props: EmojiClickerProps) {
   const rootStyle = useMemo<React.CSSProperties>(() => ({
     width: size,
     height: size,
-    ['--shape-radius' as any]: `${shapeRadius}px`,
+    ['--shape-radius' as '--shape-radius']: `${shapeRadius}px`,
   }), [size, shapeRadius])
 
   const mediaStyle = useMemo<React.CSSProperties>(() => ({

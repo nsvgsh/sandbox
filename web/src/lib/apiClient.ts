@@ -6,14 +6,20 @@ export type CountersNormalized = {
   totalTaps: number
 }
 
+function toNumber(value: unknown, fallback = 0): number {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : fallback
+  const n = Number(value)
+  return Number.isFinite(n) ? n : fallback
+}
+
 export function normalizeCounters(input: unknown): CountersNormalized {
-  const c = (typeof input === 'object' && input !== null ? input as Record<string, unknown> : {})
+  const c: Record<string, unknown> = (typeof input === 'object' && input !== null) ? (input as Record<string, unknown>) : {}
   return {
-    coins: Number((c as any).coins || 0),
-    tickets: Number((c as any).tickets || 0),
-    coinMultiplier: Number((c as any).coinMultiplier ?? (c as any).coin_multiplier ?? 1),
-    level: Number((c as any).level || 0),
-    totalTaps: Number((c as any).totalTaps ?? (c as any).total_taps ?? 0),
+    coins: toNumber(c['coins'], 0),
+    tickets: toNumber(c['tickets'], 0),
+    coinMultiplier: toNumber(c['coinMultiplier'] ?? c['coin_multiplier'], 1),
+    level: toNumber(c['level'], 0),
+    totalTaps: toNumber(c['totalTaps'] ?? c['total_taps'], 0),
   }
 }
 
@@ -31,8 +37,8 @@ export function parsePublicConfig(obj: Record<string, unknown>): PublicConfig {
   // obj is key->value map from /v1/config
   const adTTLRaw = obj['ad_ttl_seconds']
   const adTTL = typeof adTTLRaw === 'number' ? adTTLRaw : Number(adTTLRaw ?? 180)
-  const thresholds = (obj['thresholds'] as Record<string, unknown>) || {}
-  const batchRaw = thresholds?.['batch_min_interval_ms']
+  const thresholds = (typeof obj['thresholds'] === 'object' && obj['thresholds'] !== null ? obj['thresholds'] as Record<string, unknown> : {})
+  const batchRaw = thresholds['batch_min_interval_ms']
   const batchMs = typeof batchRaw === 'number' ? batchRaw : Number(batchRaw ?? 100)
   const monetagEnabled = Boolean(obj['monetag_enabled'] ?? false)
   const monetagZoneId = typeof obj['monetag_zone_id'] === 'string' ? (obj['monetag_zone_id'] as string) : undefined
