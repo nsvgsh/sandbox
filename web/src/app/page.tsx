@@ -258,7 +258,7 @@ export default function Home() {
     try { sessionStorage.setItem(`unlock:${key}`, JSON.stringify({ impressionId, expiresAt })) } catch {}
     setAdUnlocks((s) => ({ ...s, [key]: { impressionId, expiresAt } }))
   }
-  function readUnlockForTask(taskId: string): { impressionId: string; expiresAt: number } | null {
+  const readUnlockForTask = useCallback((taskId: string): { impressionId: string; expiresAt: number } | null => {
     const key = `task:${taskId}`
     const inState = adUnlocks[key]
     if (inState) return inState
@@ -269,7 +269,7 @@ export default function Home() {
       if (parsed && typeof parsed.expiresAt === 'number' && typeof parsed.impressionId === 'string') return { impressionId: parsed.impressionId, expiresAt: parsed.expiresAt }
     } catch {}
     return null
-  }
+  }, [adUnlocks])
   function clearUnlockForTask(taskId: string) {
     const key = `task:${taskId}`
     try { sessionStorage.removeItem(`unlock:${key}`) } catch {}
