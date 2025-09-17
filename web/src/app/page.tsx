@@ -383,12 +383,7 @@ export default function Home() {
     }
   }
 
-  async function loadLeaderboard() {
-    const res = await fetch('/api/v1/leaderboard?top=10')
-    if (!res.ok) return
-    const data = await res.json()
-    setLeaderboard(data)
-  }
+  // removed loadLeaderboard (not used in current UI build)
 
   useEffect(() => {
     if (userId && !session) {
@@ -396,7 +391,6 @@ export default function Home() {
         await refreshDebug()
         await resumeOrStartSession()
         await loadTasks()
-        await loadLeaderboard()
       })()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -467,7 +461,7 @@ export default function Home() {
         setMonetagEnabled(Boolean(cfg.monetagEnabled))
         setMonetagZoneId(cfg.monetagZoneId)
         setMonetagSdkUrl(cfg.monetagSdkUrl)
-        setUnlockPolicy(cfg.unlockPolicy || 'any')
+        // unlock policy is advisory for UI only in this build; omit unused setter
         setLogFailedAdEvents(Boolean(cfg.logFailedAdEvents))
       } catch {}
     })()
