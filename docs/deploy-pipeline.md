@@ -18,6 +18,13 @@
   supabase secrets list
   ```
 
+## Database initialization (fresh Supabase project)
+- In Supabase SQL Editor run in order:
+  1) `docs/db-schema.sql` (base schema)
+  2) `create extension if not exists "pgcrypto";`
+  3) Migrations from `supabase/migrations/` in order: `001` → `002` → `003` → `004` → `005`
+  - Notes: migrations `003`/`005` are idempotent (safe to re-run); they handle the `ad_events_status_check` constraint.
+
 ## Build & deploy
 - Vercel: push to main triggers build; preview per PR
 - Supabase functions (not used in this app version):
@@ -62,13 +69,13 @@
   - [ ] Smoke flows: level bonus → ad/log → bonus claim; tasks → ad/log → claim
 
 ## Smoke checks
-- GET /v1/health → ok
-- POST /v1/auth/dev (local) with dev token → 200 sets cookie
-- POST /v1/session/start → returns ids; then POST /v1/session/claim with same ids → echoes; with random epoch → rotates
-- POST /v1/ingest/taps → 200 and nextThreshold
-- Level-up path: reach level, then POST /v1/ad/log with intent="level_bonus" → returns impressionId; POST /v1/level/bonus/claim with that impressionId within `ad_ttl_seconds` → bonus applied; UI shows Claim x2 countdown
-- Task path (intent-coupled): GET /v1/tasks (pick available), POST /v1/tasks/{id}/claim → 409 AD_REQUIRED; POST /v1/ad/log with intent="task:{id}" → POST /v1/tasks/{id}/claim → 200
-- GET /v1/leaderboard → top K, rank, activePlayers
+- GET /api/v1/health → ok
+- POST /api/v1/auth/dev (when DEV_TOKEN enabled) with header `x-dev-token: <token>` → 200 sets cookie
+- POST /api/v1/session/start → returns ids; then POST /api/v1/session/claim with same ids → echoes; with random epoch → rotates
+- POST /api/v1/ingest/taps → 200 and nextThreshold
+- Level-up path: reach level, then POST /api/v1/ad/log with intent="level_bonus" → returns impressionId; POST /api/v1/level/bonus/claim with that impressionId within `ad_ttl_seconds` → bonus applied; UI shows Claim x2 countdown
+- Task path (intent-coupled): GET /api/v1/tasks (pick available), POST /api/v1/tasks/{id}/claim → 409 AD_REQUIRED; POST /api/v1/ad/log with intent="task:{id}" → POST /api/v1/tasks/{id}/claim → 200
+- GET /api/v1/leaderboard → top K, rank, activePlayers
 
 ## Observability & rollback
 - Metrics: 2xx/4xx/5xx per endpoint, rate‑limit hits, epoch conflicts, ad TTL rejects (TTL_EXPIRED)
@@ -80,3 +87,13 @@
 - `.env` files never committed; manage with Supabase secrets CLI
 - Avoid logging full secrets; print truncated hashes only
 - Local dev: set both `NEXT_PUBLIC_DEV_TOKEN` and `DEV_TOKEN` to the same value so admin/debug endpoints authorize
+- Prod test of gameplay (optional): temporarily set `DEV_TOKEN` and `NEXT_PUBLIC_DEV_TOKEN` to the same value in Vercel project settings to enable /api/v1/auth/dev; remove after testing.
+
+## Local development (web)
+- Requirements: local Postgres (or Supabase local), Node 18+
+- Steps:
+  - Ensure Postgres is running; set `DATABASE_URL` (see `docs/env.example`)
+  - From repo root: `cd web && npm install`
+  - Generate `web/.env.local`: `node scripts/setup-env.mjs` (pulls subset from `docs/env.example`)
+  - (Optional) Set `DEV_TOKEN` in `web/.env.local` and ensure `NEXT_PUBLIC_DEV_TOKEN` matches
+  - Run dev server: `npm run dev` (in `web/`)
