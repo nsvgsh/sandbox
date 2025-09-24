@@ -27,4 +27,5 @@ Scope note: v1 avoids payments/Stars, complex ads, PvP, clans, and other heavy s
 Notes:
 - `DEV_TOKEN` and `NEXT_PUBLIC_DEV_TOKEN` should match; the setup script mirrors them.
 - Edit `web/.env.local` to change local values; restart `next dev` after edits.
+- 
 
