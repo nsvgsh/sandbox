@@ -53,3 +53,4 @@
 | TAP-BATCHING-002 | Implemented client tap aggregator and flusher with monotonic UI |
 | TAP-BATCHING-003 | Parsed tap_agg config on client and wired UI tuning |
 | TAP-BATCHING-004 | Updated docs: overview, API contracts, deploy pipeline, env, db models |
+| WEB-COOKIES-0001 | Set dev cookie SameSite=None; Secure; added header fallback for Telegram Web |

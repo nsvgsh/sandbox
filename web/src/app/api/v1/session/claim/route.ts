@@ -9,7 +9,16 @@ function isUuid(value: string): boolean {
 
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
-  const userId = cookieStore.get('dev_session')?.value
+  let userId = cookieStore.get('dev_session')?.value
+  if (!userId) {
+    // Dev header fallback for Telegram Web (3PC blocked)
+    const devToken = req.headers.get('x-dev-token')
+    const providedUser = req.headers.get('x-user-id')
+    const expected = process.env.DEV_TOKEN
+    if (expected && devToken === expected && providedUser) {
+      userId = providedUser
+    }
+  }
   if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
   const body = (await req.json().catch(() => ({}))) as { sessionId?: string; sessionEpoch?: string }

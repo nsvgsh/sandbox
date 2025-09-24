@@ -5,7 +5,18 @@ import { withClient } from '../../../../../lib/db'
 
 export async function POST() {
   const cookieStore = await cookies()
-  const userId = cookieStore.get('dev_session')?.value
+  let userId = cookieStore.get('dev_session')?.value
+  if (!userId) {
+    // Dev header fallback for Telegram Web (3PC blocked)
+    const headersList = (await import('next/headers')).headers
+    const reqHeaders = await headersList()
+    const devToken = reqHeaders.get('x-dev-token')
+    const providedUser = reqHeaders.get('x-user-id')
+    const expected = process.env.DEV_TOKEN
+    if (expected && devToken === expected && providedUser) {
+      userId = providedUser
+    }
+  }
   if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
   const row = await withClient(async (c) => {

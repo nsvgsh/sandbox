@@ -10,6 +10,7 @@ export async function POST(req: NextRequest) {
   }
   const userId = randomUUID()
   const cookieStore = await cookies()
-  cookieStore.set('dev_session', userId, { httpOnly: true, sameSite: 'lax', secure: false, path: '/' })
+  // Cross-site compatible for Telegram Web (iframe): SameSite=None; Secure
+  cookieStore.set('dev_session', userId, { httpOnly: true, sameSite: 'none', secure: true, path: '/' })
   return NextResponse.json({ userId })
 }
