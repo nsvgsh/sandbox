@@ -21,7 +21,12 @@ export async function POST(req: NextRequest) {
   }
   const provider = body.provider || 'stub'
   const placement = body.placement || 'level_bonus'
-  const status = (body.status as string) || 'closed'
+  // Derive canonical status on server: 'completed' on valued result; otherwise 'failed'
+  let status: 'completed' | 'failed' = 'failed'
+  try {
+    const rewardType = body?.result?.reward_event_type
+    if (rewardType === 'valued') status = 'completed'
+  } catch {}
   const impressionId = body.impressionId || randomUUID()
   const intent = typeof body.intent === 'string' && body.intent.trim() ? body.intent.trim() : undefined
 
@@ -30,7 +35,7 @@ export async function POST(req: NextRequest) {
     // insert ad_event
     const payload: Record<string, unknown> = { impressionId }
     if (intent) payload.intent = intent
-    if (status === 'closed' && body.result && typeof body.result === 'object') {
+    if (status === 'completed' && body.result && typeof body.result === 'object') {
       try {
         payload.monetag = body.result
       } catch {}
