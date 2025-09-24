@@ -84,7 +84,7 @@
 
 /* Only adjust font size in confirm state; primary inherits default */
 .ctaLabelConfirm {
-  font-size: clamp(0px, 5.36vw, 22.5px);
+  font-size: clamp(0px, 5.36vw, 22.4px);
 }
 
 .badge {
