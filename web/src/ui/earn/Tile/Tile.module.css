@@ -52,9 +52,16 @@
   background: transparent;
   border-radius: 0;
   border: var(--cta-slice) solid transparent;
-  border-image-source: url('/ui/earn/Button01_Green.Png');
   border-image-slice: 24 fill;
   border-image-repeat: stretch;
+}
+
+/* Variants approximate modal: primary (orange), confirm (green) */
+.ctaPrimary {
+  border-image-source: url('/ui/earn/Button01_Green.png');
+}
+.ctaConfirm {
+  border-image-source: url('/ui/earn/Button01_Orange.Png');
 }
 
 /* Tap feedback mirroring Button */
@@ -65,7 +72,7 @@
 
 .ctaLabel {
   font-family: 'Lilita One';
-  font-size: clamp(0px, 6vw, 26px);
+  font-size: clamp(0px, 6vw, 25.2px);
   font-weight: 400;
   letter-spacing: -0.025em;
   color: #ffffff;
@@ -73,6 +80,11 @@
   filter: drop-shadow(0 0.08em 0 #000000);
   position: relative;
   top: calc(-1 * var(--cta-nudge) * var(--cta-height));
+}
+
+/* Only adjust font size in confirm state; primary inherits default */
+.ctaLabelConfirm {
+  font-size: clamp(0px, 5.3vw, 22.6px);
 }
 
 .badge {

@@ -38,6 +38,7 @@ export function EarnGrid(props: {
       badgeNumber: idx + 1,
       icon: pickIconForTask(it.taskId),
       ctaLabel: 'Open',
+      variant: 'primary',
     }))
   }
 
@@ -73,9 +74,12 @@ export function EarnGrid(props: {
         <div className={styles.grid}>
           {list.map((t) => {
             const left = secondsLeft?.(t.id)
+            const isUnlocked = typeof left === 'number' && left > 0
             const disabled = typeof left === 'number' && left <= 0
+            const ctaLabel = isUnlocked ? `Claim (${left}s)` : 'Open'
+            const variant: 'primary' | 'confirm' = isUnlocked ? 'confirm' : 'primary'
             return (
-              <Tile key={t.id} tile={{ ...t, disabled }} onClick={(id) => {
+              <Tile key={t.id} tile={{ ...t, disabled, ctaLabel, variant }} onClick={(id) => {
                 if (activeTab === 'available') {
                   const leftNow = secondsLeft?.(id)
                   if (leftNow && leftNow > 0) {

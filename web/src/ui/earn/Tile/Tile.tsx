@@ -8,6 +8,7 @@ export type EarnTile = {
   icon: 'chest' | 'target'
   ctaLabel?: string
   disabled?: boolean
+  variant?: 'primary' | 'confirm'
 }
 
 export function Tile({ tile, onClick }: { tile: EarnTile; onClick?: (id: string) => void }) {
@@ -20,7 +21,7 @@ export function Tile({ tile, onClick }: { tile: EarnTile; onClick?: (id: string)
       <div className={styles.card} role="group" aria-label="Earn item">
         <img className={styles.icon} src={iconSrc} alt="" draggable={false} />
         <button
-          className={styles.cta}
+          className={[styles.cta, tile.variant === 'confirm' ? styles.ctaConfirm : styles.ctaPrimary].join(' ')}
           type="button"
           onPointerDown={(e) => { try { e.currentTarget.setAttribute('data-pressed', 'true') } catch {} }}
           onPointerUp={(e) => { try { e.currentTarget.removeAttribute('data-pressed') } catch {}; onClick?.(tile.id) }}
@@ -28,7 +29,7 @@ export function Tile({ tile, onClick }: { tile: EarnTile; onClick?: (id: string)
           onPointerLeave={(e) => { try { e.currentTarget.removeAttribute('data-pressed') } catch {} }}
           disabled={tile.disabled}
         >
-          <span className={styles.ctaLabel}>{tile.ctaLabel ?? 'Open'}</span>
+          <span className={[styles.ctaLabel, tile.variant === 'confirm' ? styles.ctaLabelConfirm : ''].join(' ')}>{tile.ctaLabel ?? 'Open'}</span>
         </button>
       </div>
     </div>
