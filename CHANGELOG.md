@@ -49,3 +49,7 @@
 | UI-BOTTOMNAV-active_tap_states | Added active indicator and tap feedback to bottom nav |
 | UI-LEVELUP-MODAL-POLISH-001 | Constrained modal to 420px, added 3-row grid (50/30/20), tokenized colors/typography, extracted RewardPill, removed inline styles |
 | ENV-0001 | Added DATABASE_URL to docs/env.example; setup script now includes it for web/.env.local |
+| TAP-BATCHING-001 | Added DB-backed tap aggregation config (006_tap_agg_config.sql) |
+| TAP-BATCHING-002 | Implemented client tap aggregator and flusher with monotonic UI |
+| TAP-BATCHING-003 | Parsed tap_agg config on client and wired UI tuning |
+| TAP-BATCHING-004 | Updated docs: overview, API contracts, deploy pipeline, env, db models |

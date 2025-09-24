@@ -14,6 +14,7 @@ Conventions
 - POST /session/start → { sessionId, sessionEpoch, lastAppliedSeq }
 - POST /session/claim → { sessionId, sessionEpoch, lastAppliedSeq }
 - POST /ingest/taps → { counters, nextThreshold, leveledUp? }
+  - Clients may send coalesced tap counts (`taps > 1`). Server applies idempotency/seq as usual and returns authoritative counters.
 - GET /counters → { counters, effects?, nextThreshold }
 - POST /ad/log → { recorded, impressionId }
   - Body accepts optional `intent`: `"level_bonus"` or `"task:<taskId>"`.
@@ -29,6 +30,9 @@ Conventions
   - Idempotency: send `X-Idempotency-Key` (recommend using the ad `impressionId`). Duplicate claims with the same key do not grant twice.
   - Errors: 409 `ALREADY_CLAIMED` (task already claimed), 409 `AD_REQUIRED`, 404 `NOT_FOUND`.
 - GET /config → { thresholds, policies, flags, monetag, leaderboard }
+  - thresholds: includes `batch_min_interval_ms` used by client flusher cadence and server guard.
+  - ingest: may include `max_taps_per_batch`, `clamp_soft` (server‑side awareness only).
+  - tap_agg: includes client UI tuning keys: `flush_threshold`, `tween_ms_min`, `tween_ms_max`.
 - POST /track/lead → {}
 - GET /leaderboard?top=K → { top, me, activePlayers }  (windowDays is configured via env)
 - POST /partners/propellerads/enqueue (service) → { queued }

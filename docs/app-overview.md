@@ -42,6 +42,11 @@
   - On successful claim, a confirmation modal shows: header “congratulations!” and `reward: task_reward: { ... }` formatted from the task payload.
   - Ad unlock TTLs use an advisory countdown; the server remains source of truth. If TTL expires, the task stays in AVAILABLE and shows `Watch ad` again (no EXPIRED tab in current UI).
 
+## Tap aggregation (always-on)
+- Client aggregates taps locally and flushes coalesced counts to `/v1/ingest/taps` on a timer and when a size threshold is reached.
+- UI coins are derived as `lastServerCoins + pendingTaps × coin_multiplier` for smoothness. Levels and tickets update only from server responses.
+- Server remains authoritative for progression; any server clamp or rounding will reconcile without visual regress (monotonic render).
+
 ## Security
 - Always validate `WebApp.initData` (`hash`, `signature`) server‑side before trusting params
 - Do not trust `start_param` until validation completes

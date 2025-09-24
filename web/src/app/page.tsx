@@ -64,6 +64,15 @@ export default function Home() {
   const [session, setSession] = useState<Session | null>(null)
   const [clientSeq, setClientSeq] = useState<number>(0)
   const [counters, setCounters] = useState<Counters>(null)
+  // Aggregator state
+  const baseCountersRef = useRef<CountersNormalized | null>(null)
+  const [displayCoins, setDisplayCoins] = useState<number>(0)
+  const [pendingTaps, setPendingTaps] = useState<number>(0)
+  const inflightRef = useRef<boolean>(false)
+  const lastFlushAtRef = useRef<number>(0)
+  const flushThresholdRef = useRef<number>(20)
+  const tweenMinRef = useRef<number>(80)
+  const tweenMaxRef = useRef<number>(180)
   const [leveledUp, setLeveledUp] = useState<number | null>(null)
   const [nextThreshold, setNextThreshold] = useState<NextThreshold>(null)
   const [debugState, setDebugState] = useState<DebugState>(null)
@@ -135,35 +144,23 @@ export default function Home() {
     await loadCounters()
   }
 
+  function deriveDisplayCoins(base: CountersNormalized | null, pending: number): number {
+    const coins = Number(base?.coins ?? 0)
+    const mult = Number(base?.coinMultiplier ?? 1)
+    const delta = Math.floor(Math.max(0, pending) * Math.max(1, mult))
+    return coins + delta
+  }
+
   async function tap() {
     if (!session) return
-    const nextSeq = clientSeq + 1
-  const { ok, json } = await fetchJsonWithRetry<unknown>('/api/v1/ingest/taps', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ taps: 1, clientSeq: nextSeq, sessionId: session.sessionId, sessionEpoch: session.sessionEpoch }),
-    }, {
-      retry429DelayMs: batchMinIntervalMs,
-      onOutdated: async () => { await resumeOrStartSession() },
+    // local optimistic update only
+    setPendingTaps((p) => {
+      const next = p + 1
+      const base = baseCountersRef.current
+      const target = deriveDisplayCoins(base, next)
+      setDisplayCoins((prev) => (target < prev ? prev : target))
+      return next
     })
-    if (ok) {
-      const data = json as { counters: unknown; nextThreshold?: NextThreshold; leveledUp?: { level: number } | null }
-      const c = normalizeCounters(data.counters)
-      setCounters(c)
-      setClientSeq(nextSeq)
-      setLeveledUp(data?.leveledUp?.level ?? null)
-      if (data?.leveledUp?.level) {
-        try { await refreshDebug() } catch {}
-      }
-      setNextThreshold(data?.nextThreshold ?? null)
-    } else {
-      try {
-        const errText = typeof (json as { error?: unknown })?.error === 'string' ? (json as { error?: string }).error! : 'Something went wrong. Please try again.'
-        showNotice(errText)
-      } catch {
-        showNotice('Something went wrong. Please try again.')
-      }
-    }
   }
 
   // removed unused claimBonus
@@ -287,6 +284,9 @@ export default function Home() {
     {
       const c = normalizeCounters(data.counters)
       setCounters(c)
+      baseCountersRef.current = c
+      // Reset display to at least server value
+      setDisplayCoins((prev) => (prev < c.coins ? c.coins : prev))
     }
     setNextThreshold(data.nextThreshold as NextThreshold)
   }
@@ -471,6 +471,9 @@ export default function Home() {
         const cfg = parsePublicConfig(obj)
         setAdTTLSeconds(cfg.adTTLSeconds)
         setBatchMinIntervalMs(cfg.batchMinIntervalMs)
+        if (typeof cfg.tapAggFlushThreshold === 'number') flushThresholdRef.current = cfg.tapAggFlushThreshold
+        if (typeof cfg.tapAggTweenMsMin === 'number') tweenMinRef.current = cfg.tapAggTweenMsMin
+        if (typeof cfg.tapAggTweenMsMax === 'number') tweenMaxRef.current = cfg.tapAggTweenMsMax
         setMonetagEnabled(Boolean(cfg.monetagEnabled))
         setMonetagZoneId(cfg.monetagZoneId)
         setMonetagSdkUrl(cfg.monetagSdkUrl)
@@ -479,6 +482,60 @@ export default function Home() {
       } catch {}
     })()
   }, [])
+
+  // Flusher: coalesce pending taps at interval and size threshold
+  useEffect(() => {
+    if (!session) return
+    const tick = async () => {
+      if (inflightRef.current) return
+      const now = Date.now()
+      const since = now - lastFlushAtRef.current
+      const threshold = flushThresholdRef.current
+      const shouldByTime = since >= Math.max(50, batchMinIntervalMs)
+      const shouldBySize = pendingTaps >= Math.max(1, threshold)
+      if (!shouldByTime && !shouldBySize) return
+      const toSend = pendingTaps
+      if (toSend <= 0) return
+      inflightRef.current = true
+      const nextSeq = clientSeq + 1
+      const { ok, json, status } = await fetchJsonWithRetry<unknown>('/api/v1/ingest/taps', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ taps: toSend, clientSeq: nextSeq, sessionId: session.sessionId, sessionEpoch: session.sessionEpoch }),
+      }, {
+        retry429DelayMs: batchMinIntervalMs,
+        onOutdated: async () => { await resumeOrStartSession() },
+      })
+      if (ok) {
+        const data = json as { counters: unknown; nextThreshold?: NextThreshold; leveledUp?: { level: number } | null }
+        const c = normalizeCounters(data.counters)
+        baseCountersRef.current = c
+        setCounters(c)
+        setClientSeq(nextSeq)
+        setLeveledUp(data?.leveledUp?.level ?? null)
+        if (data?.leveledUp?.level) { try { await refreshDebug() } catch {} }
+        setNextThreshold(data?.nextThreshold ?? null)
+        // reduce pending by sent count
+        setPendingTaps((p) => Math.max(0, p - toSend))
+        // ensure display is at least base coins
+        setDisplayCoins((prev) => (prev < c.coins ? c.coins : prev))
+      } else {
+        // keep pending taps; show notice only for non-retryable errors
+        if (status !== 429 && status !== 409 && status !== 0) {
+          try {
+            const errText = typeof (json as { error?: unknown })?.error === 'string' ? (json as { error?: string }).error! : 'Something went wrong. Please try again.'
+            showNotice(errText)
+          } catch {
+            showNotice('Something went wrong. Please try again.')
+          }
+        }
+      }
+      lastFlushAtRef.current = Date.now()
+      inflightRef.current = false
+    }
+    const id = setInterval(() => { void tick() }, Math.max(50, batchMinIntervalMs))
+    return () => clearInterval(id)
+  }, [session, clientSeq, batchMinIntervalMs, pendingTaps])
 
   // Wallet: hydrate address from sessionStorage
   useEffect(() => {
@@ -564,18 +621,20 @@ export default function Home() {
           {activeSection === 'home' && (
             <ScreenContainer>
               <div style={{ marginBottom: 8 }}>
-                <HeaderHUD counters={counters ? {
-                  coins: Number(counters.coins ?? 0),
-                  tickets: Number(counters.tickets ?? 0),
-                  level: Number(counters.level ?? 0),
-                } : null} />
+                <HeaderHUD counters={(() => {
+                  const t = Number(counters?.tickets ?? 0)
+                  const lvl = Number(counters?.level ?? 0)
+                  // Use displayCoins for smooth, monotonic rendering
+                  const coins = Number.isFinite(displayCoins) ? displayCoins : Number(counters?.coins ?? 0)
+                  return { coins, tickets: t, level: lvl }
+                })()} />
               </div>
               <AvatarRow />
               <div style={{ marginTop: 8 }}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, paddingTop: '10dvh', paddingBottom: 'calc(24px + env(safe-area-inset-bottom))' }}>
                   <EmojiClicker
                     size={clickerSize}
-                    onTap={() => { void tap() }}
+                    onTap={() => { tap() }}
                     haptics={true}
                   />
                   <div style={{ fontSize: 12, opacity: 0.75 }}>Tap to earn coins</div>

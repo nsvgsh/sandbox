@@ -26,6 +26,9 @@ export function normalizeCounters(input: unknown): CountersNormalized {
 export type PublicConfig = {
   adTTLSeconds: number
   batchMinIntervalMs: number
+  tapAggFlushThreshold?: number
+  tapAggTweenMsMin?: number
+  tapAggTweenMsMax?: number
   monetagEnabled?: boolean
   monetagZoneId?: string
   monetagSdkUrl?: string
@@ -40,6 +43,10 @@ export function parsePublicConfig(obj: Record<string, unknown>): PublicConfig {
   const thresholds = (typeof obj['thresholds'] === 'object' && obj['thresholds'] !== null ? obj['thresholds'] as Record<string, unknown> : {})
   const batchRaw = thresholds['batch_min_interval_ms']
   const batchMs = typeof batchRaw === 'number' ? batchRaw : Number(batchRaw ?? 100)
+  const tapAgg = (typeof obj['tap_agg'] === 'object' && obj['tap_agg'] !== null ? obj['tap_agg'] as Record<string, unknown> : {})
+  const flushTh = typeof tapAgg['flush_threshold'] === 'number' ? (tapAgg['flush_threshold'] as number) : Number(tapAgg['flush_threshold'] ?? 20)
+  const tweenMin = typeof tapAgg['tween_ms_min'] === 'number' ? (tapAgg['tween_ms_min'] as number) : Number(tapAgg['tween_ms_min'] ?? 80)
+  const tweenMax = typeof tapAgg['tween_ms_max'] === 'number' ? (tapAgg['tween_ms_max'] as number) : Number(tapAgg['tween_ms_max'] ?? 180)
   const monetagEnabled = Boolean(obj['monetag_enabled'] ?? false)
   const monetagZoneId = typeof obj['monetag_zone_id'] === 'string' ? (obj['monetag_zone_id'] as string) : undefined
   const monetagSdkUrl = typeof obj['monetag_sdk_url'] === 'string' ? (obj['monetag_sdk_url'] as string) : undefined
@@ -49,6 +56,9 @@ export function parsePublicConfig(obj: Record<string, unknown>): PublicConfig {
   return {
     adTTLSeconds: Number.isFinite(adTTL) ? adTTL : 180,
     batchMinIntervalMs: Number.isFinite(batchMs) ? batchMs : 100,
+    tapAggFlushThreshold: Number.isFinite(flushTh) ? flushTh : 20,
+    tapAggTweenMsMin: Number.isFinite(tweenMin) ? tweenMin : 80,
+    tapAggTweenMsMax: Number.isFinite(tweenMax) ? tweenMax : 180,
     monetagEnabled,
     monetagZoneId,
     monetagSdkUrl,

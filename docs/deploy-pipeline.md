@@ -22,8 +22,9 @@
 - In Supabase SQL Editor run in order:
   1) `docs/db-schema.sql` (base schema)
   2) `create extension if not exists "pgcrypto";`
-  3) Migrations from `supabase/migrations/` in order: `001` → `002` → `003` → `004` → `005`
+  3) Migrations from `supabase/migrations/` in order: `001` → `002` → `003` → `004` → `005` → `006`
   - Notes: migrations `003`/`005` are idempotent (safe to re-run); they handle the `ad_events_status_check` constraint.
+  - Migration `006_tap_agg_config.sql` seeds tap aggregation parameters in `game_config` (`thresholds.batch_min_interval_ms`, `ingest.max_taps_per_batch`, `ingest.clamp_soft`, `tap_agg.flush_threshold`, `tap_agg.tween_ms_min`, `tap_agg.tween_ms_max`).
 
 ## Build & deploy
 - Vercel: push to main triggers build; preview per PR

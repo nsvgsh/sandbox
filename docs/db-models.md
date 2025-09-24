@@ -45,3 +45,7 @@ Notes on migrations
 - The canonical runtime schema includes additive changes in `supabase/migrations/` that extend the baseline documented here. Notable examples:
   - `003_x2_policy_v3.sql` normalizes `ad_events.status` to include `completed` and `used`, adds indexes on impressionId lookup, and introduces `claim_level_bonus_v3` with A‑only TTL gating, idempotency by impressionId, and ad consumption (`used`).
   - `001_hotpath.sql` provides `game_config` defaults, the `_next_threshold` helper, session/tap functions, and ensures `level_events.template_id` exists.
+  - `006_tap_agg_config.sql` seeds tap aggregation parameters in `game_config`:
+    - `thresholds.batch_min_interval_ms` — server guard and client cadence
+    - `ingest.max_taps_per_batch`, `ingest.clamp_soft` — server ingest awareness
+    - `tap_agg.flush_threshold`, `tap_agg.tween_ms_min`, `tap_agg.tween_ms_max` — client UI tuning via `/v1/config`.
