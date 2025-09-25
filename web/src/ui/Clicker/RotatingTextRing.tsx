@@ -3,14 +3,20 @@
 import React, { useEffect, useMemo, useRef } from 'react'
 import styles from './RotatingTextRing.module.css'
 
+type RingStyle = React.CSSProperties & {
+  ['--ring-size']: string
+  ['--ring-opacity']: number | string
+  ['--ring-font-size']: string
+  ['--spin-duration']: string
+}
+
 export function RotatingTextRing(props: {
   sizePx: number
-  text?: string
   visible?: boolean
   degPerSec?: number
   className?: string
 }) {
-  const { sizePx, text = 'START TAP TO EARN REAL CASH', visible = true, degPerSec = 30, className } = props
+  const { sizePx, visible = true, degPerSec = 30, className } = props
 
   const fontSize = useMemo(() => {
     const base = Math.max(19, Math.min(25, Math.round(sizePx * 0.15)))
@@ -28,11 +34,11 @@ export function RotatingTextRing(props: {
 
   const pathIdRef = useRef<string>('ringPath-' + Math.random().toString(36).slice(2))
 
-  const styleVars: React.CSSProperties = {
-    ['--ring-size' as any]: `${ringSize}px`,
-    ['--ring-opacity' as any]: visible ? 1 : 0,
-    ['--ring-font-size' as any]: `${fontSize}px`,
-    ['--spin-duration' as any]: `${Math.max(4, Math.min(60, 360 / Math.max(10, degPerSec)))}s`,
+  const styleVars: RingStyle = {
+    ['--ring-size']: `${ringSize}px`,
+    ['--ring-opacity']: visible ? 1 : 0,
+    ['--ring-font-size']: `${fontSize}px`,
+    ['--spin-duration']: `${Math.max(4, Math.min(60, 360 / Math.max(10, degPerSec)))}s`,
   }
 
   // Split phrases: top and bottom

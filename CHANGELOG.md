@@ -56,3 +56,4 @@
 | ADS-STATUS-0001 | Normalize ad success: server writes status='completed'; strict claim check |
 | WEB-COOKIES-0001 | Set dev cookie SameSite=None; Secure; added header fallback for Telegram Web |
 | UI-HOME-CTA | Rotating circular CTA text around tap button; idle fade-in/out; reduced-motion respected |
+| WEB-BUILD-0001 | Fix Vercel build blocker by removing `any` from RotatingTextRing CSS variables |
