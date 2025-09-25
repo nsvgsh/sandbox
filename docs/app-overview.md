@@ -59,3 +59,7 @@
 ## Schema and migrations
 - `docs/db-schema.sql` is a baseline schema document. Authoritative schema includes additive changes in `supabase/migrations/`.
   - Examples: `ad_events.status` extended with `completed/used`, indexes on `(reward_payload->>'impressionId')`, `claim_level_bonus_v3` (A‑only gating, idempotency, marks ads as used), `level_events.template_id` ensured.
+
+## Home Screen
+
+- The main tap area is centered with an animated circular CTA ring that reads "START TAP TO EARN REAL CASH". The ring rotates when idle, fades out immediately on tap, and fades back in after ~1s of inactivity. It is decorative (`aria-hidden`) and respects `prefers-reduced-motion` (disables rotation). Typography follows Lilita One with subtle stroke and drop-shadow, and sizing adapts to the 320–420px container range.

@@ -11,6 +11,7 @@ import { Wallet } from '@/ui/wallet/Wallet/Wallet'
 import { ScreenContainer } from '@/ui/ScreenContainer/ScreenContainer'
 import pageStyles from './page.module.css'
 import { EmojiClicker } from '@/ui/Clicker'
+import { RotatingTextRing } from '@/ui/Clicker/RotatingTextRing'
 
 type Counters = {
   coins: number
@@ -100,6 +101,17 @@ export default function Home() {
   // const [walletTab, setWalletTab] = useState<'withdrawals' | 'activity' | 'airdrop'>('withdrawals')
   const [claimSuccess, setClaimSuccess] = useState<{ taskId: string; rewardPayload: Record<string, unknown> | null } | null>(null)
 
+  // CTA ring visibility based on tap activity
+  const [ctaVisible, setCtaVisible] = useState<boolean>(true)
+  const idleTimerRef = useRef<number | null>(null)
+  const touchActivity = useCallback(() => {
+    setCtaVisible(false)
+    if (idleTimerRef.current) {
+      try { window.clearTimeout(idleTimerRef.current) } catch {}
+    }
+    idleTimerRef.current = window.setTimeout(() => setCtaVisible(true), 1000)
+  }, [])
+
   async function devLogin() {
     const token = process.env.NEXT_PUBLIC_DEV_TOKEN || process.env.DEV_TOKEN || ''
     const res = await fetch('/api/v1/auth/dev', { method: 'POST', headers: { 'x-dev-token': token } })
@@ -153,7 +165,7 @@ export default function Home() {
 
   async function tap() {
     if (!session) return
-    // local optimistic update only
+    touchActivity()
     setPendingTaps((p) => {
       const next = p + 1
       const base = baseCountersRef.current
@@ -624,7 +636,6 @@ export default function Home() {
                 <HeaderHUD counters={(() => {
                   const t = Number(counters?.tickets ?? 0)
                   const lvl = Number(counters?.level ?? 0)
-                  // Use displayCoins for smooth, monotonic rendering
                   const coins = Number.isFinite(displayCoins) ? displayCoins : Number(counters?.coins ?? 0)
                   return { coins, tickets: t, level: lvl }
                 })()} />
@@ -632,14 +643,22 @@ export default function Home() {
               <AvatarRow />
               <div style={{ marginTop: 8 }}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, paddingTop: '10dvh', paddingBottom: 'calc(24px + env(safe-area-inset-bottom))' }}>
-                  <EmojiClicker
-                    size={clickerSize}
-                    onTap={() => { tap() }}
-                    haptics={true}
-                  />
-                  <div style={{ fontSize: 12, opacity: 0.75 }}>Tap to earn coins</div>
-                  {nextThreshold ? (
-                    <div style={{ fontSize: 11, opacity: 0.6 }}>Next: L{nextThreshold.level} • {nextThreshold.coins} coins</div>
+                  <div style={{ position: 'relative', width: clickerSize, height: clickerSize }}>
+                    <RotatingTextRing sizePx={clickerSize} visible={ctaVisible} />
+                    <EmojiClicker
+                      size={clickerSize}
+                      onTap={() => { tap() }}
+                      haptics={true}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div style={{ position: 'fixed', left: 0, right: 0, bottom: 'calc(18dvh + env(safe-area-inset-bottom))', display: 'flex', justifyContent: 'center', pointerEvents: 'none', zIndex: 60 }}>
+                <div style={{ textAlign: 'center', lineHeight: 1.3 }}>
+                  {Number(nextThreshold?.coins ?? 0) > 0 ? (
+                    <div style={{ fontSize: 12, opacity: 0.75 }}>
+                      {`Next Level: ${Number(nextThreshold?.coins ?? 0)} coins`}
+                    </div>
                   ) : null}
                 </div>
               </div>
