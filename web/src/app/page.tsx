@@ -77,7 +77,7 @@ export default function Home() {
   const [leveledUp, setLeveledUp] = useState<number | null>(null)
   const [nextThreshold, setNextThreshold] = useState<NextThreshold>(null)
   const [debugState, setDebugState] = useState<DebugState>(null)
-  type TaskDef = { taskId: string; state: 'available' | 'claimed'; rewardPayload?: Record<string, unknown> }
+  type TaskDef = { taskId: string; state: 'available' | 'claimed'; rewardPayload?: Record<string, unknown>; partnerKey?: string | null }
   const [tasks, setTasks] = useState<TaskDef[] | null>(null)
   const [tasksLoading, setTasksLoading] = useState<boolean>(false)
   const tasksLoadInFlightRef = useRef<boolean>(false)
@@ -403,7 +403,11 @@ export default function Home() {
       const code = (json && (json as { code?: string }).code) || ''
       if (code === 'AD_REQUIRED') {
         try { console.log(JSON.stringify({ event: 'task_claim_ad_required', taskId: taskId.slice(0,8) })) } catch {}
+        clearUnlockForTask(taskId)
         showNotice('Watch an ad for this offer first.')
+      }
+      if (code === 'ALREADY_CLAIMED') {
+        showNotice('Already claimed.')
       }
     }
   }
@@ -673,17 +677,37 @@ export default function Home() {
                   available={Array.isArray(tasks)
                     ? tasks
                         .filter((t) => t.state === 'available')
-                        .map((t) => ({ taskId: t.taskId, rewardPayload: t.rewardPayload ?? null, state: t.state }))
+                        .map((t) => ({ taskId: t.taskId, rewardPayload: t.rewardPayload ?? null, state: t.state, partnerKey: (t as any).partnerKey ?? null, unlockLevel: (t as any).unlockLevel ?? null }))
                     : []}
                   completed={Array.isArray(tasks)
                     ? tasks
                         .filter((t) => t.state === 'claimed')
-                        .map((t) => ({ taskId: t.taskId, rewardPayload: t.rewardPayload ?? null, state: t.state }))
+                        .map((t) => ({ taskId: t.taskId, rewardPayload: t.rewardPayload ?? null, state: t.state, partnerKey: (t as any).partnerKey ?? null, unlockLevel: (t as any).unlockLevel ?? null }))
                     : []}
                   activeTab={offersTab}
                   onTabChange={setOffersTab}
                   onWatch={(taskId) => watchAdForTask(taskId)}
                   onClaim={(taskId) => claimTask(taskId)}
+                  onPartnerOpen={(taskId) => {
+                    // Optimistic unlock: flip CTA to Claim immediately
+                    try { setUnlockForTask(taskId, 'free-trial', 60) } catch {}
+                    // Focus-based readiness refresh
+                    const onFocus = async () => {
+                      try {
+                        const res = await fetch(`/api/v1/tasks/${taskId}/ready`)
+                        if (res.ok) {
+                          const j = await res.json() as { ready: boolean; claimed: boolean }
+                          if (!j.ready) {
+                            // if not ready, clear optimistic unlock to avoid stale UI
+                            clearUnlockForTask(taskId)
+                          }
+                          await loadTasks()
+                        }
+                      } catch {}
+                      try { window.removeEventListener('focus', onFocus, { capture: true } as any) } catch {}
+                    }
+                    try { window.addEventListener('focus', onFocus, { once: true, capture: true } as any) } catch {}
+                  }}
                   secondsLeft={(taskId) => {
                     const unlock = readUnlockForTask(taskId)
                     return unlock ? Math.max(0, Math.ceil((unlock.expiresAt - nowTick) / 1000)) : null

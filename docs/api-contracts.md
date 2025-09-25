@@ -26,9 +26,18 @@ Conventions
 - GET /tasks → { definitions, progress }
 - POST /tasks/{taskId}/claim → { state, rewardEventId?, counters? }
   - Ad‑gated tasks: recent completed ad must match `intent='task:<taskId>'` within TTL; otherwise `AD_REQUIRED`.
+  - Free Trial partner tasks: no TTL; require a completed redirect click with intent `task:<taskId>`; latest eligible click is consumed.
   - Spend‑once: the matched ad is marked `used` on successful claim.
   - Idempotency: send `X-Idempotency-Key` (recommend using the ad `impressionId`). Duplicate claims with the same key do not grant twice.
   - Errors: 409 `ALREADY_CLAIMED` (task already claimed), 409 `AD_REQUIRED`, 404 `NOT_FOUND`.
+- GET /offer/free-trial/{taskId}/redirect → 302
+  - Reads URL template and source from config; generates UUIDv4 click id; records `ad_events` (`provider='free_trial'`, `placement='earn'`, `status='completed'`, `reward_payload.intent='task:<taskId>'`), then redirects with `_ocid` and `aff_subid`.
+  - Restricts host to `*.himfls.com`.
+  - Errors: 404 `NOT_FOUND` (unknown/inactive task), 503 `CONFIG_MISSING`, 400 `HOST_RESTRICTED|BAD_TEMPLATE`.
+- GET /tasks/{taskId}/ready → { ready, claimed, lastClickAt?, clicks? }
+  - For partner tasks (free_trial) reports if a redirect click exists and is unconsumed.
+  - 404 when the task is not an active free_trial partner task.
+
 - GET /config → { thresholds, policies, flags, monetag, leaderboard }
   - thresholds: includes `batch_min_interval_ms` used by client flusher cadence and server guard.
   - ingest: may include `max_taps_per_batch`, `clamp_soft` (server‑side awareness only).
@@ -46,4 +55,5 @@ Conventions
 ## UI notes (local dev parity)
 - Level‑up: client shows a modal on level‑up with base reward details and a two‑step x2 flow. After ad/log, the modal displays the total x2 reward for clarity; the backend still applies only the incremental portion per `level_bonus_policy` and marks the ad as `used`.
 - Tasks (Offers): per‑task ad unlock with `intent='task:<id>'` is required; client shows `Claim (Xs)` within TTL and a success modal on claim. If TTL expires, the task remains in AVAILABLE and shows `Watch ad` again (no separate EXPIRED tab in the current UI).
+- Free Trial: partner tiles use Redirect; claim has no TTL. A readiness check (`GET /tasks/{id}/ready`) is used to flip CTA to Claim after redirect.
 - TTL countdowns in the UI are advisory; the server remains authoritative on acceptance.

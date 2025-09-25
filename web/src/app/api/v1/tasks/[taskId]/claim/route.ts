@@ -16,7 +16,38 @@ export async function POST(req: NextRequest) {
     if (!taskId) return NextResponse.json({ error: 'bad_request' }, { status: 400 })
 
     const row = await withClient(async (c) => {
-      // Enforce ad requirement: must have an intent-bound completed ad for this task within TTL
+      // Determine if this is Free Trial partner task
+      const { rows: kindRows } = await c.query(
+        "select s.partner_key as \"partnerKey\" from task_definitions d join level_offer_schedule s on s.task_id=d.task_id where d.task_id=$1 and d.kind='partner' and s.active=true",
+        [taskId]
+      )
+      const isFreeTrial = !!kindRows[0] && String(kindRows[0].partnerKey) === 'free_trial'
+
+      if (isFreeTrial) {
+        // If already claimed, return conflict without requiring a fresh ad
+        const { rows: progRows } = await c.query(
+          'select state from task_progress where user_id=$1 and task_id=$2',
+          [userId, taskId]
+        )
+        if (progRows[0]?.state === 'claimed') {
+          throw new Error('ALREADY_CLAIMED')
+        }
+
+        // No TTL: consume latest eligible completed event with matching intent
+        const { rows: adRows } = await c.query(
+          "select id from ad_events where user_id=$1 and status='completed' and (reward_payload->>'intent') = $2 order by created_at desc limit 1",
+          [userId, `task:${taskId}`]
+        )
+        if (!adRows[0]) throw new Error('AD_REQUIRED')
+
+        // For partner, always use the ad_event id as idempotency key (valid uuid)
+        const idem = adRows[0].id
+        const { rows } = await c.query('select * from claim_task_v2($1,$2::uuid,$3::uuid)', [userId, taskId, idem])
+        await c.query('update ad_events set status=\'used\' where id=$1', [adRows[0].id])
+        return rows[0]
+      }
+
+      // Default branch: enforce TTL for ad requirement
       const { rows: ttlRows } = await c.query("select coalesce((value)::int, 180) as ttl from game_config where key='ad_ttl_seconds'")
       const ttl = Number(ttlRows[0]?.ttl || 180)
       const { rows: adRows } = await c.query(

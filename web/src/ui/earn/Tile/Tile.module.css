@@ -60,6 +60,9 @@
 .ctaPrimary {
   border-image-source: url('/ui/earn/Button01_Green.png');
 }
+.ctaPartner {
+  border-image-source: url('/ui/earn/Button01_Purple.png');
+}
 .ctaConfirm {
   border-image-source: url('/ui/earn/Button01_Orange.png');
 }

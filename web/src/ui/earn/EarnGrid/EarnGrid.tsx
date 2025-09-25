@@ -17,6 +17,8 @@ export type EarnItem = {
   taskId: string
   rewardPayload: Record<string, unknown> | null
   state: 'available' | 'claimed' | string
+  partnerKey?: string | null
+  unlockLevel?: number | null
 }
 
 export function EarnGrid(props: {
@@ -27,15 +29,16 @@ export function EarnGrid(props: {
   onTabChange: (tab: 'available' | 'completed') => void
   onWatch?: (taskId: string) => void
   onClaim?: (taskId: string) => void
+  onPartnerOpen?: (taskId: string) => void
   secondsLeft?: (taskId: string) => number | null
 }) {
-  const { available, completed, loading, activeTab, onTabChange, onWatch, onClaim, secondsLeft } = props
+  const { available, completed, loading, activeTab, onTabChange, onWatch, onClaim, onPartnerOpen, secondsLeft } = props
 
   const toTiles = (items: EarnItem[] | null): EarnTile[] => {
     if (!Array.isArray(items)) return []
     return items.map((it, idx) => ({
       id: it.taskId,
-      badgeNumber: idx + 1,
+      badgeNumber: typeof it.unlockLevel === 'number' ? it.unlockLevel : (idx + 1),
       icon: pickIconForTask(it.taskId),
       ctaLabel: 'Open',
       variant: 'primary',
@@ -72,23 +75,45 @@ export function EarnGrid(props: {
         <EmptyState label={activeTab === 'available' ? 'No available offers' : 'No completed offers'} />
       ) : (
         <div className={styles.grid}>
-          {list.map((t) => {
-            const left = secondsLeft?.(t.id)
+          {(activeTab === 'available' ? (available || []) : (completed || [])).map((it, idx) => {
+            const left = secondsLeft?.(it.taskId)
             const isUnlocked = typeof left === 'number' && left > 0
             const disabled = typeof left === 'number' && left <= 0
-            const ctaLabel = isUnlocked ? `Claim (${left}s)` : 'Open'
-            const variant: 'primary' | 'confirm' = isUnlocked ? 'confirm' : 'primary'
+            const isPartner = (it.partnerKey || '') === 'free_trial'
+            // For partner: when unlocked (ready), show Claim; otherwise show partnerKey (debug) or Open
+            const ctaLabel = isPartner
+              ? (isUnlocked ? 'Claim' : (it.partnerKey ? String(it.partnerKey) : 'Open'))
+              : (isUnlocked ? `Claim (${left}s)` : 'Open')
+            const variant: 'primary' | 'confirm' | 'partner' = isPartner
+              ? (isUnlocked ? 'confirm' : 'partner')
+              : (isUnlocked ? 'confirm' : 'primary')
+            const tile: EarnTile = {
+              id: it.taskId,
+              badgeNumber: typeof it.unlockLevel === 'number' ? it.unlockLevel : (idx + 1),
+              icon: pickIconForTask(it.taskId),
+              ctaLabel,
+              variant,
+              disabled: isPartner ? false : disabled,
+            }
             return (
-              <Tile key={t.id} tile={{ ...t, disabled, ctaLabel, variant }} onClick={(id) => {
-                if (activeTab === 'available') {
+              <Tile key={tile.id} tile={tile} onClick={(id) => {
+                  if (activeTab !== 'available') return
+                  if (isPartner) {
+                    if (isUnlocked) {
+                      onClaim?.(id)
+                    } else {
+                      try { onPartnerOpen?.(id) } catch {}
+                      try { window.open(`/api/v1/offer/free-trial/${id}/redirect`, '_blank', 'noopener,noreferrer') } catch {}
+                    }
+                    return
+                  }
                   const leftNow = secondsLeft?.(id)
                   if (leftNow && leftNow > 0) {
                     onClaim?.(id)
                   } else {
                     onWatch?.(id)
                   }
-                }
-              }} />
+                }} />
             )
           })}
         </div>

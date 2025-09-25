@@ -23,6 +23,11 @@
 | X2-POLICY-A-ONLY-001 | Added claim_level_bonus_v3 (A-only); idempotent by impressionId; mark ad_events as used; wired claim route to v3 |
 | UI-HOME-MAIN | Main screen scaffold in-place: counters header, avatar row, Tap Area, fixed bottom navigation |
 | UI-LEVELUP-MODAL | Level-up modal with base reward reveal; x2 flow with advisory countdown and idempotent claim; shows total x2 rewards after ad-view |
+| AD-PARTNER-FREE-TRIAL-DB | Added level_offer_schedule, config keys for partner redirect, and ad intent index |
+| AD-PARTNER-FREE-TRIAL-APPLY | Updated apply_tap_batch to honor Free Trial schedule and skip base rewards |
+| AD-PARTNER-FREE-TRIAL-REDIRECT | Added /api/v1/offer/free-trial/{taskId}/redirect endpoint with secure host check and ad-like logging |
+| AD-PARTNER-FREE-TRIAL-CLAIM | Branched tasks claim: Free Trial has no TTL; consumes latest eligible click |
+| AD-PARTNER-FREE-TRIAL-TASKS | Extended GET /api/v1/tasks to include partner metadata via schedule join |
 | UI-OFFERS-SCREEN | Offers screen (in-place): AVAILABLE/COMPLETED tabs, intent-coupled ad unlocks with TTL, sessionStorage persistence, per-task claim countdown |
 | UI-OFFERS-CLAIM-MODAL | Task claim success popup: "congratulations!" with reward: task_reward list |
 | UI-WALLET-SCREEN | Wallet shell (in-place): connect wallet (local address only), assets (TON/USDT placeholders), Coins/Tickets, Withdrawals/Activity/Airdrop tabs |
@@ -57,3 +62,5 @@
 | WEB-COOKIES-0001 | Set dev cookie SameSite=None; Secure; added header fallback for Telegram Web |
 | UI-HOME-CTA | Rotating circular CTA text around tap button; idle fade-in/out; reduced-motion respected |
 | WEB-BUILD-0001 | Fix Vercel build blocker by removing `any` from RotatingTextRing CSS variables |
+| AD-PARTNER-FREE-TRIAL-READY-API | Added GET /api/v1/tasks/{taskId}/ready endpoint |
+| AD-PARTNER-FREE-TRIAL-READY-UI | Earn grid flips CTA to Claim after readiness; partner opens in new tab |

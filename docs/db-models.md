@@ -27,6 +27,15 @@
 - task_definitions: task_id (PK), unlock_level, kind, reward_payload (jsonb), verification, active
 - task_progress: user_id + task_id (PK), state, claimed_at
 
+## level_offer_schedule (Free Trial)
+- level (PK), active (bool), skip_base_reward (bool, default true), partner_key (text, 'free_trial'), payload (jsonb), updated_at
+- task_id (uuid, unique, not null) — 1–1 mapping to `task_definitions`
+
+## game_config (keys excerpt)
+- thresholds, level_bonus_policy, coins_per_tap, ad_ttl_seconds, ingest
+- free_trial_url_template — partner URL template with placeholders `{CLICKID}` and `{SOURCE}`
+- free_trial_source — project-wide source tag for partner redirects
+
 ## attribution_leads
 - user_id (PK), campaign_id, first_seen_at, meta
 
@@ -49,3 +58,5 @@ Notes on migrations
     - `thresholds.batch_min_interval_ms` — server guard and client cadence
     - `ingest.max_taps_per_batch`, `ingest.clamp_soft` — server ingest awareness
     - `tap_agg.flush_threshold`, `tap_agg.tween_ms_min`, `tap_agg.tween_ms_max` — client UI tuning via `/v1/config`.
+  - `008_free_trial_offer.sql` adds `level_offer_schedule`, config keys, and intent index for partner clicks.
+  - `009_apply_tap_batch_free_trial.sql` updates `apply_tap_batch` to honor `level_offer_schedule` with `skip_base_reward`.
