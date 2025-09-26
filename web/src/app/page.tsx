@@ -14,6 +14,8 @@ import pageStyles from './page.module.css'
 import { EmojiClicker } from '@/ui/Clicker'
 import { RotatingTextRing } from '@/ui/Clicker/RotatingTextRing'
 
+type TapWindow = Window & { __tapConfigCoinsPerTap?: number }
+
 type Counters = {
   coins: number
   tickets: number
@@ -78,7 +80,7 @@ export default function Home() {
   const [leveledUp, setLeveledUp] = useState<number | null>(null)
   const [nextThreshold, setNextThreshold] = useState<NextThreshold>(null)
   const [debugState, setDebugState] = useState<DebugState>(null)
-  type TaskDef = { taskId: string; state: 'available' | 'claimed'; rewardPayload?: Record<string, unknown>; partnerKey?: string | null }
+  type TaskDef = { taskId: string; state: 'available' | 'claimed'; rewardPayload?: Record<string, unknown>; partnerKey?: string | null; unlockLevel?: number | null }
   const [tasks, setTasks] = useState<TaskDef[] | null>(null)
   const [tasksLoading, setTasksLoading] = useState<boolean>(false)
   const tasksLoadInFlightRef = useRef<boolean>(false)
@@ -164,7 +166,7 @@ export default function Home() {
   function deriveDisplayCoins(base: CountersNormalized | null, pending: number): number {
     const coins = Number(base?.coins ?? 0)
     const mult = Number(base?.coinMultiplier ?? 1)
-    const cpt = Number((window as any)?.__tapConfigCoinsPerTap ?? 1)
+    const cpt = Number(((window as unknown as TapWindow)?.__tapConfigCoinsPerTap) ?? 1)
     const delta = Math.floor(Math.max(0, pending) * Math.max(1, mult) * Math.max(1, cpt))
     return coins + delta
   }
@@ -440,16 +442,16 @@ export default function Home() {
     setFreeTrialAtLevel(null)
     void (async () => {
       // 1) Decide from current tasks snapshot (no dependency on tasks changes here)
-      const snapshot = Array.isArray(tasks) ? (tasks as any[]) : []
+                    const snapshot: TaskDef[] = Array.isArray(tasks) ? tasks : []
       let found = snapshot.find((x) => (x?.partnerKey === 'free_trial') && (x?.unlockLevel === leveledUp))
       // 2) If not found, perform a one-off fetch (do not mutate global tasks to avoid loops)
       if (!found) {
         try {
           const res = await fetch('/api/v1/tasks')
           if (res.ok) {
-            const data = await res.json().catch(() => null) as { definitions?: any[] } | null
-            const defs = Array.isArray(data?.definitions) ? data!.definitions! : []
-            found = defs.find((x: any) => (x?.partnerKey === 'free_trial') && (x?.unlockLevel === leveledUp))
+            const data = await res.json().catch(() => null) as { definitions?: TaskDef[] } | null
+            const defs: TaskDef[] = Array.isArray(data?.definitions) ? data!.definitions! : []
+            found = defs.find((x) => (x?.partnerKey === 'free_trial') && (x?.unlockLevel === leveledUp))
           }
         } catch {}
       }
@@ -518,7 +520,7 @@ export default function Home() {
         if (!res.ok) return
         const obj = await res.json()
         const cfg = parsePublicConfig(obj)
-        try { (window as any).__tapConfigCoinsPerTap = Number(cfg.coinsPerTap ?? 1) } catch {}
+        try { (window as unknown as TapWindow).__tapConfigCoinsPerTap = Number(cfg.coinsPerTap ?? 1) } catch {}
         setAdTTLSeconds(cfg.adTTLSeconds)
         setBatchMinIntervalMs(cfg.batchMinIntervalMs)
         if (typeof cfg.hudTweenMs === 'number') setHudTweenMs(cfg.hudTweenMs)
@@ -741,9 +743,9 @@ export default function Home() {
                           await loadTasks()
                         }
                       } catch {}
-                      try { window.removeEventListener('focus', onFocus, { capture: true } as any) } catch {}
+                    try { window.removeEventListener('focus', onFocus, { capture: true } as unknown as AddEventListenerOptions) } catch {}
                     }
-                    try { window.addEventListener('focus', onFocus, { once: true, capture: true } as any) } catch {}
+                  try { window.addEventListener('focus', onFocus, { once: true, capture: true } as AddEventListenerOptions) } catch {}
                   }}
                   secondsLeft={(taskId) => {
                     const unlock = readUnlockForTask(taskId)

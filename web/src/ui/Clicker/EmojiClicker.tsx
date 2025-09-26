@@ -194,7 +194,7 @@ export function EmojiClicker(props: EmojiClickerProps) {
     const currentLabel = labelList[currentIndex % labelList.length] || ''
     // compute per-tap increment text based on props (fallback to window config / +1)
     let cpt = typeof props.coinsPerTap === 'number' ? props.coinsPerTap : 1
-    try { if (!Number.isFinite(cpt)) cpt = Number(((window as any)?.__tapConfigCoinsPerTap) ?? 1) } catch {}
+    try { if (!Number.isFinite(cpt)) cpt = Number((((window as unknown) as { __tapConfigCoinsPerTap?: number })?.__tapConfigCoinsPerTap) ?? 1) } catch {}
     const multNow = typeof props.coinMultiplier === 'number' ? props.coinMultiplier : 1
     const inc = Math.max(1, Math.floor(Math.max(1, cpt) * Math.max(1, multNow)))
     pushParticle(x, y, currentAsset, `+${inc}`)
@@ -216,7 +216,7 @@ export function EmojiClicker(props: EmojiClickerProps) {
       }
     }
     if (typeof onTap === 'function') onTap(currentLabel)
-  }, [currentIndex, handleHaptic, labelList, onTap, pushParticle, sourceList, tapCount, emojis.length])
+  }, [currentIndex, handleHaptic, labelList, onTap, pushParticle, sourceList, tapCount, emojis.length, props.coinMultiplier, props.coinsPerTap])
 
   const onPointerDown = useCallback(() => setIsPressing(true), [])
   const onPointerUp = useCallback(() => setIsPressing(false), [])

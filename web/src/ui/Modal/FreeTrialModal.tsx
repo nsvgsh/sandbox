@@ -21,8 +21,8 @@ export const FreeTrialLevelUpModal: React.FC<FreeTrialLevelUpModalProps> = ({ le
   useEffect(() => {
     if (!hasOpened || hasReturned) return
     const onFocus = () => { try { setHasReturned(true) } catch {} }
-    try { window.addEventListener('focus', onFocus, { once: true } as any) } catch {}
-    return () => { try { window.removeEventListener('focus', onFocus as any, { capture: false } as any) } catch {} }
+    try { window.addEventListener('focus', onFocus, { once: true } as AddEventListenerOptions) } catch {}
+    return () => { try { window.removeEventListener('focus', onFocus, { capture: false } as AddEventListenerOptions) } catch {} }
   }, [hasOpened, hasReturned])
 
   const handleOpen = () => {
