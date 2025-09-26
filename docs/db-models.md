@@ -16,8 +16,10 @@
 - id (PK), user_id, level, base_reward, reward_payload (jsonb), bonus_offered, bonus_multiplier, ad_event_id, template_id, created_at
 
 ## Progression semantics
-- Level-up is driven by absolute current coins (no spend). If `coins >= (level+1) * base`, level increases; coins are not decremented.
+- Level-up is driven by absolute current coins (no spend). If `coins >= _threshold_for_level(level+1)`, level increases; coins are not decremented.
+- `_threshold_for_level(L)` uses a polynomial: `floor(a0 + a1*L + a2*L^2 + a3*L^3)`; coefficients are read from `game_config.thresholds_poly` with defaults.
 - Base rewards are applied after the level-up loop for the batch; rewards do not recursively trigger more level-ups in the same batch.
+- coin_multiplier in any payload is ABSOLUTE set; bonus x2 does not affect multiplier.
 
 ## ad_events
 - id (PK), user_id, session_id, provider, placement, status ('closed'|'failed'|'used'|'filled'|'completed'), reward_payload (jsonb), created_at
@@ -35,8 +37,7 @@
 - level (PK), active (bool), skip_base_reward (bool, default true), partner_key (text, 'free_trial'), payload (jsonb), updated_at
 - task_id (uuid, unique, not null) — 1–1 mapping to `task_definitions`
 
-## game_config (keys excerpt)
-- thresholds, level_bonus_policy, coins_per_tap, ad_ttl_seconds, ingest
+- thresholds, thresholds_poly, level_bonus_policy, coins_per_tap, ad_ttl_seconds, ingest
 - free_trial_url_template — partner URL template with placeholders `{CLICKID}` and `{SOURCE}`
 - free_trial_source — project-wide source tag for partner redirects
 

@@ -17,7 +17,7 @@ export type EarnItem = {
   taskId: string
   rewardPayload: Record<string, unknown> | null
   state: 'available' | 'claimed' | string
-  partnerKey?: string | null
+  kind?: string | null
   unlockLevel?: number | null
 }
 
@@ -79,7 +79,7 @@ export function EarnGrid(props: {
             const left = secondsLeft?.(it.taskId)
             const isUnlocked = typeof left === 'number' && left > 0
             const disabled = typeof left === 'number' && left <= 0
-            const isPartner = (it.partnerKey || '') === 'free_trial'
+            const isPartner = (it.kind || '') === 'free-trial'
             // For partner: when unlocked (ready), show Claim; otherwise show partnerKey (debug) or Open
             const ctaLabel = isPartner
               ? (isUnlocked ? 'Claim' : 'Free')

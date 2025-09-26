@@ -14,11 +14,8 @@ export async function GET() {
               d.unlock_level as "unlockLevel",
               d.kind,
               d.reward_payload as "rewardPayload",
-              d.verification,
-              s.partner_key as "partnerKey",
-              s.payload as "offerPayload"
+              d.verification
          from task_definitions d
-         left join level_offer_schedule s on s.task_id = d.task_id
         where d.active=true
         order by d.unlock_level`
     )
@@ -34,7 +31,7 @@ export async function GET() {
       progressByTaskId.set(p.taskId, p)
     }
 
-    const definitions = (defs.rows as { taskId: string; unlockLevel: number; kind: string; rewardPayload: unknown; verification: string; partnerKey?: string | null; offerPayload?: unknown }[]).map(
+    const definitions = (defs.rows as { taskId: string; unlockLevel: number; kind: string; rewardPayload: unknown; verification: string }[]).map(
       (d) => {
         const p = progressByTaskId.get(d.taskId)
         const state = p?.state === 'claimed' ? 'claimed' : d.unlockLevel <= userLevel ? 'available' : 'locked'

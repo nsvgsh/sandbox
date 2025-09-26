@@ -1,0 +1,13 @@
+{
+  "monetag": {
+    "enabled": true,
+    "zone_id": "9667281",
+    "sdk_url": "//munqu.com/sdk.js",
+    "unlock_policy": "any",
+    "log_failed_ad_events": true
+  },
+  "free_trial": {
+    "url_template": "https://himfls.com/track/Mzc2LjAuMy4zLjAuMC4wLjAuMC4wLjAuMA?_ocid={CLICKID}&aff_subid={SOURCE}",
+    "source": "tap-app"
+  }
+}

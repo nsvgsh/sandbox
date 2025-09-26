@@ -16,12 +16,13 @@ export async function POST(req: NextRequest) {
     if (!taskId) return NextResponse.json({ error: 'bad_request' }, { status: 400 })
 
     const row = await withClient(async (c) => {
-      // Determine if this is Free Trial partner task
-      const { rows: kindRows } = await c.query(
-        "select s.partner_key as \"partnerKey\" from task_definitions d join level_offer_schedule s on s.task_id=d.task_id where d.task_id=$1 and d.kind='partner' and s.active=true",
+      // Determine task kind directly from task_definitions
+      const { rows: krows } = await c.query(
+        'select kind from task_definitions where task_id=$1 and active=true',
         [taskId]
       )
-      const isFreeTrial = !!kindRows[0] && String(kindRows[0].partnerKey) === 'free_trial'
+      const taskKind = String(krows[0]?.kind || '')
+      const isFreeTrial = taskKind === 'free-trial'
 
       if (isFreeTrial) {
         // If already claimed, return conflict without requiring a fresh ad
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest) {
         return rows[0]
       }
 
-      // Default branch: enforce TTL for ad requirement
+      // Default branch (in_app and others): enforce TTL for ad requirement
       const { rows: ttlRows } = await c.query("select coalesce((value)::int, 180) as ttl from game_config where key='ad_ttl_seconds'")
       const ttl = Number(ttlRows[0]?.ttl || 180)
       const { rows: adRows } = await c.query(

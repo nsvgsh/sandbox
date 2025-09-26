@@ -1,0 +1,9 @@
+{
+  "ad_ttl_seconds": 10,
+  "coins_per_tap": 100,
+  "hud_tween_ms": 160,
+  "thresholds": { "base": 10, "growth": "linear", "batch_min_interval_ms": 500 },
+  "tap_agg": { "flush_threshold": 2, "tween_ms_min": 80, "tween_ms_max": 180 },
+  "ingest": { "max_taps_per_batch": 50, "clamp_soft": true },
+  "level_bonus_policy": { "coins": "multiply", "tickets": "add", "coin_multiplier": "multiply" }
+}

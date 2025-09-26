@@ -80,7 +80,7 @@ export default function Home() {
   const [leveledUp, setLeveledUp] = useState<number | null>(null)
   const [nextThreshold, setNextThreshold] = useState<NextThreshold>(null)
   const [debugState, setDebugState] = useState<DebugState>(null)
-  type TaskDef = { taskId: string; state: 'available' | 'claimed'; rewardPayload?: Record<string, unknown>; partnerKey?: string | null; unlockLevel?: number | null }
+  type TaskDef = { taskId: string; state: 'available' | 'claimed'; rewardPayload?: Record<string, unknown>; kind?: string | null; unlockLevel?: number | null }
   const [tasks, setTasks] = useState<TaskDef[] | null>(null)
   const [tasksLoading, setTasksLoading] = useState<boolean>(false)
   const tasksLoadInFlightRef = useRef<boolean>(false)
@@ -441,27 +441,22 @@ export default function Home() {
     setLevelModalDecision('unknown')
     setFreeTrialAtLevel(null)
     void (async () => {
-      // 1) Decide from current tasks snapshot (no dependency on tasks changes here)
-                    const snapshot: TaskDef[] = Array.isArray(tasks) ? tasks : []
-      let found = snapshot.find((x) => (x?.partnerKey === 'free_trial') && (x?.unlockLevel === leveledUp))
-      // 2) If not found, perform a one-off fetch (do not mutate global tasks to avoid loops)
-      if (!found) {
-        try {
-          const res = await fetch('/api/v1/tasks')
-          if (res.ok) {
-            const data = await res.json().catch(() => null) as { definitions?: TaskDef[] } | null
-            const defs: TaskDef[] = Array.isArray(data?.definitions) ? data!.definitions! : []
-            found = defs.find((x) => (x?.partnerKey === 'free_trial') && (x?.unlockLevel === leveledUp))
+      // Decide via level-based ready endpoint (decoupled from tasks)
+      try {
+        const res = await fetch(`/api/v1/offer/free-trial/level/${leveledUp}/ready`)
+        if (res.ok) {
+          const j = await res.json() as { ready?: boolean; taskId?: string }
+          if (j?.ready && typeof j.taskId === 'string') {
+            setPendingBonusConfirm(false)
+            setFreeTrialAtLevel({ taskId: j.taskId, level: leveledUp })
+            setLevelModalDecision('free_trial')
+          } else {
+            setLevelModalDecision('regular')
           }
-        } catch {}
-      }
-      if (found && typeof found.taskId === 'string') {
-        setPendingBonusConfirm(false)
-        setFreeTrialAtLevel({ taskId: found.taskId, level: leveledUp })
-        setLevelModalDecision('free_trial')
-      } else {
-        setLevelModalDecision('regular')
-      }
+        } else {
+          setLevelModalDecision('regular')
+        }
+      } catch { setLevelModalDecision('regular') }
       // fetch level header (optional, does not affect decision)
       try {
         const res = await fetch('/api/v1/level/last')
@@ -716,12 +711,12 @@ export default function Home() {
                   available={Array.isArray(tasks)
                     ? (tasks as TaskDef[])
                         .filter((t) => t.state === 'available')
-                        .map((t: TaskDef) => ({ taskId: t.taskId, rewardPayload: t.rewardPayload ?? null, state: t.state, partnerKey: t.partnerKey ?? null, unlockLevel: t.unlockLevel ?? null }))
+                        .map((t: TaskDef) => ({ taskId: t.taskId, rewardPayload: t.rewardPayload ?? null, state: t.state, kind: t.kind ?? null, unlockLevel: t.unlockLevel ?? null }))
                     : []}
                   completed={Array.isArray(tasks)
                     ? (tasks as TaskDef[])
                         .filter((t) => t.state === 'claimed')
-                        .map((t: TaskDef) => ({ taskId: t.taskId, rewardPayload: t.rewardPayload ?? null, state: t.state, partnerKey: t.partnerKey ?? null, unlockLevel: t.unlockLevel ?? null }))
+                        .map((t: TaskDef) => ({ taskId: t.taskId, rewardPayload: t.rewardPayload ?? null, state: t.state, kind: t.kind ?? null, unlockLevel: t.unlockLevel ?? null }))
                     : []}
                   activeTab={offersTab}
                   onTabChange={setOffersTab}
@@ -776,7 +771,7 @@ export default function Home() {
             levelModalDecision === 'free_trial' && freeTrialAtLevel ? (
               <FreeTrialLevelUpModal
                 level={leveledUp}
-                onOpen={() => { try { window.open(`/api/v1/offer/free-trial/${freeTrialAtLevel.taskId}/modal-redirect`, '_blank', 'noopener,noreferrer') } catch {} }}
+                onOpen={() => { try { window.open(`/api/v1/offer/free-trial/level/${leveledUp}/modal-redirect`, '_blank', 'noopener,noreferrer') } catch {} }}
                 onClose={async () => { setLeveledUp(null); setFreeTrialAtLevel(null); await loadCounters(); }}
                 ctaLabel={'Open'}
               />

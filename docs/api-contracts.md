@@ -39,10 +39,13 @@ Conventions
   - For partner tasks (free_trial) reports if a redirect click exists and is unconsumed.
   - 404 when the task is not an active free_trial partner task.
 
-- GET /config → { thresholds, policies, flags, monetag, leaderboard }
+- GET /config → { thresholds, policies, flags, monetag, leaderboard, coins_per_tap, hud_tween_ms }
   - thresholds: includes `batch_min_interval_ms` used by client flusher cadence and server guard.
   - ingest: may include `max_taps_per_batch`, `clamp_soft` (server‑side awareness only).
   - tap_agg: includes client UI tuning keys: `flush_threshold`, `tween_ms_min`, `tween_ms_max`.
+  - coins_per_tap: number — used by clients for optimistic UI and by server for earnings.
+  - hud_tween_ms: number — HUD numbers animation duration in ms (0 disables).
+  - thresholds_poly: optional coefficients for runtime polynomial thresholds (server uses them; clients display nextThreshold returned by server).
 - POST /track/lead → {}
 - GET /leaderboard?top=K → { top, me, activePlayers }  (windowDays is configured via env)
 - POST /partners/propellerads/enqueue (service) → { queued }

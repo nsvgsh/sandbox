@@ -16,15 +16,14 @@ export async function GET(req: NextRequest) {
     if (!taskId) return NextResponse.json({ error: 'bad_request' }, { status: 400 })
 
     const data = await withClient(async (c) => {
-      // validate partner task (free_trial) and active
+      // validate free-trial task and active (no join)
       const { rows: trows } = await c.query(
-        `select d.task_id as "taskId", d.active, s.partner_key as "partnerKey"
-           from task_definitions d
-           join level_offer_schedule s on s.task_id=d.task_id
-          where d.task_id=$1 and d.active=true and s.active=true and s.partner_key='free_trial'`,
+        `select task_id as "taskId", active, kind from task_definitions where task_id=$1 and active=true`,
         [taskId]
       )
       if (!trows[0]) throw new Error('NOT_FOUND')
+      const isFreeTrial = String(trows[0].kind || '') === 'free-trial'
+      if (!isFreeTrial) throw new Error('NOT_FOUND')
 
       const { rows: crows } = await c.query(
         'select state from task_progress where user_id=$1 and task_id=$2',

@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     const counters = await c.query('select * from user_counters where user_id=$1', [userId])
     const lastLevel = await c.query('select * from level_events where user_id=$1 order by created_at desc limit 1', [userId])
     const board = await c.query('select * from leaderboard_global where user_id=$1', [userId])
-    const config = await c.query("select key, value from game_config where key in ('thresholds','claim_ttl_seconds','ad_ttl_seconds','level_bonus_policy','coins_per_tap')")
+    const config = await c.query("select key, value from game_config where key in ('thresholds','ad_ttl_seconds','level_bonus_policy','coins_per_tap')")
 
     const currentLevel = Number(counters.rows[0]?.level || 0)
     const levelsToPreview = [currentLevel + 1, currentLevel + 2, currentLevel + 3]

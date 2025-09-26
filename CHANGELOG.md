@@ -69,3 +69,18 @@
 | CLAIM-PARTNER-IDEM-HARDEN | Free Trial claim uses server ad_event.id as idempotency key |
 | UI-EARN-FREE-TRIAL-CTA | Partner tile variant: open in new tab; readiness-based Claim |
 | PROGRESSION-NO-SPEND-012 | Removed coin deduction on level-up; coins never decrease |
+| PROGRESSION-POLY-013 | Polynomial thresholds via _threshold_for_level; no-spend preserved |
+| THRESHOLDS-POLY-CONFIG-014 | thresholds_poly coefficients in game_config (runtime-configurable) |
+| UI-HUD-TWEEN | Animated HUD numbers via hud_tween_ms (config) |
+| UI-TAP-BUBBLE | Tap particle shows +coins_per_tap×mult (optimistic) |
+| OPS-GAME-ADMIN | Added ops/game-admin flow (input.json → output.sql) and generator script |
+| OPS-INTEGRATIONS-ADMIN | Added ops/integrations-admin (Monetag & Free Trial) and generator script |
+| MULT-ABS-SET-015 | coin_multiplier treated as ABSOLUTE set; x2 ignores multiplier; intents separated |
+| FT-FTMODAL-001 | Decoupled Free Trial level-up modal from taskId; added level-based redirect |
+| FT-FTMODAL-002 | Updated frontend to call level-based modal redirect |
+| FT-FTMODAL-003 | Standardized Free Trial Earn placement to 'earn_tile' |
+| FT-FTMODAL-004 | Updated docs to reflect decoupled modal and placements |
+| OPS-LOCALDB-001 | Local DB orchestrator: drop/recreate, schema+migrations, admin SQL |
+| OPS-ADMIN-REPLACE-001 | Admin generators now replace data (delete stale, reinsert new) |
+| OPS-ADMIN-FT-NOSYNC-001 | Disabled free_trial→tasks sync; Earn formed strictly from tasks |
+| OPS-NORM-EARN-001 | Earn uses kind only (free-trial/in_app); removed partnerKey and joins |

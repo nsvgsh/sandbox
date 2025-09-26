@@ -6,13 +6,13 @@ On level‑up, offer ad‑gated bonus multiplier (configurable, e.g., ×2) to mu
 Optional tasks (ad-views, by default) grant bonuses (including coin multipliers).
 
 ## Progression
-- Level n requires 10 × n Coins (configurable; not hard‑coded).
-- Level‑up converts required Coins into one Level; excess carries over.
-- Each Level unlocks a task bundle; gating is data‑driven for future variation.
+- No-spend: coins never decrease. Level‑up occurs when current coins reach an absolute threshold.
+- Thresholds are polynomial: coins_required(L) = floor(a0 + a1*L + a2*L^2 + a3*L^3); coefficients configurable via DB.
+- Excess coins naturally carry over to future thresholds; no conversion/spend on level‑up.
+- Each Level can unlock tasks; gating is data‑driven.
 - Global leaderboard by total Levels.
 
-## Currencies
-- Coins: earned per tap (1 × coin_multiplier), tasks, level‑up rewards; spent automatically on level‑up.
+- Coins: earned per tap (coins_per_tap × coin_multiplier), tasks, level‑up rewards; not spent on level‑up (no‑spend).
 - Levels: earned at thresholds; progression metric only.
 - Tickets: granted by tasks/level‑ups; sink is gifts lottery post‑v1 (schema/UI ready; disabled in v1).
 
