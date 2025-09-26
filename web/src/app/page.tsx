@@ -690,7 +690,7 @@ export default function Home() {
                       size={clickerSize}
                       onTap={() => { tap() }}
                       coinMultiplier={Number(baseCountersRef.current?.coinMultiplier ?? counters?.coinMultiplier ?? 1)}
-                      coinsPerTap={Number((window as any)?.__tapConfigCoinsPerTap ?? 1)}
+                      coinsPerTap={Number(((window as unknown as TapWindow)?.__tapConfigCoinsPerTap) ?? 1)}
                       haptics={true}
                     />
                   </div>
