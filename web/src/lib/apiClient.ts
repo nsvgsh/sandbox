@@ -36,6 +36,7 @@ export type PublicConfig = {
   monetagSdkUrl?: string
   unlockPolicy?: 'any' | 'valued'
   logFailedAdEvents?: boolean
+  ingestMaxBatch?: number
 }
 
 export function parsePublicConfig(obj: Record<string, unknown>): PublicConfig {
@@ -59,6 +60,8 @@ export function parsePublicConfig(obj: Record<string, unknown>): PublicConfig {
   const unlockPolicyRaw = obj['unlock_policy']
   const unlockPolicy = unlockPolicyRaw === 'valued' ? 'valued' : 'any'
   const logFailedAdEvents = Boolean(obj['log_failed_ad_events'] ?? true)
+  const ingestObj = (typeof obj['ingest'] === 'object' && obj['ingest'] !== null ? obj['ingest'] as Record<string, unknown> : {})
+  const ingestMaxBatch = Number.isFinite(Number(ingestObj['max_taps_per_batch'])) ? Number(ingestObj['max_taps_per_batch']) : undefined
   return {
     adTTLSeconds: Number.isFinite(adTTL) ? adTTL : 180,
     batchMinIntervalMs: Number.isFinite(batchMs) ? batchMs : 100,
@@ -72,6 +75,7 @@ export function parsePublicConfig(obj: Record<string, unknown>): PublicConfig {
     monetagSdkUrl,
     unlockPolicy,
     logFailedAdEvents,
+    ingestMaxBatch,
   }
 }
 

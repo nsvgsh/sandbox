@@ -75,6 +75,8 @@ export default function Home() {
   const inflightRef = useRef<boolean>(false)
   const lastFlushAtRef = useRef<number>(0)
   const flushThresholdRef = useRef<number>(20)
+  const ingestMaxBatchRef = useRef<number | undefined>(undefined)
+  const effectiveFlushRef = useRef<number>(20)
   const tweenMinRef = useRef<number>(80)
   const tweenMaxRef = useRef<number>(180)
   const [leveledUp, setLeveledUp] = useState<number | null>(null)
@@ -179,6 +181,15 @@ export default function Home() {
       const base = baseCountersRef.current
       const target = deriveDisplayCoins(base, next)
       setDisplayCoins((prev) => (target < prev ? prev : target))
+      try {
+        const threshold = Math.max(1, effectiveFlushRef.current || flushThresholdRef.current || 1)
+        const now = Date.now()
+        const since = now - lastFlushAtRef.current
+        const canByTime = since >= Math.max(50, batchMinIntervalMs)
+        if (!inflightRef.current && next >= threshold && canByTime) {
+          setTimeout(() => { void flushOnceRef.current?.() }, 0)
+        }
+      } catch {}
       return next
     })
   }
@@ -520,6 +531,13 @@ export default function Home() {
         setBatchMinIntervalMs(cfg.batchMinIntervalMs)
         if (typeof cfg.hudTweenMs === 'number') setHudTweenMs(cfg.hudTweenMs)
         if (typeof cfg.tapAggFlushThreshold === 'number') flushThresholdRef.current = cfg.tapAggFlushThreshold
+        if (typeof cfg.ingestMaxBatch === 'number') ingestMaxBatchRef.current = cfg.ingestMaxBatch
+        try {
+          const ft = (typeof cfg.tapAggFlushThreshold === 'number') ? cfg.tapAggFlushThreshold : flushThresholdRef.current
+          const imb = (typeof cfg.ingestMaxBatch === 'number') ? cfg.ingestMaxBatch : ingestMaxBatchRef.current
+          const eff = Math.max(1, Math.min(ft || 1, (imb ?? Number.POSITIVE_INFINITY)))
+          effectiveFlushRef.current = eff
+        } catch {}
         if (typeof cfg.tapAggTweenMsMin === 'number') tweenMinRef.current = cfg.tapAggTweenMsMin
         if (typeof cfg.tapAggTweenMsMax === 'number') tweenMaxRef.current = cfg.tapAggTweenMsMax
         setMonetagEnabled(Boolean(cfg.monetagEnabled))
@@ -532,13 +550,60 @@ export default function Home() {
   }, [])
 
   // Flusher: coalesce pending taps at interval and size threshold
+  const flushOnceRef = useRef<null | (() => Promise<void>)>(null)
+  const flushOnceImpl = useCallback(async () => {
+    if (!session) return
+    if (inflightRef.current) return
+    const now = Date.now()
+    const since = now - lastFlushAtRef.current
+    const threshold = Math.max(1, Math.min(flushThresholdRef.current || 1, (ingestMaxBatchRef.current ?? Number.POSITIVE_INFINITY)))
+    const shouldByTime = since >= Math.max(50, batchMinIntervalMs)
+    const shouldBySize = pendingTaps >= threshold
+    if (!shouldByTime && !shouldBySize) return
+    const toSend = pendingTaps
+    if (toSend <= 0) return
+    inflightRef.current = true
+    const nextSeq = clientSeq + 1
+    const { ok, json, status } = await fetchJsonWithRetry<unknown>('/api/v1/ingest/taps', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ taps: toSend, clientSeq: nextSeq, sessionId: session.sessionId, sessionEpoch: session.sessionEpoch }),
+    }, {
+      retry429DelayMs: batchMinIntervalMs,
+      onOutdated: async () => { await resumeOrStartSession() },
+    })
+    if (ok) {
+      const data = json as { counters: unknown; nextThreshold?: NextThreshold; leveledUp?: { level: number } | null }
+      const c = normalizeCounters(data.counters)
+      baseCountersRef.current = c
+      setCounters(c)
+      setClientSeq(nextSeq)
+      setLeveledUp(data?.leveledUp?.level ?? null)
+      if (data?.leveledUp?.level) { try { await refreshDebug() } catch {} }
+      setNextThreshold(data?.nextThreshold ?? null)
+      setPendingTaps((p) => Math.max(0, p - toSend))
+      setDisplayCoins((prev) => (prev < c.coins ? c.coins : prev))
+    } else {
+      if (status !== 429 && status !== 409 && status !== 0) {
+        try {
+          const errText = typeof (json as { error?: unknown })?.error === 'string' ? (json as { error?: string }).error! : 'Something went wrong. Please try again.'
+          showNotice(errText)
+        } catch {
+          showNotice('Something went wrong. Please try again.')
+        }
+      }
+    }
+    lastFlushAtRef.current = Date.now()
+    inflightRef.current = false
+  }, [session, clientSeq, batchMinIntervalMs, pendingTaps])
+  flushOnceRef.current = flushOnceImpl
   useEffect(() => {
     if (!session) return
     const tick = async () => {
       if (inflightRef.current) return
       const now = Date.now()
       const since = now - lastFlushAtRef.current
-      const threshold = flushThresholdRef.current
+      const threshold = Math.max(1, Math.min(flushThresholdRef.current || 1, (ingestMaxBatchRef.current ?? Number.POSITIVE_INFINITY)))
       const shouldByTime = since >= Math.max(50, batchMinIntervalMs)
       const shouldBySize = pendingTaps >= Math.max(1, threshold)
       if (!shouldByTime && !shouldBySize) return
