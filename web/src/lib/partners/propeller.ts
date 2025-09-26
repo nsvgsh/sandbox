@@ -15,22 +15,38 @@ export type ParsedStart = {
   zoneid?: string
 }
 
+function toBool(value: unknown): boolean {
+  if (typeof value === 'boolean') return value
+  if (typeof value === 'string') return value === 'true'
+  return false
+}
+
+function toStr(value: unknown, fallback = ''): string {
+  if (typeof value === 'string') return value
+  if (value == null) return fallback
+  return String(value)
+}
+
+function stripJsonQuotes(s: string): string {
+  return s.replace(/^"|"$/g, '')
+}
+
 export async function getPropellerConfig(c: PoolClient): Promise<PropellerConfig> {
-  const { rows } = await c.query(
+  const { rows } = await c.query<{ key: string; value: unknown }>(
     "select key, value from game_config where key in ('propeller_enabled','propeller_postback_base_url','propeller_aid','propeller_tid','propeller_pid')"
   )
-  const map = new Map<string, any>(rows.map((r: any) => [r.key, r.value]))
+  const map = new Map<string, unknown>(rows.map((r) => [r.key, r.value]))
   const enabledRaw = map.get('propeller_enabled')
   const baseUrlRaw = map.get('propeller_postback_base_url')
   const aidRaw = map.get('propeller_aid')
   const tidRaw = map.get('propeller_tid')
   const pidRaw = map.get('propeller_pid')
   return {
-    enabled: Boolean(enabledRaw === true || String(enabledRaw) === 'true'),
-    baseUrl: String(baseUrlRaw || 'http://ad.propellerads.com/conversion.php').replace(/^"|"$/g, ''),
-    aid: String(aidRaw || '').replace(/^"|"$/g, ''),
-    tid: String(tidRaw || '').replace(/^"|"$/g, ''),
-    pid: String(pidRaw || '').replace(/^"|"$/g, '') || undefined,
+    enabled: toBool(enabledRaw),
+    baseUrl: stripJsonQuotes(toStr(baseUrlRaw, 'http://ad.propellerads.com/conversion.php')),
+    aid: stripJsonQuotes(toStr(aidRaw, '')),
+    tid: stripJsonQuotes(toStr(tidRaw, '')),
+    pid: stripJsonQuotes(toStr(pidRaw, '')) || undefined,
   }
 }
 
@@ -98,14 +114,22 @@ export async function maybeSendFirstConversion(
   const cfg = await getPropellerConfig(c)
   if (!cfg.enabled || !cfg.aid || !cfg.tid) return { attempted: false }
 
-  const { rows: attr } = await c.query(
+  const { rows: attr } = await c.query<{ meta: unknown }>(
     "select meta from attribution_leads where user_id=$1 and (meta->>'provider')='propellerads'",
     [userId]
   )
   if (!attr.length) return { attempted: false }
 
-  const subid = attr[0]?.meta?.subid || attr[0]?.meta?.SUBID || attr[0]?.meta?.click_id
-  if (!subid || typeof subid !== 'string') return { attempted: false }
+  const meta = attr[0]?.meta
+  const getMetaString = (m: unknown, key: string): string | undefined => {
+    if (m && typeof m === 'object') {
+      const v = (m as Record<string, unknown>)[key]
+      if (typeof v === 'string') return v
+    }
+    return undefined
+  }
+  const subid = getMetaString(meta, 'subid') || getMetaString(meta, 'SUBID') || getMetaString(meta, 'click_id')
+  if (!subid) return { attempted: false }
 
   // Check if already sent (dedupe)
   const { rows: existing } = await c.query(
