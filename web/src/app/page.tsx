@@ -714,14 +714,14 @@ export default function Home() {
                 <EarnGrid
                   loading={tasksLoading}
                   available={Array.isArray(tasks)
-                    ? tasks
+                    ? (tasks as TaskDef[])
                         .filter((t) => t.state === 'available')
-                        .map((t) => ({ taskId: t.taskId, rewardPayload: t.rewardPayload ?? null, state: t.state, partnerKey: (t as any).partnerKey ?? null, unlockLevel: (t as any).unlockLevel ?? null }))
+                        .map((t: TaskDef) => ({ taskId: t.taskId, rewardPayload: t.rewardPayload ?? null, state: t.state, partnerKey: t.partnerKey ?? null, unlockLevel: t.unlockLevel ?? null }))
                     : []}
                   completed={Array.isArray(tasks)
-                    ? tasks
+                    ? (tasks as TaskDef[])
                         .filter((t) => t.state === 'claimed')
-                        .map((t) => ({ taskId: t.taskId, rewardPayload: t.rewardPayload ?? null, state: t.state, partnerKey: (t as any).partnerKey ?? null, unlockLevel: (t as any).unlockLevel ?? null }))
+                        .map((t: TaskDef) => ({ taskId: t.taskId, rewardPayload: t.rewardPayload ?? null, state: t.state, partnerKey: t.partnerKey ?? null, unlockLevel: t.unlockLevel ?? null }))
                     : []}
                   activeTab={offersTab}
                   onTabChange={setOffersTab}
