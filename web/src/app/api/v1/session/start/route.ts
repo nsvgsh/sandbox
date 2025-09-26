@@ -2,6 +2,7 @@ export const runtime = 'nodejs'
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { withClient } from '../../../../../lib/db'
+import { maybeSendFirstConversion } from '../../../../../lib/partners/propeller'
 
 export async function POST() {
   const cookieStore = await cookies()
@@ -21,6 +22,10 @@ export async function POST() {
 
   const row = await withClient(async (c) => {
     const { rows } = await c.query('select * from session_start($1)', [userId])
+    // Best-effort: attempt PropellerAds first conversion postback if attributed
+    try {
+      await maybeSendFirstConversion(c, userId!)
+    } catch {}
     return rows[0]
   })
 

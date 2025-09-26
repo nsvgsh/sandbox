@@ -2,6 +2,7 @@ export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { withClient } from '../../../../../lib/db'
+import { maybeSendFirstConversion } from '../../../../../lib/partners/propeller'
 
 function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
@@ -56,9 +57,13 @@ export async function POST(req: NextRequest) {
         lastAppliedSeq: Number(current!.lastAppliedSeq || 0),
       }
       try {
-        console.log(
-          JSON.stringify({ event: 'session_claim_match', userId: String(userId).slice(0, 8), sessionId: payload.sessionId, sessionEpoch: payload.sessionEpoch })
-        )
+        console.log(JSON.stringify({ event: 'session_claim_match', userId: String(userId).slice(0, 8), sessionId: payload.sessionId, sessionEpoch: payload.sessionEpoch }))
+        // Opportunistic retry of Propeller postback if pending/failed
+        await withClient(async (c) => {
+          try {
+            await maybeSendFirstConversion(c, userId!)
+          } catch {}
+        })
       } catch {}
       return NextResponse.json(payload)
     }
@@ -66,6 +71,10 @@ export async function POST(req: NextRequest) {
     // rotate (or initialize) if no match, missing, or no existing record
     const rotated = await withClient(async (c) => {
       const { rows } = await c.query('select * from session_start($1)', [userId])
+      // Opportunistic attempt on rotate as well
+      try {
+        await maybeSendFirstConversion(c, userId!)
+      } catch {}
       return rows[0] as { session_id: string; session_epoch: string; last_applied_seq: number }
     })
 

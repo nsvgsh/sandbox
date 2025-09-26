@@ -183,6 +183,17 @@ function runGeneratorsAndApply(conn) {
     if (existsSync(integOut)) psqlFile(conn, integOut);
   }
 
+  // Propeller admin
+  const propIn = resolve(repoRoot, 'ops/propeller-admin/input.json');
+  const propOut = resolve(repoRoot, 'ops/propeller-admin/output.sql');
+  const propGen = resolve(repoRoot, 'web/scripts/build-propeller-sql.mjs');
+  if (!existsSync(propIn) || !existsSync(propGen)) {
+    log('Propeller admin generator or input missing; skipping propeller-admin apply.')
+  } else {
+    run(`node ${JSON.stringify(propGen)} --in ${JSON.stringify(propIn)} --out ${JSON.stringify(propOut)}`)
+    if (existsSync(propOut)) psqlFile(conn, propOut)
+  }
+
   // Runtime config (optional)
   const rtIn = resolve(repoRoot, 'ops/runtime-config-admin/input.json');
   const rtOut = resolve(repoRoot, 'ops/runtime-config-admin/output.sql');
@@ -192,7 +203,7 @@ function runGeneratorsAndApply(conn) {
     if (existsSync(rtOut)) psqlFile(conn, rtOut);
   }
 
-  return { gameOut, integOut, rtOut };
+  return { gameOut, integOut, rtOut, propOut };
 }
 
 function safeRead(filePath) {
@@ -227,9 +238,10 @@ function composeRemoteSetupSql(paths) {
       }
     }
   } catch {}
-  parts.push('-- 3) Admin generated SQL (game/integrations/runtime)');
+  parts.push('-- 3) Admin generated SQL (game/integrations/propeller/runtime)');
   const gameBody = safeRead(paths.gameOut); if (gameBody) parts.push(gameBody.trim());
   const integBody = safeRead(paths.integOut); if (integBody) parts.push(integBody.trim());
+  const propBody = safeRead(paths.propOut); if (propBody) parts.push(propBody.trim());
   const rtBody = safeRead(paths.rtOut); if (rtBody) parts.push(rtBody.trim());
 
   const combined = parts.join('\n\n');
