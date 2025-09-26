@@ -86,6 +86,7 @@ export default function Home() {
   // const [leaderboard, setLeaderboard] = useState<unknown | null>(null)
   const [adUnlocks, setAdUnlocks] = useState<Record<string, { impressionId: string; expiresAt: number }>>({})
   const [adTTLSeconds, setAdTTLSeconds] = useState<number>(10)
+  const [hudTweenMs, setHudTweenMs] = useState<number>(0)
   const [monetagEnabled, setMonetagEnabled] = useState<boolean>(false)
   const [monetagZoneId, setMonetagZoneId] = useState<string | undefined>(undefined)
   const [monetagSdkUrl, setMonetagSdkUrl] = useState<string | undefined>(undefined)
@@ -163,7 +164,8 @@ export default function Home() {
   function deriveDisplayCoins(base: CountersNormalized | null, pending: number): number {
     const coins = Number(base?.coins ?? 0)
     const mult = Number(base?.coinMultiplier ?? 1)
-    const delta = Math.floor(Math.max(0, pending) * Math.max(1, mult))
+    const cpt = Number((window as any)?.__tapConfigCoinsPerTap ?? 1)
+    const delta = Math.floor(Math.max(0, pending) * Math.max(1, mult) * Math.max(1, cpt))
     return coins + delta
   }
 
@@ -516,8 +518,10 @@ export default function Home() {
         if (!res.ok) return
         const obj = await res.json()
         const cfg = parsePublicConfig(obj)
+        try { (window as any).__tapConfigCoinsPerTap = Number(cfg.coinsPerTap ?? 1) } catch {}
         setAdTTLSeconds(cfg.adTTLSeconds)
         setBatchMinIntervalMs(cfg.batchMinIntervalMs)
+        if (typeof cfg.hudTweenMs === 'number') setHudTweenMs(cfg.hudTweenMs)
         if (typeof cfg.tapAggFlushThreshold === 'number') flushThresholdRef.current = cfg.tapAggFlushThreshold
         if (typeof cfg.tapAggTweenMsMin === 'number') tweenMinRef.current = cfg.tapAggTweenMsMin
         if (typeof cfg.tapAggTweenMsMax === 'number') tweenMaxRef.current = cfg.tapAggTweenMsMax
@@ -673,7 +677,7 @@ export default function Home() {
                   const lvl = Number(counters?.level ?? 0)
                   const coins = Number.isFinite(displayCoins) ? displayCoins : Number(counters?.coins ?? 0)
                   return { coins, tickets: t, level: lvl }
-                })()} />
+                })()} tweenMs={hudTweenMs} />
               </div>
               <AvatarRow />
               <div style={{ marginTop: 8 }}>
@@ -683,6 +687,8 @@ export default function Home() {
                     <EmojiClicker
                       size={clickerSize}
                       onTap={() => { tap() }}
+                      coinMultiplier={Number(baseCountersRef.current?.coinMultiplier ?? counters?.coinMultiplier ?? 1)}
+                      coinsPerTap={Number((window as any)?.__tapConfigCoinsPerTap ?? 1)}
                       haptics={true}
                     />
                   </div>

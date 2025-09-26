@@ -15,6 +15,10 @@
 ## level_events
 - id (PK), user_id, level, base_reward, reward_payload (jsonb), bonus_offered, bonus_multiplier, ad_event_id, template_id, created_at
 
+## Progression semantics
+- Level-up is driven by absolute current coins (no spend). If `coins >= (level+1) * base`, level increases; coins are not decremented.
+- Base rewards are applied after the level-up loop for the batch; rewards do not recursively trigger more level-ups in the same batch.
+
 ## ad_events
 - id (PK), user_id, session_id, provider, placement, status ('closed'|'failed'|'used'|'filled'|'completed'), reward_payload (jsonb), created_at
  - Indexes: `(reward_payload->>'impressionId')` and `(user_id, (reward_payload->>'impressionId'))`

@@ -8,6 +8,7 @@ type Particle = {
   x: number
   y: number
   asset: string
+  text: string
 }
 
 export type EmojiClickerProps = {
@@ -18,6 +19,8 @@ export type EmojiClickerProps = {
   size?: number
   className?: string
   haptics?: boolean
+  coinMultiplier?: number
+  coinsPerTap?: number
 }
 
 const DEFAULT_ASSETS = [
@@ -158,9 +161,9 @@ export function EmojiClicker(props: EmojiClickerProps) {
     } catch {}
   }, [currentIndex, size])
 
-  const pushParticle = useCallback((x: number, y: number, asset: string) => {
+  const pushParticle = useCallback((x: number, y: number, asset: string, text: string) => {
     setParticles((prev) => {
-      const next: Particle[] = [...prev, { id: particleIdRef.current++, x, y, asset }]
+      const next: Particle[] = [...prev, { id: particleIdRef.current++, x, y, asset, text }]
       // pool limit
       if (next.length > 12) next.shift()
       return next
@@ -189,7 +192,12 @@ export function EmojiClicker(props: EmojiClickerProps) {
     const y = ev.clientY - rect.top
     const currentAsset = sourceList.length ? sourceList[currentIndex % sourceList.length] : ''
     const currentLabel = labelList[currentIndex % labelList.length] || ''
-    pushParticle(x, y, currentAsset)
+    // compute per-tap increment text based on props (fallback to window config / +1)
+    let cpt = typeof props.coinsPerTap === 'number' ? props.coinsPerTap : 1
+    try { if (!Number.isFinite(cpt)) cpt = Number(((window as any)?.__tapConfigCoinsPerTap) ?? 1) } catch {}
+    const multNow = typeof props.coinMultiplier === 'number' ? props.coinMultiplier : 1
+    const inc = Math.max(1, Math.floor(Math.max(1, cpt) * Math.max(1, multNow)))
+    pushParticle(x, y, currentAsset, `+${inc}`)
     handleHaptic()
     setTapCount((c) => c + 1)
     if ((tapCount + 1) % 3 === 0) {
@@ -254,7 +262,7 @@ export function EmojiClicker(props: EmojiClickerProps) {
               style={{ left: p.x, top: p.y }}
               onAnimationEnd={() => setParticles((prev) => prev.filter((x) => x.id !== p.id))}
             >
-              <span className={styles.particleText}>+1</span>
+              <span className={styles.particleText}>{p.text || '+1'}</span>
               {p.asset ? (
                 <img className={styles.particleIcon} src={p.asset} alt="" />
               ) : null}

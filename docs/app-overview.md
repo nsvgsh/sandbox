@@ -51,6 +51,11 @@
 - UI coins are derived as `lastServerCoins + pendingTaps × coin_multiplier` for smoothness. Levels and tickets update only from server responses.
 - Server remains authoritative for progression; any server clamp or rounding will reconcile without visual regress (monotonic render).
 
+## Progression & economy (no-spend level-ups)
+- Coins never decrease. Level-ups are triggered when current coins reach the absolute threshold for the next level.
+- Thresholds are configured via `game_config.thresholds.base` (linear growth by default: `(level+1) * base`).
+- Base rewards (coins/tickets/coin_multiplier) for a level are applied after the level-up loop per batch; rewards do not trigger further level-ups within the same batch.
+
 ## Security
 - Always validate `WebApp.initData` (`hash`, `signature`) server‑side before trusting params
 - Do not trust `start_param` until validation completes

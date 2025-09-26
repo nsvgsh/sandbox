@@ -68,3 +68,4 @@
 | UI-LEVELUP-DECISION-GATE | One-shot decision per level; removed flicker between regular and FT modals |
 | CLAIM-PARTNER-IDEM-HARDEN | Free Trial claim uses server ad_event.id as idempotency key |
 | UI-EARN-FREE-TRIAL-CTA | Partner tile variant: open in new tab; readiness-based Claim |
+| PROGRESSION-NO-SPEND-012 | Removed coin deduction on level-up; coins never decrease |
