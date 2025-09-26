@@ -2,6 +2,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { HeaderHUD } from '@/ui/Header/HeaderHUD'
 import { LevelUpModal } from '@/ui/Modal/Modal'
+import { FreeTrialLevelUpModal } from '@/ui/Modal/FreeTrialModal'
 import { normalizeCounters, parsePublicConfig, fetchJsonWithRetry, type CountersNormalized } from '../lib/apiClient'
 import { isMonetagLoaded, loadMonetagSdk, showRewardedInterstitial, categorizeMonetagError } from '../lib/ads/monetag'
 import { showNotice } from '../lib/notice'
@@ -92,6 +93,8 @@ export default function Home() {
   const [logFailedAdEvents, setLogFailedAdEvents] = useState<boolean>(true)
   const [batchMinIntervalMs, setBatchMinIntervalMs] = useState<number>(100)
   const [pendingBonusConfirm, setPendingBonusConfirm] = useState<boolean>(false)
+  const decisionForLevelRef = useRef<number | null>(null)
+  const [levelModalDecision, setLevelModalDecision] = useState<'unknown'|'free_trial'|'regular'>('unknown')
   const [bonusImpressionId, setBonusImpressionId] = useState<string | null>(null)
   const [bonusExpiresAt, setBonusExpiresAt] = useState<number | null>(null)
   const [nowTick, setNowTick] = useState<number>(Date.now())
@@ -100,6 +103,7 @@ export default function Home() {
   const [walletAddress, setWalletAddress] = useState<string | null>(null)
   // const [walletTab, setWalletTab] = useState<'withdrawals' | 'activity' | 'airdrop'>('withdrawals')
   const [claimSuccess, setClaimSuccess] = useState<{ taskId: string; rewardPayload: Record<string, unknown> | null } | null>(null)
+  const [freeTrialAtLevel, setFreeTrialAtLevel] = useState<{ taskId: string; level: number } | null>(null)
 
   // CTA ring visibility based on tap activity
   const [ctaVisible, setCtaVisible] = useState<boolean>(true)
@@ -425,16 +429,43 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId])
 
-  // When leveledUp fires, fetch public reward reveal for modal (fallback remains debug data in props)
+  // Decide which modal to show exactly once per leveledUp value
   useEffect(() => {
     if (!leveledUp) return
+    if (decisionForLevelRef.current === leveledUp && levelModalDecision !== 'unknown') return
+    decisionForLevelRef.current = leveledUp
+    setLevelModalDecision('unknown')
+    setFreeTrialAtLevel(null)
     void (async () => {
+      // 1) Decide from current tasks snapshot (no dependency on tasks changes here)
+      const snapshot = Array.isArray(tasks) ? (tasks as any[]) : []
+      let found = snapshot.find((x) => (x?.partnerKey === 'free_trial') && (x?.unlockLevel === leveledUp))
+      // 2) If not found, perform a one-off fetch (do not mutate global tasks to avoid loops)
+      if (!found) {
+        try {
+          const res = await fetch('/api/v1/tasks')
+          if (res.ok) {
+            const data = await res.json().catch(() => null) as { definitions?: any[] } | null
+            const defs = Array.isArray(data?.definitions) ? data!.definitions! : []
+            found = defs.find((x: any) => (x?.partnerKey === 'free_trial') && (x?.unlockLevel === leveledUp))
+          }
+        } catch {}
+      }
+      if (found && typeof found.taskId === 'string') {
+        setPendingBonusConfirm(false)
+        setFreeTrialAtLevel({ taskId: found.taskId, level: leveledUp })
+        setLevelModalDecision('free_trial')
+      } else {
+        setLevelModalDecision('regular')
+      }
+      // fetch level header (optional, does not affect decision)
       try {
         const res = await fetch('/api/v1/level/last')
-        if (!res.ok) return
-        const data = await res.json().catch(() => null)
-        if (data && typeof data.level === 'number') {
-          setDebugState((s) => ({ ...(s || { counters: null, lastLevel: null, leaderboard: null, config: [] as { key: string; value: unknown }[] }), lastLevel: { level: data.level, reward_payload: data.rewardPayload, bonus_multiplier: null } }))
+        if (res.ok) {
+          const data = await res.json().catch(() => null)
+          if (data && typeof data.level === 'number') {
+            setDebugState((s) => ({ ...(s || { counters: null, lastLevel: null, leaderboard: null, config: [] as { key: string; value: unknown }[] }), lastLevel: { level: data.level, reward_payload: data.rewardPayload, bonus_multiplier: null } }))
+          }
         }
       } catch {}
     })()
@@ -733,8 +764,15 @@ export default function Home() {
               />
             </div>
           )}
-          {typeof leveledUp === 'number' && (
-            pendingBonusConfirm ? (
+          {typeof leveledUp === 'number' && levelModalDecision !== 'unknown' && (
+            levelModalDecision === 'free_trial' && freeTrialAtLevel ? (
+              <FreeTrialLevelUpModal
+                level={leveledUp}
+                onOpen={() => { try { window.open(`/api/v1/offer/free-trial/${freeTrialAtLevel.taskId}/modal-redirect`, '_blank', 'noopener,noreferrer') } catch {} }}
+                onClose={async () => { setLeveledUp(null); setFreeTrialAtLevel(null); await loadCounters(); }}
+                ctaLabel={'Open'}
+              />
+            ) : pendingBonusConfirm ? (
               <LevelUpModal
                 level={leveledUp}
                 rewards={(() => {

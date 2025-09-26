@@ -1,0 +1,58 @@
+.ftCard {
+  position: relative; /* anchor for close button */
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr); /* header / expanded rewards */
+  /* Allow corner close button to protrude outside and increase overall height for FT */
+  overflow: visible !important;
+  block-size: min(calc(100cqw * 660 / 420), calc(92dvh - (env(safe-area-inset-top) + env(safe-area-inset-bottom)))) !important;
+  max-height: min(660px, calc(92dvh - (env(safe-area-inset-top) + env(safe-area-inset-bottom)))) !important;
+}
+
+.ftRewardsExpanded {
+  display: grid;
+  grid-template-rows: 1fr auto; /* asset area / CTA area */
+  gap: 12px;
+}
+
+.ftNoScroll {
+  overflow: hidden; /* disable vertical scrolling inside rewards box for free-trial */
+}
+
+.ftAssetWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ftAssetImg {
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+.ftCtaWrap {
+  align-self: end;
+}
+
+.ftCtaPurple {
+  border-image-source: url('/ui/levelup/free-trial/Button01_Purple.png');
+}
+
+.closeX {
+  position: absolute;
+  top: 0;
+  right: 0;
+  transform: translate(50%, -50%); /* center sits exactly on the card corner */
+  background: rgba(0,0,0,0.35);
+  border: 2px solid rgba(255,255,255,0.6);
+  color: rgba(255,255,255,0.92);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 2;
+}
+
+

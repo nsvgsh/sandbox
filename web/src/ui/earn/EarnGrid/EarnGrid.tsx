@@ -82,7 +82,7 @@ export function EarnGrid(props: {
             const isPartner = (it.partnerKey || '') === 'free_trial'
             // For partner: when unlocked (ready), show Claim; otherwise show partnerKey (debug) or Open
             const ctaLabel = isPartner
-              ? (isUnlocked ? 'Claim' : (it.partnerKey ? String(it.partnerKey) : 'Open'))
+              ? (isUnlocked ? 'Claim' : 'Free')
               : (isUnlocked ? `Claim (${left}s)` : 'Open')
             const variant: 'primary' | 'confirm' | 'partner' = isPartner
               ? (isUnlocked ? 'confirm' : 'partner')

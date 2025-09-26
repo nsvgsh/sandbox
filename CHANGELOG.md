@@ -64,3 +64,7 @@
 | WEB-BUILD-0001 | Fix Vercel build blocker by removing `any` from RotatingTextRing CSS variables |
 | AD-PARTNER-FREE-TRIAL-READY-API | Added GET /api/v1/tasks/{taskId}/ready endpoint |
 | AD-PARTNER-FREE-TRIAL-READY-UI | Earn grid flips CTA to Claim after readiness; partner opens in new tab |
+| UI-LEVELUP-FREE-TRIAL | Free Trial level-up modal (non-claimable CTA, asset, close control) |
+| UI-LEVELUP-DECISION-GATE | One-shot decision per level; removed flicker between regular and FT modals |
+| CLAIM-PARTNER-IDEM-HARDEN | Free Trial claim uses server ad_event.id as idempotency key |
+| UI-EARN-FREE-TRIAL-CTA | Partner tile variant: open in new tab; readiness-based Claim |

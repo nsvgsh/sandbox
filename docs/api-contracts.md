@@ -27,6 +27,7 @@ Conventions
 - POST /tasks/{taskId}/claim → { state, rewardEventId?, counters? }
   - Ad‑gated tasks: recent completed ad must match `intent='task:<taskId>'` within TTL; otherwise `AD_REQUIRED`.
   - Free Trial partner tasks: no TTL; require a completed redirect click with intent `task:<taskId>`; latest eligible click is consumed.
+  - Free Trial idempotency: server ignores client `X-Idempotency-Key` and uses the matched `ad_events.id` as the idempotency key.
   - Spend‑once: the matched ad is marked `used` on successful claim.
   - Idempotency: send `X-Idempotency-Key` (recommend using the ad `impressionId`). Duplicate claims with the same key do not grant twice.
   - Errors: 409 `ALREADY_CLAIMED` (task already claimed), 409 `AD_REQUIRED`, 404 `NOT_FOUND`.

@@ -30,6 +30,10 @@
   row-gap: 12px;
   container-type: inline-size;
 }
+
+.cardTwoRows {
+  grid-template-rows: auto minmax(0, 1fr); /* header / expanded rewards */
+}
 .headerArea {
   min-height: 0;
   display: flex;
@@ -98,6 +102,54 @@
   text-align: left;
   display: flex;
   flex-direction: column;
+}
+
+.rewardsBoxExpanded {
+  display: grid;
+  grid-template-rows: 1fr auto; /* asset takes most space, CTA at bottom */
+  gap: 12px;
+}
+
+.ftAssetWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ftAssetImg {
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+.ftCtaWrap {
+  align-self: end;
+}
+
+.ctaPurple {
+  border-image-source: url('/ui/levelup/free-trial/Button01_Purple.png');
+}
+
+.closeX {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255,255,255,0.12);
+  border: 0;
+  color: rgba(255,255,255,0.8);
+  width: 28px;
+  height: 28px;
+  border-radius: 14px;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.closeHit {
+  position: fixed;
+  inset: 0;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  cursor: default;
 }
 
 .rewardsLabel {
