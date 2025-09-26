@@ -47,6 +47,7 @@ Conventions
   - hud_tween_ms: number — HUD numbers animation duration in ms (0 disables).
   - thresholds_poly: optional coefficients for runtime polynomial thresholds (server uses them; clients display nextThreshold returned by server).
 - POST /track/lead → {}
+  - Body: `{ userId, startapp }` where `startapp = ${SUBID}_{campaignid}_{zoneid}_prop` (64 chars max)
 - GET /leaderboard?top=K → { top, me, activePlayers }  (windowDays is configured via env)
 - POST /partners/propellerads/enqueue (service) → { queued }
 - GET /health → { ok: true }

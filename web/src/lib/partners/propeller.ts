@@ -50,10 +50,10 @@ export async function getPropellerConfig(c: PoolClient): Promise<PropellerConfig
   }
 }
 
-export function parseStartParam(start?: string): ParsedStart {
-  if (!start || typeof start !== 'string') return { provider: 'unknown' }
+export function parseStartAppParam(startapp?: string): ParsedStart {
+  if (!startapp || typeof startapp !== 'string') return { provider: 'unknown' }
   // Enforce 64-char max by trimming from the end, preserving SUBID at the front
-  let s = start
+  let s = startapp
   if (s.length > 64) s = s.slice(0, 64)
   const parts = s.split('_')
   const [subid, campaignid, zoneid, sentinel] = parts

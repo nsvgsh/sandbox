@@ -4,11 +4,11 @@
 
 PropellerAds requires that we:
 - Capture their click identifier `${SUBID}` (or an alias) at traffic entry.
-- Persist it with the user/session initiated via Telegram `start` param: `start=${SUBID}_{campaignid}_{zoneid}_prop` (underscore-delimited, max 64 chars, restricted charset).
+- Persist it with the user/session initiated via Telegram `startapp` param: `startapp=${SUBID}_{campaignid}_{zoneid}_prop` (underscore-delimited, max 64 chars, restricted charset).
 - On conversion, send an S2S GET (or POST) request to their Postback endpoint with `visitor_id=${SUBID}` and optional `goal`.
 
 Implications for our stack:
-- Telegram entry: We already parse `initData` for TMA; we must also parse `start` payload. Store parsed pieces in DB (e.g., `ad_attribution` table keyed by `tg_user_id` or `session_id`).
+- Telegram entry: We already parse `initData` for TMA; we must also parse `startapp` payload. Store parsed pieces in DB (e.g., `ad_attribution` table keyed by `tg_user_id` or `session_id`).
 - Event sourcing: For each tracked conversion (e.g., registration, level milestones, purchase-like actions), emit a durable event into our tasks/events pipeline (see `supabase` migrations), then an outbox/worker sends the PropellerAds postback.
 - Idempotency: Maintain an outbox with a unique key per (`SUBID`, `goal`, `event_kind`) to avoid duplicate postbacks. Store result and response code for observability.
 - Config: Place Postback base URL (aid/pid/tid tokens) in runtime config/env; do not hardcode. Allow toggling integration on/off and environment targeting (staging/production).
@@ -32,7 +32,7 @@ Implications for our stack:
 
 ## Task list
 
-1. Parse Telegram `start` parameter and persist attribution
+1. Parse Telegram `startapp` parameter and persist attribution
 2. Add conversions→goal mapping in code (main, goal=2/3)
 3. Create postback client with retry and metrics
 4. Implement outbox producer/consumer for postbacks
@@ -42,7 +42,7 @@ Implications for our stack:
 
 ## Documentation impact
 
-- Update `docs/api-contracts.md` with attribution start param contract and postback behaviors
+- Update `docs/api-contracts.md` with attribution startapp param contract and postback behaviors
 - Update `docs/app-overview.md` with attribution and outbox flow diagram
 - Add PropellerAds configuration details to `docs/deploy-pipeline.md` and `.env.example`
 
