@@ -21,7 +21,23 @@ END $$;
 
 -- Truncate tables (CASCADE)
 
-truncate table if exists     tap_batches, level_events, ad_events, reward_events, task_progress,     task_definitions, level_reward_templates, leaderboard_global, partner_postbacks,     active_effects, level_offer_schedule, attribution_leads, user_counters, user_profiles,     game_config   RESTART IDENTITY CASCADE;
+DO $$ BEGIN
+  BEGIN EXECUTE 'TRUNCATE TABLE tap_batches RESTART IDENTITY CASCADE'; EXCEPTION WHEN undefined_table THEN END;
+  BEGIN EXECUTE 'TRUNCATE TABLE level_events RESTART IDENTITY CASCADE'; EXCEPTION WHEN undefined_table THEN END;
+  BEGIN EXECUTE 'TRUNCATE TABLE ad_events RESTART IDENTITY CASCADE'; EXCEPTION WHEN undefined_table THEN END;
+  BEGIN EXECUTE 'TRUNCATE TABLE reward_events RESTART IDENTITY CASCADE'; EXCEPTION WHEN undefined_table THEN END;
+  BEGIN EXECUTE 'TRUNCATE TABLE task_progress RESTART IDENTITY CASCADE'; EXCEPTION WHEN undefined_table THEN END;
+  BEGIN EXECUTE 'TRUNCATE TABLE task_definitions RESTART IDENTITY CASCADE'; EXCEPTION WHEN undefined_table THEN END;
+  BEGIN EXECUTE 'TRUNCATE TABLE level_reward_templates RESTART IDENTITY CASCADE'; EXCEPTION WHEN undefined_table THEN END;
+  BEGIN EXECUTE 'TRUNCATE TABLE leaderboard_global RESTART IDENTITY CASCADE'; EXCEPTION WHEN undefined_table THEN END;
+  BEGIN EXECUTE 'TRUNCATE TABLE partner_postbacks RESTART IDENTITY CASCADE'; EXCEPTION WHEN undefined_table THEN END;
+  BEGIN EXECUTE 'TRUNCATE TABLE active_effects RESTART IDENTITY CASCADE'; EXCEPTION WHEN undefined_table THEN END;
+  BEGIN EXECUTE 'TRUNCATE TABLE level_offer_schedule RESTART IDENTITY CASCADE'; EXCEPTION WHEN undefined_table THEN END;
+  BEGIN EXECUTE 'TRUNCATE TABLE attribution_leads RESTART IDENTITY CASCADE'; EXCEPTION WHEN undefined_table THEN END;
+  BEGIN EXECUTE 'TRUNCATE TABLE user_counters RESTART IDENTITY CASCADE'; EXCEPTION WHEN undefined_table THEN END;
+  BEGIN EXECUTE 'TRUNCATE TABLE user_profiles RESTART IDENTITY CASCADE'; EXCEPTION WHEN undefined_table THEN END;
+  BEGIN EXECUTE 'TRUNCATE TABLE game_config RESTART IDENTITY CASCADE'; EXCEPTION WHEN undefined_table THEN END;
+END $$;
 
 commit;
 

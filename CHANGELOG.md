@@ -85,3 +85,4 @@
 | OPS-ADMIN-FT-NOSYNC-001 | Disabled free_trial→tasks sync; Earn formed strictly from tasks |
 | OPS-NORM-EARN-001 | Earn uses kind only (free-trial/in_app); removed partnerKey and joins |
 | OPS-FLUSH-IMMEDIATE-001 | Immediate flush on threshold; effectiveFlush = min(flush_threshold, max_taps_per_batch) |
+| OPS-REMOTE-0001 | Fixed Supabase run error: replaced invalid TRUNCATE IF EXISTS with safe DO block |
