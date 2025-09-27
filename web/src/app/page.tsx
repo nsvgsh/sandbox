@@ -155,8 +155,27 @@ export default function Home() {
     await startSession()
   }
 
+  function getStartAppFromContext(): string | undefined {
+    try {
+      // Prefer Telegram WebApp param if available
+      const w = window as unknown as any
+      const tg = w?.Telegram?.WebApp
+      const tgStart = typeof tg?.tgWebAppStartParam === 'string' ? tg.tgWebAppStartParam : undefined
+      if (tgStart) return tgStart
+    } catch {}
+    try {
+      const url = new URL(window.location.href)
+      const s = url.searchParams.get('startapp')
+      if (s) return s
+    } catch {}
+    return undefined
+  }
+
   async function startSession() {
-    const res = await fetch('/api/v1/session/start', { method: 'POST' })
+    const startapp = typeof window !== 'undefined' ? getStartAppFromContext() : undefined
+    const headers: Record<string, string> = {}
+    if (startapp) headers['x-startapp'] = startapp
+    const res = await fetch('/api/v1/session/start', { method: 'POST', headers })
     if (!res.ok) return
     const data = (await res.json()) as Session
     setSession(data)
