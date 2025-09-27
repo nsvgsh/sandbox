@@ -158,7 +158,7 @@ export default function Home() {
     await startSession()
   }
 
-  type TgWebApp = { tgWebAppStartParam?: string }
+  type TgWebApp = { tgWebAppStartParam?: string; initDataUnsafe?: { start_param?: string } }
   type WindowWithTelegram = Window & { Telegram?: { WebApp?: TgWebApp } }
 
   function getStartAppFromContext(): string | undefined {
@@ -166,13 +166,17 @@ export default function Home() {
       // Prefer Telegram WebApp param if available
       const w = window as WindowWithTelegram
       const tg = w.Telegram?.WebApp
-      const tgStart = typeof tg?.tgWebAppStartParam === 'string' ? tg.tgWebAppStartParam : undefined
-      if (tgStart) return tgStart
+      const tgStartA = typeof tg?.tgWebAppStartParam === 'string' ? tg.tgWebAppStartParam : undefined
+      if (tgStartA) return tgStartA
+      const tgStartB = typeof tg?.initDataUnsafe?.start_param === 'string' ? tg.initDataUnsafe.start_param : undefined
+      if (tgStartB) return tgStartB
     } catch {}
     try {
       const url = new URL(window.location.href)
-      const s = url.searchParams.get('startapp')
-      if (s) return s
+      const s1 = url.searchParams.get('startapp')
+      if (s1) return s1
+      const s2 = url.searchParams.get('tgWebAppStartParam')
+      if (s2) return s2
     } catch {}
     return undefined
   }
