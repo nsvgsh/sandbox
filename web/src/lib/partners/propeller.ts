@@ -11,6 +11,7 @@ export type PropellerConfig = {
 export type ParsedStart = {
   provider: 'propellerads' | 'unknown'
   subid?: string
+  device?: string
   campaignid?: string
   zoneid?: string
 }
@@ -55,10 +56,32 @@ export function parseStartAppParam(startapp?: string): ParsedStart {
   // Enforce 64-char max by trimming from the end, preserving SUBID at the front
   let s = startapp
   if (s.length > 64) s = s.slice(0, 64)
-  const parts = s.split('_')
-  const [subid, campaignid, zoneid, sentinel] = parts
-  if (!subid || sentinel !== 'prop') return { provider: 'unknown' }
-  return { provider: 'propellerads', subid, campaignid, zoneid }
+  let parts = s.split('_').filter(Boolean)
+  if (parts.length === 0) return { provider: 'unknown' }
+
+  // Back-compat: drop trailing 'prop' sentinel if present
+  if (parts[parts.length - 1] === 'prop') parts = parts.slice(0, -1)
+
+  const subid = parts[0]
+  if (!subid) return { provider: 'unknown' }
+
+  // Supported formats:
+  // 1) subid
+  // 2) subid_device
+  // 3) subid_campaignid_zoneid
+  if (parts.length === 1) {
+    return { provider: 'propellerads', subid }
+  }
+  if (parts.length === 2) {
+    const device = parts[1]
+    return { provider: 'propellerads', subid, device }
+  }
+  if (parts.length >= 3) {
+    const campaignid = parts[1]
+    const zoneid = parts[2]
+    return { provider: 'propellerads', subid, campaignid, zoneid }
+  }
+  return { provider: 'propellerads', subid }
 }
 
 export function buildPostbackUrl(cfg: PropellerConfig, subid: string, goal?: number): string {
