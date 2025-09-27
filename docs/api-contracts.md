@@ -12,7 +12,9 @@ Conventions
 - POST /auth/tg → { jwt, user }
 - GET /level/last → { level, rewardPayload }
 - POST /session/start → { sessionId, sessionEpoch, lastAppliedSeq }
+  - Optional header: `x-startapp: <payload>` — persists attribution (PropellerAds) and triggers S2S postback.
 - POST /session/claim → { sessionId, sessionEpoch, lastAppliedSeq }
+  - Optional header: `x-startapp: <payload>` — same attribution semantics as `session/start`.
 - POST /ingest/taps → { counters, nextThreshold, leveledUp? }
   - Clients may send coalesced tap counts (`taps > 1`). Server applies idempotency/seq as usual and returns authoritative counters.
 - GET /counters → { counters, effects?, nextThreshold }

@@ -21,7 +21,6 @@
 | ADMIN-DEBUG-ADTTL | Admin debug state exposes ad_ttl_seconds |
 | CONFIG-TTL-DEFAULTS | Set local ad_ttl_seconds default to 10s; deprecated claim_ttl_seconds for bonus flow |
 | X2-POLICY-A-ONLY-001 | Added claim_level_bonus_v3 (A-only); idempotent by impressionId; mark ad_events as used; wired claim route to v3 |
-| ADS-PROPELLER-0001 | PropellerAds S2S: start-param attribution via `attribution_leads`; DB-backed config; synchronous postback on first user creation; audit in `partner_postbacks` |
 | UI-HOME-MAIN | Main screen scaffold in-place: counters header, avatar row, Tap Area, fixed bottom navigation |
 | UI-LEVELUP-MODAL | Level-up modal with base reward reveal; x2 flow with advisory countdown and idempotent claim; shows total x2 rewards after ad-view |
 | AD-PARTNER-FREE-TRIAL-DB | Added level_offer_schedule, config keys for partner redirect, and ad intent index |
@@ -87,3 +86,5 @@
 | OPS-NORM-EARN-001 | Earn uses kind only (free-trial/in_app); removed partnerKey and joins |
 | OPS-FLUSH-IMMEDIATE-001 | Immediate flush on threshold; effectiveFlush = min(flush_threshold, max_taps_per_batch) |
 | OPS-REMOTE-0001 | Fixed Supabase run error: replaced invalid TRUNCATE IF EXISTS with safe DO block |
+| ADS-PROPELLER-0001 | PropellerAds S2S: start-param attribution via `attribution_leads`; DB-backed config; synchronous postback on first user creation; audit in `partner_postbacks` |
+| ADS-PROPELLER-0001-CLAIM | Forwarded `x-startapp` on session claim; server persists attribution and triggers postback on claim path |

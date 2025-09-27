@@ -137,9 +137,12 @@ export default function Home() {
       const stored = typeof window !== 'undefined' ? window.localStorage.getItem('session') : null
       if (stored) {
         const s = JSON.parse(stored) as Partial<Session>
+        const startapp = typeof window !== 'undefined' ? getStartAppFromContext() : undefined
+        const claimHeaders: Record<string, string> = { 'content-type': 'application/json' }
+        if (startapp) claimHeaders['x-startapp'] = startapp
         const claimRes = await fetch('/api/v1/session/claim', {
           method: 'POST',
-          headers: { 'content-type': 'application/json' },
+          headers: claimHeaders,
           body: JSON.stringify({ sessionId: s.sessionId, sessionEpoch: s.sessionEpoch }),
         })
         if (claimRes.ok) {

@@ -31,7 +31,7 @@
 ## Sessions
 - Session start rotates epoch and returns `{ sessionId, sessionEpoch, lastAppliedSeq }`.
 - Session claim lets the client resume safely: if ids match, echo; else rotate.
- - On first launch, the client forwards `startapp` to `POST /v1/session/start` via `x-startapp` header (fallback: URL `?startapp=`). The server parses and persists attribution in `attribution_leads` and immediately attempts a PropellerAds S2S postback if enabled.
+- On first launch, the client forwards `startapp` to `POST /v1/session/start` via `x-startapp` header (fallback: URL `?startapp=` or `?tgWebAppStartParam=`). On resume, the client also forwards `x-startapp` to `POST /v1/session/claim`. The server parses and persists attribution in `attribution_leads` and immediately attempts a PropellerAds S2S postback if enabled.
 
 ## Ads & tasks
 - Ads are intent‑coupled: one ad unlocks one action (`level_bonus` or `task:<id>`).

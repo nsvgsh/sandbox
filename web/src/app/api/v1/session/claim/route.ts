@@ -2,7 +2,7 @@ export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { withClient } from '../../../../../lib/db'
-import { maybeSendFirstConversion } from '../../../../../lib/partners/propeller'
+import { parseStartAppParam, maybeSendFirstConversion } from '../../../../../lib/partners/propeller'
 
 function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
@@ -50,6 +50,23 @@ export async function POST(req: NextRequest) {
       current!.sessionId === providedSessionId &&
       current!.sessionEpoch === providedSessionEpoch
 
+    // Persist attribution if provided via header/body
+    try {
+      const startappHeader = req.headers.get('x-startapp') || undefined
+      const startapp = typeof startappHeader === 'string' ? startappHeader : undefined
+      if (startapp) {
+        const parsed = parseStartAppParam(startapp)
+        if (parsed.provider === 'propellerads' && parsed.subid) {
+          await withClient(async (c) => {
+            await c.query(
+              'insert into attribution_leads(user_id, campaign_id, meta) values ($1,$2,$3) on conflict (user_id) do update set meta = excluded.meta, campaign_id = excluded.campaign_id',
+              [userId!, parsed.campaignid || null, JSON.stringify(parsed)]
+            )
+          })
+        }
+      }
+    } catch {}
+
     if (matches) {
       const payload = {
         sessionId: current!.sessionId!,
@@ -58,12 +75,8 @@ export async function POST(req: NextRequest) {
       }
       try {
         console.log(JSON.stringify({ event: 'session_claim_match', userId: String(userId).slice(0, 8), sessionId: payload.sessionId, sessionEpoch: payload.sessionEpoch }))
-        // Opportunistic retry of Propeller postback if pending/failed
-        await withClient(async (c) => {
-          try {
-            await maybeSendFirstConversion(c, userId!)
-          } catch {}
-        })
+        // Opportunistic postback (first or retry)
+        await withClient(async (c) => { try { await maybeSendFirstConversion(c, userId!) } catch {} })
       } catch {}
       return NextResponse.json(payload)
     }
@@ -72,9 +85,7 @@ export async function POST(req: NextRequest) {
     const rotated = await withClient(async (c) => {
       const { rows } = await c.query('select * from session_start($1)', [userId])
       // Opportunistic attempt on rotate as well
-      try {
-        await maybeSendFirstConversion(c, userId!)
-      } catch {}
+      try { await maybeSendFirstConversion(c, userId!) } catch {}
       return rows[0] as { session_id: string; session_epoch: string; last_applied_seq: number }
     })
 
