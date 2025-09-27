@@ -8,7 +8,7 @@
 
 ## High‑level flows
 - Telegram client → Bot deep link (startapp/startattach) → WebApp launch
-- WebApp reads URL GET `tgWebAppStartParam` for initial routing
+- WebApp reads URL GET `tgWebAppStartParam` for initial routing and attribution (maps to `startapp`)
 - Attachment‑menu launches populate `initDataUnsafe.start_param`
 - WebApp → Supabase Edge Function: validate `initData`
 - Edge Function → WebApp: user/session payload → issue Supabase JWT
@@ -31,6 +31,7 @@
 ## Sessions
 - Session start rotates epoch and returns `{ sessionId, sessionEpoch, lastAppliedSeq }`.
 - Session claim lets the client resume safely: if ids match, echo; else rotate.
+ - On first launch, the client forwards `startapp` to `POST /v1/session/start` via `x-startapp` header (fallback: URL `?startapp=`). The server parses and persists attribution in `attribution_leads` and immediately attempts a PropellerAds S2S postback if enabled.
 
 ## Ads & tasks
 - Ads are intent‑coupled: one ad unlocks one action (`level_bonus` or `task:<id>`).
@@ -63,7 +64,7 @@
 
 ## Security
 - Always validate `WebApp.initData` (`hash`, `signature`) server‑side before trusting params
-- Do not trust `start_param` until validation completes
+- Do not trust `startapp`/`start_param` until validation completes
 
 ## UI (local dev) surfaces
 - Home (Game): Counters header (Coins/Tickets/Level), avatar/nickname, Tap Area, level‑up modal with x2 flow.
