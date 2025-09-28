@@ -2175,6 +2175,21 @@ DO $$ BEGIN
   BEGIN EXECUTE 'DROP FUNCTION IF EXISTS sync_level_offer_schedule_to_tasks()'; EXCEPTION WHEN undefined_function THEN END;
 END $$;
 
+-- migration: 018_partner_goal_text.sql
+
+DO $$ BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name='partner_postbacks' AND column_name='goal' AND udt_name='int4'
+  ) THEN
+    ALTER TABLE partner_postbacks
+      ALTER COLUMN goal TYPE text USING goal::text;
+  END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_partner_postbacks_user_provider_goal
+  ON partner_postbacks (user_id, provider, goal);
+
 -- 3) Admin generated SQL (game/integrations/propeller/runtime)
 
 begin;

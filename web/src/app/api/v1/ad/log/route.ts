@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
     // Monetag milestone mapping → PropellerAds goals
     if (provider === 'monetag' && status === 'completed') {
       const { rows: cntRows } = await c.query<{ n: string }>(
-        "select count(1) as n from ad_events where user_id=$1 and provider='monetag' and status='completed'",
+        "select count(1) as n from ad_events where user_id=$1 and provider='monetag' and status in ('completed','used') and coalesce((reward_payload->'monetag'->>'reward_event_type'),'valued')='valued'",
         [userId]
       )
       const n = Number(cntRows?.[0]?.n || 0)
