@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { withClient } from '../../../../../lib/db'
 import { randomUUID } from 'crypto'
-import { withClient } from '../../../../../lib/db'
 import { sendMonetagMilestonePostback } from '../../../../../lib/partners/propeller'
 
 export async function POST(req: NextRequest) {
