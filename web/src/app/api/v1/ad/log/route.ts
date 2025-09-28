@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { withClient } from '../../../../../lib/db'
 import { randomUUID } from 'crypto'
+import { withClient } from '../../../../../lib/db'
+import { sendMonetagMilestonePostback } from '../../../../../lib/partners/propeller'
 
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
@@ -49,6 +51,17 @@ export async function POST(req: NextRequest) {
       'insert into ad_events(id, user_id, session_id, provider, placement, status, reward_payload) values (gen_random_uuid(), $1, null, $2, $3, $4, $5)',
       [userId, provider, placement, status, JSON.stringify(payload)]
     )
+
+    // Monetag milestone mapping → PropellerAds goals
+    if (provider === 'monetag' && status === 'completed') {
+      const { rows: cntRows } = await c.query<{ n: string }>(
+        "select count(1) as n from ad_events where user_id=$1 and provider='monetag' and status='completed'",
+        [userId]
+      )
+      const n = Number(cntRows?.[0]?.n || 0)
+      if (n === 1) { try { await sendMonetagMilestonePostback(c, userId, '2') } catch {} }
+      if (n === 3) { try { await sendMonetagMilestonePostback(c, userId, '3') } catch {} }
+    }
 
     return { recorded: true, impressionId }
   })

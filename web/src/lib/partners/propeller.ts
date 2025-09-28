@@ -6,6 +6,8 @@ export type PropellerConfig = {
   aid: string
   tid: string
   pid?: string
+  payoutGoal2?: string
+  payoutGoal3?: string
 }
 
 export type ParsedStart = {
@@ -34,7 +36,7 @@ function stripJsonQuotes(s: string): string {
 
 export async function getPropellerConfig(c: PoolClient): Promise<PropellerConfig> {
   const { rows } = await c.query<{ key: string; value: unknown }>(
-    "select key, value from game_config where key in ('propeller_enabled','propeller_postback_base_url','propeller_aid','propeller_tid','propeller_pid')"
+    "select key, value from game_config where key in ('propeller_enabled','propeller_postback_base_url','propeller_aid','propeller_tid','propeller_pid','propeller_payout_goal2','propeller_payout_goal3')"
   )
   const map = new Map<string, unknown>(rows.map((r) => [r.key, r.value]))
   const enabledRaw = map.get('propeller_enabled')
@@ -48,6 +50,8 @@ export async function getPropellerConfig(c: PoolClient): Promise<PropellerConfig
     aid: stripJsonQuotes(toStr(aidRaw, '')),
     tid: stripJsonQuotes(toStr(tidRaw, '')),
     pid: stripJsonQuotes(toStr(pidRaw, '')) || undefined,
+    payoutGoal2: stripJsonQuotes(toStr(map.get('propeller_payout_goal2'), '')) || undefined,
+    payoutGoal3: stripJsonQuotes(toStr(map.get('propeller_payout_goal3'), '')) || undefined,
   }
 }
 
@@ -84,13 +88,14 @@ export function parseStartAppParam(startapp?: string): ParsedStart {
   return { provider: 'propellerads', subid }
 }
 
-export function buildPostbackUrl(cfg: PropellerConfig, subid: string, goal?: number): string {
+export function buildPostbackUrl(cfg: PropellerConfig, subid: string, goal?: string | number, payout?: string | number): string {
   const url = new URL(cfg.baseUrl)
   if (cfg.aid) url.searchParams.set('aid', cfg.aid)
   if (cfg.tid) url.searchParams.set('tid', cfg.tid)
   if (cfg.pid) url.searchParams.set('pid', cfg.pid)
   url.searchParams.set('visitor_id', subid)
-  if (goal && Number.isFinite(goal)) url.searchParams.set('goal', String(goal))
+  if (goal !== undefined && goal !== null && String(goal).length > 0) url.searchParams.set('goal', String(goal))
+  if (payout !== undefined && payout !== null && String(payout).length > 0) url.searchParams.set('payout', String(payout))
   return url.toString()
 }
 
@@ -99,13 +104,13 @@ export async function recordAndSendPostback(
   userId: string,
   subid: string,
   url: string,
-  goal?: number
+  goal?: string
 ): Promise<{ sent: boolean; httpCode?: number }> {
   // Dedupe by (user_id, provider, goal)
   const provider = 'propellerads'
   await c.query(
     'insert into partner_postbacks(user_id, provider, subid, goal, url, status, attempts) values ($1,$2,$3,$4,$5,$6,$7) on conflict (user_id, provider, goal) do nothing',
-    [userId, provider, subid, goal ?? null, url, 'pending', 0]
+    [userId, provider, subid, goal ?? 'visit', url, 'pending', 0]
   )
 
   // Attempt HTTP send (best-effort, short timeout)
@@ -117,14 +122,14 @@ export async function recordAndSendPostback(
     const httpCode = res.status
     await c.query(
       'update partner_postbacks set status=$1, http_code=$2, attempts=attempts+1, sent_at=now() where user_id=$3 and provider=$4 and goal is not distinct from $5',
-      [res.ok ? 'sent' : 'failed', httpCode, userId, provider, goal ?? null]
+      [res.ok ? 'sent' : 'failed', httpCode, userId, provider, goal ?? 'visit']
     )
     return { sent: res.ok, httpCode }
   } catch (e) {
     clearTimeout(to)
     await c.query(
       'update partner_postbacks set status=$1, attempts=attempts+1 where user_id=$2 and provider=$3 and goal is not distinct from $4',
-      ['failed', userId, provider, goal ?? null]
+      ['failed', userId, provider, goal ?? 'visit']
     )
     return { sent: false }
   }
@@ -161,8 +166,33 @@ export async function maybeSendFirstConversion(
   )
   if (existing.length) return { attempted: false }
 
-  const url = buildPostbackUrl(cfg, subid)
-  const { sent } = await recordAndSendPostback(c, userId, subid, url)
+  const url = buildPostbackUrl(cfg, subid, 'visit')
+  const { sent } = await recordAndSendPostback(c, userId, subid, url, 'visit')
+  return { attempted: true, sent }
+}
+
+export async function sendMonetagMilestonePostback(c: PoolClient, userId: string, goal: '2' | '3'):
+  Promise<{ attempted: boolean; sent?: boolean }> {
+  const cfg = await getPropellerConfig(c)
+  if (!cfg.enabled || !cfg.aid || !cfg.tid) return { attempted: false }
+  const { rows: attr } = await c.query<{ meta: unknown }>(
+    "select meta from attribution_leads where user_id=$1 and (meta->>'provider')='propellerads'",
+    [userId]
+  )
+  if (!attr.length) return { attempted: false }
+  const getMetaString = (m: unknown, key: string): string | undefined => {
+    if (m && typeof m === 'object') {
+      const v = (m as Record<string, unknown>)[key]
+      if (typeof v === 'string') return v
+    }
+    return undefined
+  }
+  const meta = attr[0]?.meta
+  const subid = getMetaString(meta, 'subid') || getMetaString(meta, 'SUBID') || getMetaString(meta, 'click_id')
+  if (!subid) return { attempted: false }
+  const payout = goal === '2' ? cfg.payoutGoal2 : cfg.payoutGoal3
+  const url = buildPostbackUrl(cfg, subid, goal, payout)
+  const { sent } = await recordAndSendPostback(c, userId, subid, url, goal)
   return { attempted: true, sent }
 }
 

@@ -21,6 +21,10 @@ Conventions
 - POST /ad/log → { recorded, impressionId }
   - Body accepts optional `intent`: `"level_bonus"` or `"task:<taskId>"`.
   - Persists `ad_events` with `status='closed'|'failed'` and stores provider payload; does not return TTL.
+  - When `provider='monetag'` and `status='completed'`, the server maps milestones to PropellerAds postbacks:
+    - 1st-ever Monetag completion → Propeller `goal=2` (optional `payout` from config)
+    - 3rd-ever Monetag completion → Propeller `goal=3` (optional `payout` from config)
+    - Dedupe is enforced via `(user_id,'propellerads',goal)` uniqueness.
 - POST /level/bonus/claim → { rewardEventId?, counters }
   - Applies incremental x2 when a recent ad exists where `now < ad_events.created_at + ad_ttl_seconds`.
   - Send `impressionId` from `/ad/log` and use it as idempotency key (`X-Idempotency-Key`).
@@ -56,6 +60,7 @@ Conventions
     - Legacy `${SUBID}_{campaignid}_{zoneid}_prop` (trailing `_prop` ignored)
 - GET /leaderboard?top=K → { top, me, activePlayers }  (windowDays is configured via env)
 - POST /partners/propellerads/enqueue (service) → { queued }
+  - Semantics: first conversion is sent with `goal=visit`.
 - GET /health → { ok: true }
 
 ## Task verification (policy)

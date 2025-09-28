@@ -88,3 +88,4 @@
 | OPS-REMOTE-0001 | Fixed Supabase run error: replaced invalid TRUNCATE IF EXISTS with safe DO block |
 | ADS-PROPELLER-0001 | PropellerAds S2S: start-param attribution via `attribution_leads`; DB-backed config; synchronous postback on first user creation; audit in `partner_postbacks` |
 | ADS-PROPELLER-0001-CLAIM | Forwarded `x-startapp` on session claim; server persists attribution and triggers postback on claim path |
+| ADS-PROPELLER-0001-MONETAG | Monetag milestones → PropellerAds postbacks: 1st → goal=2, 3rd → goal=3; optional payout via config |

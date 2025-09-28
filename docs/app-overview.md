@@ -22,6 +22,10 @@
 - Payments: none in v1
 - Error tracking: Sentry (light client init)
 - CDN: Vercel default
+ - PropellerAds S2S:
+   - First session start/claim with attribution → `goal=visit`
+   - Monetag milestones → `goal=2` (first), `goal=3` (third)
+   - Optional payouts from `game_config` (`propeller_payout_goal2`, `propeller_payout_goal3`)
 
 ## Deep links (reference)
 - Direct Mini App: `t.me/<bot_username>?startapp[=<campaign_id>]&mode=<mode>`
