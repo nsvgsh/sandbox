@@ -15,3 +15,4 @@
 - Earn tile Free Trial остаётся задачей: клик логируется с `placement='earn_tile'`, `intent='task:<task_id>'`; клейм работает как сейчас.
 - Никакой зависимости модалки от `task_id`.
 
+

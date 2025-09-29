@@ -89,3 +89,9 @@
 | ADS-PROPELLER-0001 | PropellerAds S2S: start-param attribution via `attribution_leads`; DB-backed config; synchronous postback on first user creation; audit in `partner_postbacks` |
 | ADS-PROPELLER-0001-CLAIM | Forwarded `x-startapp` on session claim; server persists attribution and triggers postback on claim path |
 | ADS-PROPELLER-0001-MONETAG | Monetag milestones → PropellerAds postbacks: 1st → goal=2, 3rd → goal=3; optional payout via config |
+| TG-AUTH-DB | Added migrations: telegram_identities (tg_user_id→user_id) and dev_whitelist |
+| TG-AUTH | Implemented POST /api/v1/auth/tg (validate initData, upsert mapping, set cookie) |
+| TG-AUTH | Added POST /api/v1/auth/dev/allowlist (probe-only; whitelist check; no side effects) |
+| TG-AUTH | Hardened POST /api/v1/auth/dev: supports x-telegram-user-id + whitelist; random dev gated by ENABLE_RANDOM_DEV_USER |
+| UI-AUTH-GATE | Client AuthGate: inside Telegram probe→choice or auto auth; outside Telegram dev affordance gated by NEXT_PUBLIC_ENABLE_OUTSIDE_TG_DEV & ?dev=1 |
+| DOCS-TG-AUTH | Updated api-contracts, app-overview, telegram-integration (Mermaid flow + tutorials), env.example |

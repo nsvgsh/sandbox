@@ -9,7 +9,9 @@ Conventions
 - Config source: clients read timers/limits from `GET /v1/config`. Any UI countdowns are advisory; the server is authoritative.
 
 ## Routes
-- POST /auth/tg → { jwt, user }
+- POST /auth/tg → { ok, user }
+  - Body: `{ initDataRaw: string }` (or `Authorization: tma <initDataRaw>`)
+  - Validates Telegram initData (HMAC-SHA-256, TTL). On success sets `dev_session` cookie bound to internal `user_id` and returns `{ ok: true, user: { userId, tgUserId } }`.
 - GET /level/last → { level, rewardPayload }
 - POST /session/start → { sessionId, sessionEpoch, lastAppliedSeq }
   - Optional header: `x-startapp: <payload>` — persists attribution (PropellerAds) and triggers S2S postback.
@@ -18,6 +20,8 @@ Conventions
 - POST /ingest/taps → { counters, nextThreshold, leveledUp? }
   - Clients may send coalesced tap counts (`taps > 1`). Server applies idempotency/seq as usual and returns authoritative counters.
 - GET /counters → { counters, effects?, nextThreshold }
+- POST /auth/dev/allowlist → { devEligible }
+  - Probe-only endpoint. Body: `{ initDataRaw: string }`. Validates initData and returns `{ devEligible: boolean }` based on `dev_whitelist`. No cookie/side effects.
 - POST /ad/log → { recorded, impressionId }
   - Body accepts optional `intent`: `"level_bonus"` or `"task:<taskId>"`.
   - Persists `ad_events` with `status='closed'|'failed'` and stores provider payload; does not return TTL.

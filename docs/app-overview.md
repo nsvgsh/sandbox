@@ -10,10 +10,9 @@
 - Telegram client → Bot deep link (startapp/startattach) → WebApp launch
 - WebApp reads URL GET `tgWebAppStartParam` for initial routing and attribution (maps to `startapp`)
 - Attachment‑menu launches populate `initDataUnsafe.start_param`
-- WebApp → Supabase Edge Function: validate `initData`
-- Edge Function → WebApp: user/session payload → issue Supabase JWT
-- WebApp ↔ Supabase client SDK: RLS‑protected reads
-- WebApp → Edge Functions: secure mutations / anti‑cheat paths
+- WebApp → `/api/v1/auth/tg`: validate `initData`, set app cookie bound to user_id
+- WebApp → `/api/v1/session/claim|start`: resume or start gameplay session (propagate `x-startapp`)
+- WebApp ↔ Supabase (via server) for gameplay mutations and reads
 - Vercel CDN/Edge → WebApp: static assets and chunks
 - Supabase Storage → WebApp: media/assets
 
@@ -35,7 +34,7 @@
 ## Sessions
 - Session start rotates epoch and returns `{ sessionId, sessionEpoch, lastAppliedSeq }`.
 - Session claim lets the client resume safely: if ids match, echo; else rotate.
-- On first launch, the client forwards `startapp` to `POST /v1/session/start` via `x-startapp` header (fallback: URL `?startapp=` or `?tgWebAppStartParam=`). On resume, the client also forwards `x-startapp` to `POST /v1/session/claim`. The server parses and persists attribution in `attribution_leads` and immediately attempts a PropellerAds S2S postback if enabled.
+- On first launch after auth, the client forwards `startapp` to `POST /v1/session/start` via `x-startapp` header (fallback: URL `?startapp=` or `?tgWebAppStartParam=`). On resume, the client also forwards `x-startapp` to `POST /v1/session/claim`. The server parses and persists attribution in `attribution_leads` and immediately attempts a PropellerAds S2S postback if enabled.
 
 ## Ads & tasks
 - Ads are intent‑coupled: one ad unlocks one action (`level_bonus` or `task:<id>`).

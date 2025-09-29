@@ -63,6 +63,9 @@ function AvatarRow() {
 
 export default function Home() {
   const [mounted, setMounted] = useState(false)
+  const [insideTelegram, setInsideTelegram] = useState<boolean>(false)
+  const [showDevChoice, setShowDevChoice] = useState<boolean>(false)
+  const [tgUserIdFromProbe, setTgUserIdFromProbe] = useState<number | null>(null)
   const [clickerSize, setClickerSize] = useState<number>(156)
   const [userId, setUserId] = useState<string | null>(null)
   const [session, setSession] = useState<Session | null>(null)
@@ -123,7 +126,9 @@ export default function Home() {
 
   async function devLogin() {
     const token = process.env.NEXT_PUBLIC_DEV_TOKEN || process.env.DEV_TOKEN || ''
-    const res = await fetch('/api/v1/auth/dev', { method: 'POST', headers: { 'x-dev-token': token } })
+    const headers: Record<string, string> = { 'x-dev-token': token }
+    if (tgUserIdFromProbe && Number.isFinite(tgUserIdFromProbe)) headers['x-telegram-user-id'] = String(tgUserIdFromProbe)
+    const res = await fetch('/api/v1/auth/dev', { method: 'POST', headers })
     if (res.ok) {
       const data = await res.json()
       setUserId(data.userId)
@@ -179,6 +184,53 @@ export default function Home() {
       if (s2) return s2
     } catch {}
     return undefined
+  }
+
+  // AuthGate: decide on initial auth inside Telegram
+  useEffect(() => {
+    if (!mounted || userId) return
+    try {
+      const w = window as WindowWithTelegram & { Telegram?: { WebApp?: TgWebApp & { initData?: string } } }
+      const tg = w.Telegram?.WebApp
+      const inTg = !!tg
+      setInsideTelegram(inTg)
+      if (!inTg) return
+      const initDataRaw = (tg as unknown as { initData?: string })?.initData || ''
+      if (!initDataRaw || initDataRaw.length < 10) return
+      let cancelled = false
+      ;(async () => {
+        try {
+          // Probe allowlist
+          const probe = await fetch('/api/v1/auth/dev/allowlist', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ initDataRaw }) })
+          if (cancelled) return
+          if (probe.ok) {
+            const pj = await probe.json().catch(() => ({} as { devEligible?: boolean; tgUserId?: number }))
+            if (pj && pj.devEligible) {
+              setTgUserIdFromProbe(typeof pj.tgUserId === 'number' ? pj.tgUserId : null)
+              setShowDevChoice(true)
+              return
+            }
+          }
+          // Non-dev: auto auth via Telegram
+          const auth = await fetch('/api/v1/auth/tg', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ initDataRaw }) })
+          if (cancelled) return
+          if (auth.ok) {
+            const aj = await auth.json().catch(() => ({} as { user?: { userId?: string } }))
+            const uid = String(aj?.user?.userId || '')
+            if (uid) setUserId(uid)
+          }
+        } catch {}
+      })()
+      return () => { cancelled = true }
+    } catch {}
+  }, [mounted, userId])
+
+  function devAffordanceOutsideEnabled(): boolean {
+    try {
+      if (process.env.NEXT_PUBLIC_ENABLE_OUTSIDE_TG_DEV !== '1') return false
+      const url = new URL(window.location.href)
+      return url.searchParams.get('dev') === '1'
+    } catch { return false }
   }
 
   async function startSession() {
@@ -755,7 +807,51 @@ export default function Home() {
       minHeight: 'calc(100dvh - (var(--bottomnav-height, 132px) + env(safe-area-inset-bottom)))'
     }}>
       {!userId ? (
-        <button onClick={devLogin}>Dev Login</button>
+        <div style={{ padding: 16 }}>
+          {!insideTelegram && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <button onClick={() => { try { alert('Open this app from Telegram to continue.') } catch {} }}>Open in Telegram</button>
+              {devAffordanceOutsideEnabled() && (
+                <button onClick={() => { setShowDevChoice(true) }}>I’m a developer</button>
+              )}
+            </div>
+          )}
+          {insideTelegram && showDevChoice && (
+            <div role="dialog" aria-modal="true" aria-label="Developer choice" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 80 }} onClick={() => setShowDevChoice(false)}>
+              <div onClick={(e) => e.stopPropagation()} style={{ width: 'min(92vw, 420px)', borderRadius: 16, background: 'var(--background)', color: 'var(--foreground)', padding: 16, boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }}>
+                <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 8 }}>Choose login mode</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <button onClick={async () => { await devLogin(); setShowDevChoice(false) }}>Dev Login</button>
+                  <button onClick={async () => {
+                    try {
+                      const w = window as WindowWithTelegram & { Telegram?: { WebApp?: TgWebApp & { initData?: string } } }
+                      const initDataRaw = (w.Telegram?.WebApp as unknown as { initData?: string })?.initData || ''
+                      if (!initDataRaw) { setShowDevChoice(false); return }
+                      const res = await fetch('/api/v1/auth/tg', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ initDataRaw }) })
+                      if (res.ok) {
+                        const aj = await res.json().catch(() => ({} as { user?: { userId?: string } }))
+                        const uid = String(aj?.user?.userId || '')
+                        if (uid) setUserId(uid)
+                      }
+                    } catch {}
+                    setShowDevChoice(false)
+                  }}>Telegram Login</button>
+                </div>
+              </div>
+            </div>
+          )}
+          {!insideTelegram && showDevChoice && (
+            <div role="dialog" aria-modal="true" aria-label="Developer choice" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 80 }} onClick={() => setShowDevChoice(false)}>
+              <div onClick={(e) => e.stopPropagation()} style={{ width: 'min(92vw, 420px)', borderRadius: 16, background: 'var(--background)', color: 'var(--foreground)', padding: 16, boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }}>
+                <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 8 }}>Developer login</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <button onClick={async () => { await devLogin(); setShowDevChoice(false) }}>Dev Login</button>
+                  <button onClick={() => { try { alert('Open via Telegram to use Telegram Login'); } catch {}; setShowDevChoice(false) }}>Telegram Login</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       ) : !session ? (
         <button onClick={resumeOrStartSession}>Start / Resume Session</button>
       ) : (
