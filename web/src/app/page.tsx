@@ -201,7 +201,8 @@ export default function Home() {
       ;(async () => {
         try {
           // Probe allowlist
-          const probe = await fetch('/api/v1/auth/dev/allowlist', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ initDataRaw }) })
+          const corr = crypto.randomUUID()
+          const probe = await fetch('/api/v1/auth/dev/allowlist', { method: 'POST', headers: { 'content-type': 'application/json', 'x-client-corr': corr }, body: JSON.stringify({ initDataRaw }) })
           if (cancelled) return
           if (probe.ok) {
             const pj = await probe.json().catch(() => ({} as { devEligible?: boolean; tgUserId?: number }))
@@ -212,12 +213,19 @@ export default function Home() {
             }
           }
           // Non-dev: auto auth via Telegram
-          const auth = await fetch('/api/v1/auth/tg', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ initDataRaw }) })
+          const auth = await fetch('/api/v1/auth/tg', { method: 'POST', headers: { 'content-type': 'application/json', 'authorization': `tma ${initDataRaw}`, 'x-client-corr': corr }, body: JSON.stringify({ initDataRaw }) })
           if (cancelled) return
           if (auth.ok) {
             const aj = await auth.json().catch(() => ({} as { user?: { userId?: string } }))
             const uid = String(aj?.user?.userId || '')
             if (uid) setUserId(uid)
+          } else {
+            try {
+              const reason = auth.headers.get('x-debug-reason') || ''
+              const delta = auth.headers.get('x-debug-delta-sec') || ''
+              const ttl = auth.headers.get('x-debug-ttl-sec') || ''
+              console.log(JSON.stringify({ phase: 'auth_tg_fail', status: auth.status, reason, delta, ttl, corrServer: auth.headers.get('x-debug-corr') }))
+            } catch {}
           }
         } catch {}
       })()

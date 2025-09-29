@@ -30,6 +30,8 @@ async function validateInitData(initDataRaw: string): Promise<{
 export async function POST(req: NextRequest) {
   // Accept JSON body { initDataRaw } or Authorization: tma <initDataRaw>
   let initDataRaw: string | undefined
+  const corr = (globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2)) as string
+  let dbg: Record<string, unknown> = { route: 'auth_tg', corr }
   try {
     const auth = req.headers.get('authorization') || ''
     if (auth.toLowerCase().startsWith('tma ')) initDataRaw = auth.slice(4)
@@ -40,15 +42,31 @@ export async function POST(req: NextRequest) {
       if (body && typeof body.initDataRaw === 'string') initDataRaw = body.initDataRaw
     } catch {}
   }
+  dbg.initDataLen = initDataRaw ? initDataRaw.length : 0
   if (!initDataRaw || typeof initDataRaw !== 'string' || initDataRaw.length < 8) {
-    return NextResponse.json({ error: 'bad_request' }, { status: 400 })
+    const res = NextResponse.json({ error: 'bad_request', reason: 'empty_or_short', ...dbg }, { status: 400 })
+    res.headers.set('x-debug-reason', 'empty_or_short')
+    res.headers.set('x-debug-corr', corr)
+    res.headers.set('x-debug-initdata-len', String(dbg.initDataLen))
+    res.headers.set('x-debug-token-present', String(Boolean(process.env.TELEGRAM_BOT_TOKEN)))
+    return res
   }
 
   const v = await validateInitData(initDataRaw)
+  dbg.tokenPresent = Boolean(process.env.TELEGRAM_BOT_TOKEN)
   if (!v.ok || !v.user) {
-    return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+    const reason = v.reason || 'invalid'
+    const res = NextResponse.json({ error: 'unauthorized', reason, ...dbg }, { status: 401 })
+    res.headers.set('x-debug-reason', reason)
+    res.headers.set('x-debug-corr', corr)
+    res.headers.set('x-debug-runtime', 'nodejs')
+    res.headers.set('x-debug-region', process.env.VERCEL_REGION || 'local')
+    res.headers.set('x-debug-token-present', String(Boolean(process.env.TELEGRAM_BOT_TOKEN)))
+    res.headers.set('x-debug-initdata-len', String(dbg.initDataLen))
+    return res
   }
   const tg = v.user
+  dbg.userId = tg.id
 
   // Upsert mapping and ensure user exists
   const userId = await withClient(async (c) => {
@@ -82,8 +100,10 @@ export async function POST(req: NextRequest) {
   // Set cross-site compatible cookie for Telegram WebView
   const cookieStore = await cookies()
   cookieStore.set('dev_session', userId, { httpOnly: true, sameSite: 'none', secure: true, path: '/' })
-
-  return NextResponse.json({ ok: true, user: { userId, tgUserId: tg.id } })
+  const resOk = NextResponse.json({ ok: true, user: { userId, tgUserId: tg.id }, corr }, { status: 200 })
+  resOk.headers.set('x-debug-corr', corr)
+  resOk.headers.set('x-debug-region', process.env.VERCEL_REGION || 'local')
+  return resOk
 }
 
 
