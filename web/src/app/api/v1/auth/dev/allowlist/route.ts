@@ -21,7 +21,7 @@ async function validateInitData(initDataRaw: string): Promise<{ ok: boolean; tgU
 export async function POST(req: NextRequest) {
   let initDataRaw: string | undefined
   const corr = (globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2)) as string
-  let dbg: Record<string, unknown> = { route: 'allowlist', corr }
+  const dbg: Record<string, unknown> = { route: 'allowlist', corr }
   try {
     const body = (await req.json().catch(() => ({}))) as { initDataRaw?: string }
     if (body && typeof body.initDataRaw === 'string') initDataRaw = body.initDataRaw

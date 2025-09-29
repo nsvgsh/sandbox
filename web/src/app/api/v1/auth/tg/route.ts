@@ -31,11 +31,11 @@ export async function POST(req: NextRequest) {
   // Accept JSON body { initDataRaw } or Authorization: tma <initDataRaw>
   let initDataRaw: string | undefined
   const corr = (globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2)) as string
-  let dbg: Record<string, unknown> = { route: 'auth_tg', corr }
+  const dbg: Record<string, unknown> = { route: 'auth_tg', corr }
   try {
     const auth = req.headers.get('authorization') || ''
     if (auth.toLowerCase().startsWith('tma ')) initDataRaw = auth.slice(4)
-  } catch {}
+  } catch { /* ignore */ }
   if (!initDataRaw) {
     try {
       const body = (await req.json().catch(() => ({}))) as { initDataRaw?: string }
