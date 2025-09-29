@@ -53,6 +53,24 @@ Notes
 - The Dev Choice UI appears to devs inside Telegram (allowlisted) and optionally outside Telegram only when BOTH `NEXT_PUBLIC_ENABLE_OUTSIDE_TG_DEV=1` and the URL contains `?dev=1`.
 - `x-startapp` is forwarded to session routes for attribution.
 
+## Auth dependencies (external)
+
+- Telegram WebApp SDK (client)
+  - Script tag loaded early to expose `window.Telegram.WebApp` and `initData`:
+    - `https://telegram.org/js/telegram-web-app.js`
+  - Loaded in Next.js via `<Script strategy="beforeInteractive" />` in `web/src/app/layout.tsx`.
+
+- InitData validator (server)
+  - NPM: `@telegram-apps/init-data-node` — validates `initDataRaw` (HMAC‑SHA‑256 with bot token, TTL):
+    - Used in `/api/v1/auth/tg` and `/api/v1/auth/dev/allowlist`.
+    - Note: the package is deprecated upstream; a compatible alternative is `@tma.js/init-data-node`. Migration is trivial (same intent/API).
+
+- Next.js / Node runtime
+  - API routes set `export const runtime = 'nodejs'` to ensure consistent server crypto/runtime on Vercel.
+
+- Database client (server)
+  - NPM: `pg` — used by `web/src/lib/db.ts` to upsert `telegram_identities` and `user_profiles` after auth.
+
 ## Local dev setup and usage
 
 ### Prerequisites

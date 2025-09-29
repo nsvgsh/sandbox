@@ -583,6 +583,36 @@ export default function Home() {
 
   useEffect(() => setMounted(true), [])
 
+  // Resilient Telegram detection with retry + UA fallback
+  useEffect(() => {
+    let tries = 0
+    let cancelled = false
+    const tick = () => {
+      if (cancelled) return
+      try {
+        const w = window as WindowWithTelegram & { Telegram?: { WebApp?: TgWebApp & { initData?: string; ready?: () => void } } }
+        const tg = w.Telegram?.WebApp
+        if (tg) {
+          setInsideTelegram(true)
+          try { (tg as unknown as { ready?: () => void }).ready?.() } catch {}
+          return
+        }
+        // UA fallback
+        const ua = (typeof navigator !== 'undefined' ? navigator.userAgent : '').toLowerCase()
+        if (ua.includes('telegram')) {
+          setInsideTelegram(true)
+          return
+        }
+      } catch {}
+      tries += 1
+      if (tries < 5) {
+        setTimeout(tick, 200)
+      }
+    }
+    tick()
+    return () => { cancelled = true }
+  }, [])
+
   // Compute dynamic clicker size for ergonomics (thumb-zone sizing)
   useEffect(() => {
     function recalc() {
