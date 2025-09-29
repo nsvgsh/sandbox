@@ -3,26 +3,68 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { withClient } from '../../../../../lib/db'
 
-// Lazy import to keep edge/node compat reasonable
+// HMAC validation supporting both documented derivations and raw/decoded DCS
 async function validateInitData(initDataRaw: string): Promise<{
   ok: boolean
   reason?: string
   user?: { id: number; first_name?: string; last_name?: string; username?: string; photo_url?: string }
 }> {
+  const token = (process.env.TELEGRAM_BOT_TOKEN || '').trim()
+  if (!token) return { ok: false, reason: 'config_missing' }
+  const ttlSec = Number(process.env.INITDATA_TTL_SECONDS || '3600')
   try {
-    const token = process.env.TELEGRAM_BOT_TOKEN
-    if (!token) return { ok: false, reason: 'config_missing' }
-    const ttlSec = Number(process.env.INITDATA_TTL_SECONDS || '3600')
-    // Use @telegram-apps/init-data-node if available; fall back to manual validation later if needed
-    const mod = await import('@telegram-apps/init-data-node')
-    const { validate } = mod as unknown as { validate: (raw: string, opts: { botToken: string; expiresIn?: number }) => { user?: unknown } }
-    const result = validate(initDataRaw, { botToken: token, expiresIn: ttlSec })
-    const u = (result && (result as { user?: unknown }).user) as
+    const { createHmac, createHash } = await import('node:crypto')
+    const params = new URLSearchParams(initDataRaw)
+    const hash = params.get('hash') || ''
+    if (!hash) return { ok: false, reason: 'invalid' }
+    const entriesRaw: { key: string; raw: string; valueRaw: string }[] = []
+    for (const part of initDataRaw.split('&')) {
+      const idx = part.indexOf('=')
+      const key = idx >= 0 ? part.slice(0, idx) : part
+      const valueRaw = idx >= 0 ? part.slice(idx + 1) : ''
+      if (key === 'hash' || key === 'signature' || key === '') continue
+      entriesRaw.push({ key, raw: part, valueRaw })
+    }
+    entriesRaw.sort((a, b) => a.key.localeCompare(b.key))
+    const dcsDecoded = entriesRaw
+      .map((e) => `${e.key}=${decodeURIComponent(e.valueRaw)}`)
+      .join('\n')
+    const dcsRaw = entriesRaw.map((e) => `${e.key}=${e.valueRaw}`).join('\n')
+    const secret1 = createHash('sha256').update(token).digest()
+    const secret2 = createHmac('sha256', 'WebAppData').update(token).digest()
+    const cand = [
+      createHmac('sha256', secret1).update(dcsDecoded).digest('hex'),
+      createHmac('sha256', secret1).update(dcsRaw).digest('hex'),
+      createHmac('sha256', secret2).update(dcsDecoded).digest('hex'),
+      createHmac('sha256', secret2).update(dcsRaw).digest('hex'),
+    ]
+    const match = cand.some((h) => h === hash)
+    if (!match) return { ok: false, reason: 'invalid' }
+    const authDate = Number(params.get('auth_date') || '0')
+    if (Number.isFinite(authDate) && authDate > 0) {
+      const now = Math.floor(Date.now() / 1000)
+      if (now - authDate > ttlSec) return { ok: false, reason: 'expired' }
+    }
+    // Minimal user extraction (decoded JSON string)
+    let user:
       | { id: number; first_name?: string; last_name?: string; username?: string; photo_url?: string }
       | undefined
-    if (!u || typeof u.id !== 'number') return { ok: false, reason: 'no_user' }
-    return { ok: true, user: u }
-  } catch (e) {
+    try {
+      const userStr = params.get('user') || ''
+      const parsed = userStr ? (JSON.parse(decodeURIComponent(userStr)) as unknown) : undefined
+      if (parsed && typeof (parsed as { id?: unknown }).id === 'number') {
+        user = parsed as {
+          id: number
+          first_name?: string
+          last_name?: string
+          username?: string
+          photo_url?: string
+        }
+      }
+    } catch {}
+    if (!user) return { ok: false, reason: 'no_user' }
+    return { ok: true, user }
+  } catch {
     return { ok: false, reason: 'invalid' }
   }
 }
