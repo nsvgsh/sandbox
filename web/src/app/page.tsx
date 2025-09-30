@@ -85,6 +85,7 @@ export default function Home() {
   const [leveledUp, setLeveledUp] = useState<number | null>(null)
   const [nextThreshold, setNextThreshold] = useState<NextThreshold>(null)
   const [debugState, setDebugState] = useState<DebugState>(null)
+  const [bootScaffold, setBootScaffold] = useState<boolean>(true)
   type TaskDef = { taskId: string; state: 'available' | 'claimed'; rewardPayload?: Record<string, unknown>; kind?: string | null; unlockLevel?: number | null }
   const [tasks, setTasks] = useState<TaskDef[] | null>(null)
   const [tasksLoading, setTasksLoading] = useState<boolean>(false)
@@ -125,6 +126,8 @@ export default function Home() {
   }, [])
 
   async function devLogin() {
+    try { console.log(JSON.stringify({ event: 'client_scaffold_on', reason: 'auth_dev' })) } catch {}
+    try { setBootScaffold(true) } catch {}
     const token = process.env.NEXT_PUBLIC_DEV_TOKEN || process.env.DEV_TOKEN || ''
     const headers: Record<string, string> = { 'x-dev-token': token }
     if (tgUserIdFromProbe && Number.isFinite(tgUserIdFromProbe)) headers['x-telegram-user-id'] = String(tgUserIdFromProbe)
@@ -134,6 +137,8 @@ export default function Home() {
       setUserId(data.userId)
     } else {
       alert('Dev login failed')
+      try { console.log(JSON.stringify({ event: 'client_scaffold_off', reason: 'error_auth_dev' })) } catch {}
+      try { setBootScaffold(false) } catch {}
     }
   }
 
@@ -196,7 +201,11 @@ export default function Home() {
       const hasValidInitData = typeof initDataRaw === 'string' && initDataRaw.length >= 10
       setInsideTelegram(hasValidInitData)
       try { console.log(JSON.stringify({ event: 'client_boot', branch: hasValidInitData ? 'inside_tg' : 'outside_tg' })) } catch {}
-      if (!hasValidInitData) return
+      if (!hasValidInitData) {
+        try { console.log(JSON.stringify({ event: 'client_scaffold_off', reason: 'outside_gate' })) } catch {}
+        setBootScaffold(false)
+        return
+      }
       let cancelled = false
       ;(async () => {
         try {
@@ -207,6 +216,8 @@ export default function Home() {
           if (probe.ok) {
             const pj = await probe.json().catch(() => ({} as { devEligible?: boolean; tgUserId?: number }))
             if (pj && pj.devEligible) {
+              try { console.log(JSON.stringify({ event: 'client_scaffold_off', reason: 'dev_choice' })) } catch {}
+              setBootScaffold(false)
               try { console.log(JSON.stringify({ event: 'client_probe_dev_yes', corr, tgUserId: pj.tgUserId })) } catch {}
               setTgUserIdFromProbe(typeof pj.tgUserId === 'number' ? pj.tgUserId : null)
               setShowDevChoice(true)
@@ -215,6 +226,8 @@ export default function Home() {
           }
           try { console.log(JSON.stringify({ event: 'client_probe_dev_no', corr })) } catch {}
           // Non-dev: auto auth via Telegram
+          try { console.log(JSON.stringify({ event: 'client_scaffold_on', reason: 'auth_tg' })) } catch {}
+          setBootScaffold(true)
           const auth = await fetch('/api/v1/auth/tg', { method: 'POST', headers: { 'content-type': 'application/json', 'authorization': `tma ${initDataRaw}`, 'x-client-corr': corr }, body: JSON.stringify({ initDataRaw }) })
           if (cancelled) return
           if (auth.ok) {
@@ -228,6 +241,8 @@ export default function Home() {
               const msg = reason === 'invalid' ? 'Login error: invalid or expired session. Please relaunch from Telegram.' : 'Login error. Please try again.'
               showNotice(msg)
               console.log(JSON.stringify({ event: 'client_auth_tg_fail', corr, status: auth.status, reason }))
+              try { console.log(JSON.stringify({ event: 'client_scaffold_off', reason: 'error_auth_tg' })) } catch {}
+              setBootScaffold(false)
             } catch { showNotice('Login error. Please try again.') }
           }
         } catch {}
@@ -529,9 +544,12 @@ export default function Home() {
     if (userId && !session) {
       void (async () => {
         try { console.log(JSON.stringify({ event: 'client_session_loading' })) } catch {}
+        try { console.log(JSON.stringify({ event: 'client_scaffold_on', reason: 'session' })) } catch {}
         await refreshDebug()
         await resumeOrStartSession()
         await loadTasks()
+        try { console.log(JSON.stringify({ event: 'client_scaffold_off', reason: 'ready' })) } catch {}
+        try { setBootScaffold(false) } catch {}
       })()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -848,7 +866,13 @@ export default function Home() {
       margin: undefined,
       minHeight: 'calc(100dvh - (var(--bottomnav-height, 132px) + env(safe-area-inset-bottom)))'
     }}>
-      {!userId ? (
+      {bootScaffold ? (
+        <div style={{ padding: 16, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+          <div style={{ fontSize: 16, fontWeight: 700 }}>Preparing your session…</div>
+          <div style={{ width: 40, height: 40, borderRadius: 9999, border: '3px solid rgba(0,0,0,0.15)', borderTopColor: 'rgba(0,0,0,0.6)', animation: 'spin 1s linear infinite' }} />
+          <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+        </div>
+      ) : !userId ? (
         <div style={{ padding: 16 }}>
           {!insideTelegram && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -870,6 +894,8 @@ export default function Home() {
                       const w = window as WindowWithTelegram & { Telegram?: { WebApp?: TgWebApp & { initData?: string } } }
                       const initDataRaw = (w.Telegram?.WebApp as unknown as { initData?: string })?.initData || ''
                       if (!initDataRaw) { try { console.log(JSON.stringify({ event: 'client_tg_login_no_initdata' })) } catch {}; setShowDevChoice(false); return }
+                      try { console.log(JSON.stringify({ event: 'client_scaffold_on', reason: 'auth_tg_click' })) } catch {}
+                      try { setBootScaffold(true) } catch {}
                       try { console.log(JSON.stringify({ event: 'client_tg_login_clicked' })) } catch {}
                       const res = await fetch('/api/v1/auth/tg', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ initDataRaw }) })
                       if (res.ok) {
@@ -885,12 +911,6 @@ export default function Home() {
             </div>
           )}
           {/* Outside-Telegram Dev Choice modal removed: Dev login acts directly outside Telegram */}
-        </div>
-      ) : !session ? (
-        <div style={{ padding: 16, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-          <div style={{ fontSize: 16, fontWeight: 700 }}>Preparing your session…</div>
-          <div style={{ width: 40, height: 40, borderRadius: 9999, border: '3px solid rgba(0,0,0,0.15)', borderTopColor: 'rgba(0,0,0,0.6)', animation: 'spin 1s linear infinite' }} />
-          <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
         </div>
       ) : (
         <>
