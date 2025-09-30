@@ -7,7 +7,7 @@ import process from 'node:process'
 
 async function main() {
   // Lazy import to avoid bundler quirks
-  const mod = await import('@telegram-apps/init-data-node')
+  const mod = await import('@tma.js/init-data-node')
   const { validate } = mod
 
   const args = Object.fromEntries(process.argv.slice(2).map((a) => {
@@ -17,8 +17,8 @@ async function main() {
     return [a, true]
   }))
 
-  const token = (args.token || process.env.TELEGRAM_BOT_TOKEN || '').trim()
-  const initDataRaw = args.data || process.env.INITDATA_RAW || ''
+  const token = String(args.token || process.env.TELEGRAM_BOT_TOKEN || '').trim()
+  let initDataRaw = String(args.data || process.env.INITDATA_RAW || '')
   const ttlSec = Number(args.ttl || process.env.INITDATA_TTL_SECONDS || 3600)
 
   if (!token || !initDataRaw) {
@@ -28,10 +28,18 @@ async function main() {
 
   let result
   try {
-    result = validate(initDataRaw, { botToken: token, expiresIn: ttlSec })
+    result = validate(initDataRaw, token, { expiresIn: ttlSec })
   } catch (e) {
-    console.error('validate() threw:', e?.message || e)
-    process.exit(1)
+    // Retry with signature stripped (HMAC/hash path)
+    try {
+      const p = new URLSearchParams(initDataRaw)
+      p.delete('signature')
+      initDataRaw = p.toString()
+      result = validate(initDataRaw, token, { expiresIn: ttlSec })
+    } catch (e2) {
+      console.error('validate() threw:', e?.message || e)
+      process.exit(1)
+    }
   }
 
   const out = {
