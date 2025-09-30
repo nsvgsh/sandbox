@@ -15,23 +15,28 @@ async function validateInitData(initDataRaw: string): Promise<{
     const ttlSec = Number(process.env.INITDATA_TTL_SECONDS || '3600')
     // Prefer @tma.js/init-data-node; if it throws SignatureInvalidError, retry with signature stripped (HMAC/hash path)
     const mod = await import('@tma.js/init-data-node')
-    const { validate } = mod as unknown as { validate: (raw: string, token: string, opts?: { expiresIn?: number }) => { user?: unknown } }
+    const { validate, parse } = mod as unknown as {
+      validate: (raw: string, token: string, opts?: { expiresIn?: number }) => void
+      parse: (raw: string) => { user?: unknown }
+    }
     let toValidate = initDataRaw
-    let result: { user?: unknown }
+    let resultUser: unknown | undefined
     try {
-      result = validate(toValidate, token, { expiresIn: ttlSec })
+      validate(toValidate, token, { expiresIn: ttlSec })
+      resultUser = (parse(toValidate) || {}).user
     } catch (err) {
       // Fallback: strip signature param to force hash(bot token) path
       try {
         const p = new URLSearchParams(toValidate)
         p.delete('signature')
         toValidate = p.toString()
-        result = validate(toValidate, token, { expiresIn: ttlSec })
+        validate(toValidate, token, { expiresIn: ttlSec })
+        resultUser = (parse(toValidate) || {}).user
       } catch (e2) {
         throw err
       }
     }
-    const u = (result && (result as { user?: unknown }).user) as
+    const u = resultUser as
       | { id: number; first_name?: string; last_name?: string; username?: string; photo_url?: string }
       | undefined
     if (!u || typeof u.id !== 'number') return { ok: false, reason: 'no_user' }

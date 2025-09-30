@@ -8,19 +8,24 @@ async function validateInitData(initDataRaw: string): Promise<{ ok: boolean; tgU
     if (!token) return { ok: false }
     const ttlSec = Number(process.env.INITDATA_TTL_SECONDS || '3600')
     const mod = await import('@tma.js/init-data-node')
-    const { validate } = mod as unknown as { validate: (raw: string, token: string, opts?: { expiresIn?: number }) => { user?: unknown } }
+    const { validate, parse } = mod as unknown as {
+      validate: (raw: string, token: string, opts?: { expiresIn?: number }) => void
+      parse: (raw: string) => { user?: unknown }
+    }
     let toValidate = initDataRaw
-    let result: { user?: unknown }
+    let resultUser: unknown | undefined
     try {
-      result = validate(toValidate, token, { expiresIn: ttlSec })
+      validate(toValidate, token, { expiresIn: ttlSec })
+      resultUser = (parse(toValidate) || {}).user
     } catch (err) {
       // Fallback to HMAC/hash path by stripping signature
       const p = new URLSearchParams(toValidate)
       p.delete('signature')
       toValidate = p.toString()
-      result = validate(toValidate, token, { expiresIn: ttlSec })
+      validate(toValidate, token, { expiresIn: ttlSec })
+      resultUser = (parse(toValidate) || {}).user
     }
-    const u = (result && (result as { user?: unknown }).user) as { id?: number } | undefined
+    const u = resultUser as { id?: number } | undefined
     if (!u || typeof u.id !== 'number') return { ok: false }
     return { ok: true, tgUserId: u.id }
   } catch {
