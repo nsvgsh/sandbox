@@ -528,6 +528,7 @@ export default function Home() {
   useEffect(() => {
     if (userId && !session) {
       void (async () => {
+        try { console.log(JSON.stringify({ event: 'client_session_loading' })) } catch {}
         await refreshDebug()
         await resumeOrStartSession()
         await loadTasks()
@@ -886,7 +887,11 @@ export default function Home() {
           {/* Outside-Telegram Dev Choice modal removed: Dev login acts directly outside Telegram */}
         </div>
       ) : !session ? (
-        <button onClick={resumeOrStartSession}>Start / Resume Session</button>
+        <div style={{ padding: 16, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+          <div style={{ fontSize: 16, fontWeight: 700 }}>Preparing your session…</div>
+          <div style={{ width: 40, height: 40, borderRadius: 9999, border: '3px solid rgba(0,0,0,0.15)', borderTopColor: 'rgba(0,0,0,0.6)', animation: 'spin 1s linear infinite' }} />
+          <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+        </div>
       ) : (
         <>
           {activeSection === 'home' && (
