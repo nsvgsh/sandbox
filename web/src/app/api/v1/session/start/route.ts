@@ -5,6 +5,7 @@ import { withClient } from '../../../../../lib/db'
 import { maybeSendFirstConversion, parseStartAppParam } from '../../../../../lib/partners/propeller'
 
 export async function POST() {
+  const corr = (globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2)) as string
   const cookieStore = await cookies()
   let userId = cookieStore.get('dev_session')?.value
   if (!userId) {
@@ -18,7 +19,10 @@ export async function POST() {
       userId = providedUser
     }
   }
-  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+  if (!userId) {
+    try { console.log(JSON.stringify({ event: 'session_start_unauthorized', corr })) } catch {}
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+  }
 
   // Capture optional startapp passed from client
   let startapp: string | undefined
@@ -61,9 +65,6 @@ export async function POST() {
   })
 
   const payload = { sessionId: row.session_id, sessionEpoch: row.session_epoch, lastAppliedSeq: row.last_applied_seq }
-  try {
-    // Dev log
-    console.log(JSON.stringify({ event: 'session_start', userId: String(userId).slice(0, 8), sessionId: payload.sessionId, sessionEpoch: payload.sessionEpoch }))
-  } catch {}
+  try { console.log(JSON.stringify({ event: 'session_start_ok', corr, userId: String(userId).slice(0, 8), sessionId: payload.sessionId, sessionEpoch: payload.sessionEpoch, startapp: typeof startapp === 'string' ? startapp : undefined })) } catch {}
   return NextResponse.json(payload)
 }

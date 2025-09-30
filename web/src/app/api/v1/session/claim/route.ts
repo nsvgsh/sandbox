@@ -9,6 +9,7 @@ function isUuid(value: string): boolean {
 }
 
 export async function POST(req: NextRequest) {
+  const corr = (globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2)) as string
   const cookieStore = await cookies()
   let userId = cookieStore.get('dev_session')?.value
   if (!userId) {
@@ -20,7 +21,10 @@ export async function POST(req: NextRequest) {
       userId = providedUser
     }
   }
-  if (!userId) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+  if (!userId) {
+    try { console.log(JSON.stringify({ event: 'session_claim_unauthorized', corr })) } catch {}
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+  }
 
   const body = (await req.json().catch(() => ({}))) as { sessionId?: string; sessionEpoch?: string }
   const providedSessionId = typeof body.sessionId === 'string' ? body.sessionId : undefined
@@ -74,7 +78,7 @@ export async function POST(req: NextRequest) {
         lastAppliedSeq: Number(current!.lastAppliedSeq || 0),
       }
       try {
-        console.log(JSON.stringify({ event: 'session_claim_match', userId: String(userId).slice(0, 8), sessionId: payload.sessionId, sessionEpoch: payload.sessionEpoch }))
+        console.log(JSON.stringify({ event: 'session_claim_match', corr, userId: String(userId).slice(0, 8), sessionId: payload.sessionId, sessionEpoch: payload.sessionEpoch }))
         // Opportunistic postback (first or retry)
         await withClient(async (c) => { try { await maybeSendFirstConversion(c, userId!) } catch {} })
       } catch {}
@@ -92,14 +96,14 @@ export async function POST(req: NextRequest) {
     const payload = { sessionId: rotated.session_id, sessionEpoch: rotated.session_epoch, lastAppliedSeq: rotated.last_applied_seq }
     try {
       console.log(
-        JSON.stringify({ event: 'session_claim_rotated', userId: String(userId).slice(0, 8), sessionId: payload.sessionId, sessionEpoch: payload.sessionEpoch })
+        JSON.stringify({ event: 'session_claim_rotated', corr, userId: String(userId).slice(0, 8), sessionId: payload.sessionId, sessionEpoch: payload.sessionEpoch })
       )
     } catch {}
     return NextResponse.json(payload)
   } catch (e) {
     const msg = String(e instanceof Error ? e.message : e)
     try {
-      console.log(JSON.stringify({ event: 'session_claim_err', userId: String(userId).slice(0, 8), msg }))
+      console.log(JSON.stringify({ event: 'session_claim_err', corr, userId: String(userId).slice(0, 8), msg }))
     } catch {}
     return NextResponse.json({ error: 'server_error' }, { status: 500 })
   }

@@ -63,6 +63,7 @@ export async function POST(req: NextRequest) {
   }
   dbg.initDataLen = initDataRaw ? initDataRaw.length : 0
   if (!initDataRaw || typeof initDataRaw !== 'string' || initDataRaw.length < 8) {
+    try { console.log(JSON.stringify({ event: 'auth_tg_bad_request', corr, initDataLen: dbg.initDataLen })) } catch {}
     const res = NextResponse.json({ error: 'bad_request', reason: 'empty_or_short', ...dbg }, { status: 400 })
     res.headers.set('x-debug-reason', 'empty_or_short')
     res.headers.set('x-debug-corr', corr)
@@ -75,6 +76,7 @@ export async function POST(req: NextRequest) {
   dbg.tokenPresent = Boolean(process.env.TELEGRAM_BOT_TOKEN)
   if (!v.ok || !v.user) {
     const reason = v.reason || 'invalid'
+    try { console.log(JSON.stringify({ event: 'auth_tg_unauthorized', corr, reason, initDataLen: dbg.initDataLen })) } catch {}
     const res = NextResponse.json({ error: 'unauthorized', reason, ...dbg }, { status: 401 })
     res.headers.set('x-debug-reason', reason)
     res.headers.set('x-debug-corr', corr)
@@ -86,6 +88,7 @@ export async function POST(req: NextRequest) {
   }
   const tg = v.user
   dbg.userId = tg.id
+  try { console.log(JSON.stringify({ event: 'auth_tg_validated', corr, tgUserId: tg.id })) } catch {}
 
   // Upsert mapping and ensure user exists
   const userId = await withClient(async (c) => {
@@ -119,6 +122,7 @@ export async function POST(req: NextRequest) {
   // Set cross-site compatible cookie for Telegram WebView
   const cookieStore = await cookies()
   cookieStore.set('dev_session', userId, { httpOnly: true, sameSite: 'none', secure: true, path: '/' })
+  try { console.log(JSON.stringify({ event: 'auth_tg_success', corr, tgUserId: tg.id, userId })) } catch {}
   const resOk = NextResponse.json({ ok: true, user: { userId, tgUserId: tg.id }, corr }, { status: 200 })
   resOk.headers.set('x-debug-corr', corr)
   resOk.headers.set('x-debug-region', process.env.VERCEL_REGION || 'local')

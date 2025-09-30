@@ -43,6 +43,7 @@ export async function POST(req: NextRequest) {
   } catch {}
   dbg.initDataLen = initDataRaw ? initDataRaw.length : 0
   if (!initDataRaw || typeof initDataRaw !== 'string') {
+    try { console.log(JSON.stringify({ event: 'allowlist_bad_request', corr, reason: 'empty_or_short', initDataLen: dbg.initDataLen })) } catch {}
     const res = NextResponse.json({ error: 'bad_request', reason: 'empty_or_short', ...dbg }, { status: 400 })
     res.headers.set('x-debug-reason', 'empty_or_short')
     res.headers.set('x-debug-corr', corr)
@@ -52,6 +53,7 @@ export async function POST(req: NextRequest) {
   }
   const v = await validateInitData(initDataRaw)
   if (!v.ok || typeof v.tgUserId !== 'number') {
+    try { console.log(JSON.stringify({ event: 'allowlist_unauthorized', corr, reason: 'invalid', initDataLen: dbg.initDataLen })) } catch {}
     const res = NextResponse.json({ error: 'unauthorized', reason: 'invalid', ...dbg }, { status: 401 })
     res.headers.set('x-debug-reason', 'invalid')
     res.headers.set('x-debug-corr', corr)
@@ -63,6 +65,7 @@ export async function POST(req: NextRequest) {
     const { rows } = await c.query<{ tg_user_id: string }>('select tg_user_id from dev_whitelist where tg_user_id = $1', [v.tgUserId])
     return rows.length > 0
   })
+  try { console.log(JSON.stringify({ event: 'allowlist_ok', corr, tgUserId: v.tgUserId, devEligible })) } catch {}
   const resOk = NextResponse.json({ devEligible, tgUserId: v.tgUserId, corr }, { status: 200 })
   resOk.headers.set('x-debug-corr', corr)
   return resOk

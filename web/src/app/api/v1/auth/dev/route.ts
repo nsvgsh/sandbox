@@ -3,9 +3,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { randomUUID } from 'crypto'
 
 export async function POST(req: NextRequest) {
+  const corr = (globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2)) as string
   const expected = process.env.DEV_TOKEN
   const provided = req.headers.get('x-dev-token') || req.headers.get('dev-token')
   if (!expected || !provided || expected !== provided) {
+    try { console.log(JSON.stringify({ event: 'auth_dev_denied', corr, reason: 'bad_token' })) } catch {}
     return NextResponse.json({ error: 'forbidden' }, { status: 403 })
   }
   // If x-telegram-user-id is provided and whitelisted, bind session to the mapped user_id (or create mapping+user)
@@ -19,6 +21,7 @@ export async function POST(req: NextRequest) {
         // Ensure in whitelist
         const w = await c.query('select tg_user_id from dev_whitelist where tg_user_id = $1', [tgUserId])
         if (w.rows.length === 0) {
+          try { console.log(JSON.stringify({ event: 'auth_dev_denied', corr, reason: 'not_whitelisted', tgUserId })) } catch {}
           throw new Error('not_whitelisted')
         }
         // Find mapping
@@ -40,12 +43,14 @@ export async function POST(req: NextRequest) {
         }
       })
     } catch (e) {
+      try { console.log(JSON.stringify({ event: 'auth_dev_denied', corr, reason: 'exception', msg: String(e instanceof Error ? e.message : e) })) } catch {}
       return NextResponse.json({ error: 'forbidden' }, { status: 403 })
     }
   }
   if (!userId) {
     const allowRandom = String(process.env.ENABLE_RANDOM_DEV_USER || '0') === '1'
     if (!allowRandom) {
+      try { console.log(JSON.stringify({ event: 'auth_dev_denied', corr, reason: 'random_disabled' })) } catch {}
       return NextResponse.json({ error: 'forbidden' }, { status: 403 })
     }
     userId = randomUUID()
@@ -53,5 +58,6 @@ export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
   // Cross-site compatible for Telegram Web (iframe): SameSite=None; Secure
   cookieStore.set('dev_session', userId, { httpOnly: true, sameSite: 'none', secure: true, path: '/' })
+  try { console.log(JSON.stringify({ event: 'auth_dev_success', corr, userId, tgUserId: tgIdHeader ? Number(tgIdHeader) : undefined })) } catch {}
   return NextResponse.json({ userId })
 }

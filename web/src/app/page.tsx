@@ -192,11 +192,11 @@ export default function Home() {
     try {
       const w = window as WindowWithTelegram & { Telegram?: { WebApp?: TgWebApp & { initData?: string } } }
       const tg = w.Telegram?.WebApp
-      const inTg = !!tg
-      setInsideTelegram(inTg)
-      if (!inTg) return
       const initDataRaw = (tg as unknown as { initData?: string })?.initData || ''
-      if (!initDataRaw || initDataRaw.length < 10) return
+      const hasValidInitData = typeof initDataRaw === 'string' && initDataRaw.length >= 10
+      setInsideTelegram(hasValidInitData)
+      try { console.log(JSON.stringify({ event: 'client_boot', branch: hasValidInitData ? 'inside_tg' : 'outside_tg' })) } catch {}
+      if (!hasValidInitData) return
       let cancelled = false
       ;(async () => {
         try {
@@ -207,11 +207,13 @@ export default function Home() {
           if (probe.ok) {
             const pj = await probe.json().catch(() => ({} as { devEligible?: boolean; tgUserId?: number }))
             if (pj && pj.devEligible) {
+              try { console.log(JSON.stringify({ event: 'client_probe_dev_yes', corr, tgUserId: pj.tgUserId })) } catch {}
               setTgUserIdFromProbe(typeof pj.tgUserId === 'number' ? pj.tgUserId : null)
               setShowDevChoice(true)
               return
             }
           }
+          try { console.log(JSON.stringify({ event: 'client_probe_dev_no', corr })) } catch {}
           // Non-dev: auto auth via Telegram
           const auth = await fetch('/api/v1/auth/tg', { method: 'POST', headers: { 'content-type': 'application/json', 'authorization': `tma ${initDataRaw}`, 'x-client-corr': corr }, body: JSON.stringify({ initDataRaw }) })
           if (cancelled) return
@@ -219,11 +221,13 @@ export default function Home() {
             const aj = await auth.json().catch(() => ({} as { user?: { userId?: string } }))
             const uid = String(aj?.user?.userId || '')
             if (uid) setUserId(uid)
+            try { console.log(JSON.stringify({ event: 'client_auth_tg_ok', corr, userId: uid })) } catch {}
           } else {
             try {
               const reason = auth.headers.get('x-debug-reason') || 'unknown'
               const msg = reason === 'invalid' ? 'Login error: invalid or expired session. Please relaunch from Telegram.' : 'Login error. Please try again.'
               showNotice(msg)
+              console.log(JSON.stringify({ event: 'client_auth_tg_fail', corr, status: auth.status, reason }))
             } catch { showNotice('Login error. Please try again.') }
           }
         } catch {}
@@ -600,14 +604,14 @@ export default function Home() {
         const w = window as WindowWithTelegram & { Telegram?: { WebApp?: TgWebApp & { initData?: string; ready?: () => void } } }
         const tg = w.Telegram?.WebApp
         if (tg) {
-          setInsideTelegram(true)
+          // Only signal readiness; do not override insideTelegram without valid initData
           try { (tg as unknown as { ready?: () => void }).ready?.() } catch {}
           return
         }
         // UA fallback
         const ua = (typeof navigator !== 'undefined' ? navigator.userAgent : '').toLowerCase()
         if (ua.includes('telegram')) {
-          setInsideTelegram(true)
+          // Do not set insideTelegram based on UA alone
           return
         }
       } catch {}
@@ -848,7 +852,7 @@ export default function Home() {
           {!insideTelegram && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {devAffordanceOutsideEnabled() ? (
-                <button onClick={() => { setShowDevChoice(true) }}>Dev login</button>
+                <button onClick={async () => { try { console.log(JSON.stringify({ event: 'client_dev_login_clicked_outside' })) } catch {}; await devLogin() }}>Dev login</button>
               ) : (
                 <div style={{ fontSize: 14, opacity: 0.8 }}>Outside Telegram. Access denied.</div>
               )}
@@ -859,17 +863,18 @@ export default function Home() {
               <div onClick={(e) => e.stopPropagation()} style={{ width: 'min(92vw, 420px)', borderRadius: 16, background: 'var(--background)', color: 'var(--foreground)', padding: 16, boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }}>
                 <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 8 }}>Choose login mode</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <button onClick={async () => { await devLogin(); setShowDevChoice(false) }}>Dev Login</button>
+                  <button onClick={async () => { try { console.log(JSON.stringify({ event: 'client_dev_login_clicked', tgUserIdFromProbe })) } catch {}; await devLogin(); setShowDevChoice(false) }}>Dev Login</button>
                   <button onClick={async () => {
                     try {
                       const w = window as WindowWithTelegram & { Telegram?: { WebApp?: TgWebApp & { initData?: string } } }
                       const initDataRaw = (w.Telegram?.WebApp as unknown as { initData?: string })?.initData || ''
-                      if (!initDataRaw) { setShowDevChoice(false); return }
+                      if (!initDataRaw) { try { console.log(JSON.stringify({ event: 'client_tg_login_no_initdata' })) } catch {}; setShowDevChoice(false); return }
+                      try { console.log(JSON.stringify({ event: 'client_tg_login_clicked' })) } catch {}
                       const res = await fetch('/api/v1/auth/tg', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ initDataRaw }) })
                       if (res.ok) {
                         const aj = await res.json().catch(() => ({} as { user?: { userId?: string } }))
                         const uid = String(aj?.user?.userId || '')
-                        if (uid) setUserId(uid)
+                        if (uid) { setUserId(uid); try { console.log(JSON.stringify({ event: 'client_tg_login_ok', userId: uid })) } catch {} }
                       }
                     } catch {}
                     setShowDevChoice(false)
@@ -878,17 +883,7 @@ export default function Home() {
               </div>
             </div>
           )}
-          {!insideTelegram && showDevChoice && (
-            <div role="dialog" aria-modal="true" aria-label="Developer choice" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 80 }} onClick={() => setShowDevChoice(false)}>
-              <div onClick={(e) => e.stopPropagation()} style={{ width: 'min(92vw, 420px)', borderRadius: 16, background: 'var(--background)', color: 'var(--foreground)', padding: 16, boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }}>
-                <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 8 }}>Developer login</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <button onClick={async () => { await devLogin(); setShowDevChoice(false) }}>Dev Login</button>
-                  <button onClick={() => { try { alert('Open via Telegram to use Telegram Login'); } catch {}; setShowDevChoice(false) }}>Telegram Login</button>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Outside-Telegram Dev Choice modal removed: Dev login acts directly outside Telegram */}
         </div>
       ) : !session ? (
         <button onClick={resumeOrStartSession}>Start / Resume Session</button>
