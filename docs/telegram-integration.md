@@ -28,13 +28,14 @@ flowchart TD
   A[App opens] --> B{Inside Telegram?}
   
   %% Outside Telegram
-  B -- No --> O["Show 'Open in Telegram' CTA"]
   B -- No --> P{Dev affordance enabled?\nNEXT_PUBLIC_ENABLE_OUTSIDE_TG_DEV==1 AND URL ?dev=1}
-  P -- Yes --> E[Show Dev Choice UI:\nDev Login • Telegram Login]
+  P -- No --> O["Print: 'Outside Telegram. Access denied.'"]
+  P -- Yes --> L["Button: 'Dev login'"]
+  L -- Button clicked --> F
   E -- Dev Login --> F["POST /api/v1/auth/dev\n(x-dev-token[, x-telegram-user-id])"]
   F -- 403 --> J["Show 'Dev access denied'"]
   F -- 200 --> G[Set dev_session cookie]
-  E -- Telegram Login --> L[Open t.me/<bot>?startapp=...]
+  E -- Telegram Login --> N
 
   %% Inside Telegram
   B -- Yes --> C[Read initDataRaw]
@@ -44,7 +45,7 @@ flowchart TD
 
   %% Common path to session
   N -- 200 --> G
-  N -- 401/4xx --> O
+  N -- 401/4xx --> X["Login error"]
   G --> H["Resume/Start Session\n(/v1/session/claim|start + x-startapp)"]
   H --> I[Navigate to Main screen]
 ```

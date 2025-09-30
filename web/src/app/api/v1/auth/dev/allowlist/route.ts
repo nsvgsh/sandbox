@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
     const { rows } = await c.query<{ tg_user_id: string }>('select tg_user_id from dev_whitelist where tg_user_id = $1', [v.tgUserId])
     return rows.length > 0
   })
-  const resOk = NextResponse.json({ devEligible, corr }, { status: 200 })
+  const resOk = NextResponse.json({ devEligible, tgUserId: v.tgUserId, corr }, { status: 200 })
   resOk.headers.set('x-debug-corr', corr)
   return resOk
 }

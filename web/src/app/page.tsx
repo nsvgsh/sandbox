@@ -221,11 +221,10 @@ export default function Home() {
             if (uid) setUserId(uid)
           } else {
             try {
-              const reason = auth.headers.get('x-debug-reason') || ''
-              const delta = auth.headers.get('x-debug-delta-sec') || ''
-              const ttl = auth.headers.get('x-debug-ttl-sec') || ''
-              console.log(JSON.stringify({ phase: 'auth_tg_fail', status: auth.status, reason, delta, ttl, corrServer: auth.headers.get('x-debug-corr') }))
-            } catch {}
+              const reason = auth.headers.get('x-debug-reason') || 'unknown'
+              const msg = reason === 'invalid' ? 'Login error: invalid or expired session. Please relaunch from Telegram.' : 'Login error. Please try again.'
+              showNotice(msg)
+            } catch { showNotice('Login error. Please try again.') }
           }
         } catch {}
       })()
@@ -848,9 +847,10 @@ export default function Home() {
         <div style={{ padding: 16 }}>
           {!insideTelegram && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <button onClick={() => { try { alert('Open this app from Telegram to continue.') } catch {} }}>Open in Telegram</button>
-              {devAffordanceOutsideEnabled() && (
-                <button onClick={() => { setShowDevChoice(true) }}>I’m a developer</button>
+              {devAffordanceOutsideEnabled() ? (
+                <button onClick={() => { setShowDevChoice(true) }}>Dev login</button>
+              ) : (
+                <div style={{ fontSize: 14, opacity: 0.8 }}>Outside Telegram. Access denied.</div>
               )}
             </div>
           )}
