@@ -1232,12 +1232,12 @@ function TaskClaimModal(props: {
     <div role="dialog" aria-modal="true" aria-label="Task claimed" className={baseModal.overlay} onClick={onClose}>
       <div className={baseModal.card} onClick={(e) => e.stopPropagation()}>
         <div className={baseModal.headerArea}>
-          <div className={baseModal.headline} id="task-claim-headline">Congratulations!</div>
-          <div className={baseModal.title} id="task-claim-title">REWARD</div>
+          <div className={baseModal.title} id="task-claim-headline">Congratulations</div>
         </div>
 
         <div className={baseModal.rewardsBox}>
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0, width: '100%' }} aria-label="Rewards list">
+          <div className={baseModal.headline} style={{ marginBottom: 8 }}>Reward</div>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0, width: '100%', display: 'grid', rowGap: 8 }} aria-label="Rewards list">
             {items.map((it, idx) => (
               <AssetRow key={idx} iconSrc={it.iconSrc} iconAlt={it.iconAlt} label={it.label} readonly />
             ))}
