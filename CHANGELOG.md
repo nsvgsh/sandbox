@@ -71,6 +71,7 @@
 | UI-LEVELUP-DECISION-GATE | One-shot decision per level; removed flicker between regular and FT modals |
 | CLAIM-PARTNER-IDEM-HARDEN | Free Trial claim uses server ad_event.id as idempotency key |
 | UI-EARN-FREE-TRIAL-CTA | Partner tile variant: open in new tab; readiness-based Claim |
+| FT-MODAL-JSON | Free Trial modal CTA prefetch: `/offer/free-trial/level/{level}/modal-redirect?format=json` returns `{ url }` for cookie-safe new-tab open in Telegram; API keeps validations/logging and 302 fallback |
 | PROGRESSION-NO-SPEND-012 | Removed coin deduction on level-up; coins never decrease |
 | PROGRESSION-POLY-013 | Polynomial thresholds via _threshold_for_level; no-spend preserved |
 | THRESHOLDS-POLY-CONFIG-014 | thresholds_poly coefficients in game_config (runtime-configurable) |

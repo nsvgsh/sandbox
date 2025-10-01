@@ -1095,7 +1095,22 @@ export default function Home() {
             levelModalDecision === 'free_trial' && freeTrialAtLevel ? (
               <FreeTrialLevelUpModal
                 level={leveledUp}
-                onOpen={() => { try { window.open(`/api/v1/offer/free-trial/level/${leveledUp}/modal-redirect`, '_blank', 'noopener,noreferrer') } catch {} }}
+                onOpen={async () => {
+                  try {
+                    const res = await fetch(`/api/v1/offer/free-trial/level/${leveledUp}/modal-redirect?format=json`)
+                    if (res.ok) {
+                      const j = await res.json().catch(() => null) as { url?: string } | null
+                      const finalUrl = j && typeof j.url === 'string' ? j.url : ''
+                      if (finalUrl) { try { window.open(finalUrl, '_blank', 'noopener,noreferrer') } catch {} }
+                    } else {
+                      // Fallback to 302 path if JSON not available
+                      try { window.open(`/api/v1/offer/free-trial/level/${leveledUp}/modal-redirect`, '_blank', 'noopener,noreferrer') } catch {}
+                    }
+                  } catch {
+                    // Network error fallback to 302 path
+                    try { window.open(`/api/v1/offer/free-trial/level/${leveledUp}/modal-redirect`, '_blank', 'noopener,noreferrer') } catch {}
+                  }
+                }}
                 onClose={async () => { setLeveledUp(null); setFreeTrialAtLevel(null); await loadCounters(); }}
                 ctaLabel={'Open'}
               />

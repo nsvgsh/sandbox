@@ -18,6 +18,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const url = new URL(req.url)
+    const format = (url.searchParams.get('format') || '').toLowerCase()
     const parts = url.pathname.split('/').filter(Boolean)
     // .../api/v1/offer/free-trial/level/{level}/modal-redirect
     const i = parts.findIndex((p) => p === 'level')
@@ -60,6 +61,9 @@ export async function GET(req: NextRequest) {
       return { url: finalUrl }
     })
 
+    if (format === 'json') {
+      return NextResponse.json({ url: result.url })
+    }
     return NextResponse.redirect(result.url, { status: 302 })
   } catch (e) {
     const msg = String(e instanceof Error ? e.message : e)

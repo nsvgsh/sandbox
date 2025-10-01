@@ -45,6 +45,12 @@ Conventions
   - Reads URL template and source from config; generates UUIDv4 click id; records `ad_events` (`provider='free_trial'`, `placement='earn'`, `status='completed'`, `reward_payload.intent='task:<taskId>'`), then redirects with `_ocid` and `aff_subid`.
   - Restricts host to `*.himfls.com`.
   - Errors: 404 `NOT_FOUND` (unknown/inactive task), 503 `CONFIG_MISSING`, 400 `HOST_RESTRICTED|BAD_TEMPLATE`.
+- GET /offer/free-trial/level/{level}/modal-redirect → 302 | 200 JSON
+  - Query: optional `?format=json`
+  - Validates level schedule `partner_key='free_trial'`; reads URL template and source; generates UUIDv4 click id; builds final URL and enforces host restriction (`*.himfls.com`).
+  - Logs `ad_events` with `provider='free_trial'`, `placement='level_up_modal'`, `status='completed'`, `reward_payload={ impressionId, level }`.
+  - Response: when `format=json`, return `{ url: string }`; otherwise 302 redirect to the partner URL.
+  - Errors: 404 `NOT_FOUND`, 503 `CONFIG_MISSING`, 400 `HOST_RESTRICTED|BAD_TEMPLATE`.
 - GET /tasks/{taskId}/ready → { ready, claimed, lastClickAt?, clicks? }
   - For partner tasks (free_trial) reports if a redirect click exists and is unconsumed.
   - 404 when the task is not an active free_trial partner task.

@@ -43,7 +43,7 @@
   - After ad/log with `intent='level_bonus'`, the modal switches to a single `Claim x2 (Xs)` within TTL. The UI displays the total x2 reward for clarity; the backend applies only the incremental portion per policy and idempotently by `impressionId`.
   - On TTL expiry the modal reverts to the two‑button state.
 - Level‑up Free Trial (UI): when a level is scheduled in `level_offer_schedule` with `partner_key='free_trial'` and `skip_base_reward=true`, a dedicated modal is shown instead of the bonus modal.
-  - The modal has a header and an expanded reward area with an image asset and a single CTA that opens a partner link in a new tab via a non‑claimable, level‑based redirect (`/api/v1/offer/free-trial/level/{level}/modal-redirect`, `provider='free_trial'`, `placement='level_up_modal'`, unique `impressionId`).
+  - The modal has a header and an expanded reward area with an image asset and a single CTA. The client first prefetches the partner URL from `/api/v1/offer/free-trial/level/{level}/modal-redirect?format=json` (server validates, logs `ad_events` with `provider='free_trial'`, `placement='level_up_modal'`, generates unique `impressionId`, and enforces host restriction), then opens the returned URL in a new tab. The CTA remains non‑claimable.
   - The Earn tile for the Free Trial appears independently; claiming the reward is done only from the Earn tile.
 - Tasks (Offers UI): each task card has `Watch ad` → `Claim (Xs)` within TTL. Unlocks are intent‑bound to that specific task.
   - On successful claim, a confirmation modal shows: header “congratulations!” and `reward: task_reward: { ... }` formatted from the task payload.
