@@ -4,8 +4,8 @@
   grid-template-rows: auto minmax(0, 1fr); /* header / expanded rewards */
   /* Allow corner close button to protrude outside and increase overall height for FT */
   overflow: visible !important;
-  block-size: min(calc(100cqw * 660 / 420), calc(92dvh - (env(safe-area-inset-top) + env(safe-area-inset-bottom)))) !important;
-  max-height: min(660px, calc(92dvh - (env(safe-area-inset-top) + env(safe-area-inset-bottom)))) !important;
+  block-size: min(calc(100cqw * 660 / 420), calc(92dvh - (var(--tg-safe-area-inset-top) + var(--tg-content-safe-area-inset-bottom)))) !important;
+  max-height: min(660px, calc(92dvh - (var(--tg-safe-area-inset-top) + var(--tg-content-safe-area-inset-bottom)))) !important;
 }
 
 .ftRewardsExpanded {

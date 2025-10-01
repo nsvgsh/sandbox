@@ -864,7 +864,7 @@ export default function Home() {
       fontFamily: 'ui-sans-serif, system-ui',
       maxWidth: undefined,
       margin: undefined,
-      minHeight: 'calc(100dvh - (var(--bottomnav-height, 132px) + env(safe-area-inset-bottom)))'
+      minHeight: 'calc(100dvh - (var(--bottomnav-height, 132px) + var(--tg-content-safe-area-inset-bottom)))'
     }}>
       {bootScaffold ? (
         <div style={{ padding: 16, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
@@ -926,7 +926,7 @@ export default function Home() {
               </div>
               <AvatarRow />
               <div style={{ marginTop: 8 }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, paddingTop: '10dvh', paddingBottom: 'calc(24px + env(safe-area-inset-bottom))' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, paddingTop: '10dvh', paddingBottom: 'calc(24px + var(--tg-content-safe-area-inset-bottom))' }}>
                   <div style={{ position: 'relative', width: clickerSize, height: clickerSize }}>
                     <RotatingTextRing sizePx={clickerSize} visible={ctaVisible} />
                     <EmojiClicker
@@ -939,7 +939,7 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-              <div style={{ position: 'fixed', left: 0, right: 0, bottom: 'calc(18dvh + env(safe-area-inset-bottom))', display: 'flex', justifyContent: 'center', pointerEvents: 'none', zIndex: 60 }}>
+              <div style={{ position: 'fixed', left: 0, right: 0, bottom: 'calc(18dvh + var(--tg-content-safe-area-inset-bottom))', display: 'flex', justifyContent: 'center', pointerEvents: 'none', zIndex: 60 }}>
                 <div style={{ textAlign: 'center', lineHeight: 1.3 }}>
                   {Number(nextThreshold?.coins ?? 0) > 0 ? (
                     <div style={{ fontSize: 12, opacity: 0.75 }}>
