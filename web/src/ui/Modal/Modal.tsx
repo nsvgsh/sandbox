@@ -7,7 +7,7 @@ import { RewardPill } from "@/ui/shared/RewardPill/RewardPill";
 
 export interface LevelUpModalProps {
   level: number;
-  rewards: { coins?: number; tickets?: number };
+  rewards: { multiplier?: number; tickets?: number };
   onClaimBase: () => void;
   onStartAd: () => void;
   claimLabel?: string;
@@ -16,6 +16,13 @@ export interface LevelUpModalProps {
 }
 
 export const LevelUpModal: React.FC<LevelUpModalProps> = ({ level, rewards, onClaimBase, onStartAd, claimLabel, bonusLabel, singleAction }) => {
+  const formatMultiplier = (v: number) => {
+    try {
+      const n = Number(v);
+      if (!Number.isFinite(n)) return 'x1.00';
+      return `x${n.toFixed(2)}`;
+    } catch { return 'x1.00' }
+  }
   return (
     <div role="dialog" aria-modal="true" aria-labelledby="levelup-title" aria-describedby="levelup-rewards" className={styles.overlay}>
       <div className={styles.card}>
@@ -32,8 +39,8 @@ export const LevelUpModal: React.FC<LevelUpModalProps> = ({ level, rewards, onCl
         <div className={styles.rewardsBox} id="levelup-rewards">
           <span className={styles.rewardsLabel}>REWARDS</span>
           <div className={styles.rewardsRow}>
-            {typeof rewards.coins === "number" && (
-              <RewardPill iconSrc="/ui/header/ResourceBar_Icon_Gold.png" label={rewards.coins.toLocaleString()} variant="blue" />
+            {typeof rewards.multiplier === "number" && (
+              <RewardPill iconSrc="/dev/ui/modal/assets/Icon_Energy_Green.Png" label={formatMultiplier(rewards.multiplier)} variant="blue" />
             )}
             {typeof rewards.tickets === "number" && (
               <RewardPill iconSrc="/ui/header/Whisk_Purple_Ticket.png" label={rewards.tickets} variant="blue" iconWidthPercent={70} />

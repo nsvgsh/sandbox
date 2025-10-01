@@ -1074,9 +1074,10 @@ export default function Home() {
                 level={leveledUp}
                 rewards={(() => {
                   const rp = debugState?.lastLevel?.reward_payload as Record<string, unknown> | null
-                  const coins = typeof rp?.coins === 'number' ? rp.coins : Number(rp?.coins ?? 0)
                   const tickets = typeof rp?.tickets === 'number' ? rp.tickets : Number(rp?.tickets ?? 0)
-                  return { coins: coins * 2, tickets: tickets * 2 }
+                  const baseMult = Number(baseCountersRef.current?.coinMultiplier ?? counters?.coinMultiplier ?? 1)
+                  // for bonus modal we display the potential x2 multiplier effect numerically
+                  return { multiplier: baseMult * 2, tickets: tickets * 2 }
                 })()}
                 onClaimBase={claimLevelBonusX2}
                 onStartAd={async () => { setPendingBonusConfirm(false); setLeveledUp(null); setBonusImpressionId(null); setBonusExpiresAt(null); await loadCounters() }}
@@ -1092,9 +1093,9 @@ export default function Home() {
                 level={leveledUp}
                 rewards={(() => {
                   const rp = debugState?.lastLevel?.reward_payload as Record<string, unknown> | null
-                  const coins = typeof rp?.coins === 'number' ? rp.coins : Number(rp?.coins ?? 0)
                   const tickets = typeof rp?.tickets === 'number' ? rp.tickets : Number(rp?.tickets ?? 0)
-                  return { coins, tickets }
+                  const baseMult = Number(baseCountersRef.current?.coinMultiplier ?? counters?.coinMultiplier ?? 1)
+                  return { multiplier: baseMult, tickets }
                 })()}
                 onClaimBase={async () => { setLeveledUp(null); await loadCounters() }}
                 onStartAd={startLevelBonus}
