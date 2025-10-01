@@ -36,7 +36,8 @@ type DebugState = {
 
  
 
-function AvatarRow() {
+function AvatarRow(props: { label: string }) {
+  const { label } = props
   const row: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 12, padding: '10px 2px' }
   const avatar: React.CSSProperties = {
     width: 36,
@@ -50,7 +51,7 @@ function AvatarRow() {
   return (
     <div style={row}>
       <div style={avatar}>👤</div>
-      <div className={pageStyles.playerLabel}>Player</div>
+      <div className={pageStyles.playerLabel}>{label || 'Player'}</div>
     </div>
   )
 }
@@ -66,6 +67,7 @@ export default function Home() {
   const [insideTelegram, setInsideTelegram] = useState<boolean>(false)
   const [showDevChoice, setShowDevChoice] = useState<boolean>(false)
   const [tgUserIdFromProbe, setTgUserIdFromProbe] = useState<number | null>(null)
+  const [displayName, setDisplayName] = useState<string>('Player')
   const [clickerSize, setClickerSize] = useState<number>(156)
   const [userId, setUserId] = useState<string | null>(null)
   const [session, setSession] = useState<Session | null>(null)
@@ -168,7 +170,7 @@ export default function Home() {
     await startSession()
   }
 
-  type TgWebApp = { tgWebAppStartParam?: string; initDataUnsafe?: { start_param?: string } }
+  type TgWebApp = { tgWebAppStartParam?: string; initDataUnsafe?: { start_param?: string; user?: { username?: string; first_name?: string; last_name?: string } } }
   type WindowWithTelegram = Window & { Telegram?: { WebApp?: TgWebApp } }
 
   function getStartAppFromContext(): string | undefined {
@@ -200,6 +202,31 @@ export default function Home() {
       const initDataRaw = (tg as unknown as { initData?: string })?.initData || ''
       const hasValidInitData = typeof initDataRaw === 'string' && initDataRaw.length >= 10
       setInsideTelegram(hasValidInitData)
+      if (hasValidInitData) {
+        try {
+          const u = (tg?.initDataUnsafe as { user?: { username?: string; first_name?: string; last_name?: string } } | undefined)?.user
+          let origin: 'username' | 'fullname' | 'fallback' = 'fallback'
+          let label = 'Player'
+          const rawUsername = typeof u?.username === 'string' ? u.username.trim() : ''
+          const trimmedUsername = rawUsername.startsWith('@') ? rawUsername.slice(1) : rawUsername
+          const hasUsername = trimmedUsername.length > 0
+          if (hasUsername) {
+            label = trimmedUsername
+            origin = 'username'
+          } else {
+            const fn = typeof u?.first_name === 'string' ? u.first_name.trim() : ''
+            const ln = typeof u?.last_name === 'string' ? u.last_name.trim() : ''
+            const full = [fn, ln].filter(Boolean).join(' ').trim()
+            if (full.length > 0) {
+              label = full
+              origin = 'fullname'
+            }
+          }
+          if (label.length > 24) label = label.slice(0, 24)
+          setDisplayName(label)
+          try { console.log(JSON.stringify({ event: 'client_profile_displayname_set', origin })) } catch {}
+        } catch {}
+      }
       try { console.log(JSON.stringify({ event: 'client_boot', branch: hasValidInitData ? 'inside_tg' : 'outside_tg' })) } catch {}
       if (!hasValidInitData) {
         try { console.log(JSON.stringify({ event: 'client_scaffold_off', reason: 'outside_gate' })) } catch {}
@@ -970,7 +997,7 @@ export default function Home() {
                   return { coins, tickets: t, level: lvl }
                 })()} tweenMs={hudTweenMs} />
               </div>
-              <AvatarRow />
+              <AvatarRow label={displayName} />
               <div style={{ marginTop: 8 }}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, paddingTop: 'calc(10dvh + var(--tg-safe-top, env(safe-area-inset-top, 0px)))', paddingBottom: 'calc(24px + var(--tg-safe-bottom, env(safe-area-inset-bottom, 0px)))' }}>
                   <div style={{ position: 'relative', width: clickerSize, height: clickerSize }}>

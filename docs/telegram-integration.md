@@ -18,6 +18,10 @@
 - Never trust `startapp` (or `start_param`) prior to validation.
 - Dev allowlist probe: `/api/v1/auth/dev/allowlist` validates `initDataRaw` and reports if the Telegram user is in the dev whitelist; no side effects.
 
+## Username display (client-only)
+- Inside Telegram, the main screen avatar label is derived from `Telegram.WebApp.initDataUnsafe.user` on the client. Preference order: `username` (without leading `@`) → `first_name + last_name` → `"Player"`.
+- No server API is called for this label; outside Telegram or without valid initData, the label remains `"Player"`.
+
 ## Payments & Stars
 - Out of scope in v1 (pure ad-monetised loop)
 

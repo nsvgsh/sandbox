@@ -74,6 +74,10 @@
 - Offers: Tabs (AVAILABLE/COMPLETED), per‑task intent‑coupled ad unlock and claim, claim‑success modal.
 - Wallet: Read‑only balances (Coins/Tickets) and placeholders for TON/USDT assets; demo “Connect wallet” stores only a public address locally; tabs (Withdrawals/Activity/Airdrop) are stubs.
 
+### Username display (Telegram)
+- Inside Telegram, the avatar row label is derived from the WebApp context: prefer `username` (without leading `@`), then `first_name + last_name`, otherwise fallback to `"Player"`.
+- Outside Telegram or when `initData` is unavailable, the label remains `"Player"`.
+
 ## Schema and migrations
 - `docs/db-schema.sql` is a baseline schema document. Authoritative schema includes additive changes in `supabase/migrations/`.
   - Examples: `ad_events.status` extended with `completed/used`, indexes on `(reward_payload->>'impressionId')`, `claim_level_bonus_v3` (A‑only gating, idempotency, marks ads as used), `level_events.template_id` ensured.
