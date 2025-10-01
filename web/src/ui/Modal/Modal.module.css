@@ -8,14 +8,14 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: calc(16px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));
+  padding: calc(16px + var(--tg-safe-top, env(safe-area-inset-top))) 16px calc(24px + var(--tg-safe-bottom, env(safe-area-inset-bottom)));
 }
 
 .card {
   inline-size: clamp(0px, 100%, 388px);
   /* 592px @ 420px width: maintain aspect as width scales down; clamp to viewport */
-  block-size: min(calc(100cqw * 592 / 420), calc(90dvh - (env(safe-area-inset-top) + env(safe-area-inset-bottom))));
-  max-height: min(592px, calc(90dvh - (env(safe-area-inset-top) + env(safe-area-inset-bottom))));
+  block-size: min(calc(100cqw * 592 / 420), calc(90dvh - (var(--tg-safe-top, env(safe-area-inset-top)) + var(--tg-safe-bottom, env(safe-area-inset-bottom)))));
+  max-height: min(592px, calc(90dvh - (var(--tg-safe-top, env(safe-area-inset-top)) + var(--tg-safe-bottom, env(safe-area-inset-bottom)))));
   overflow: hidden;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
@@ -170,7 +170,7 @@
   align-items: stretch;
   margin-top: 12px;
   flex: 1 1 auto;          /* take remaining vertical space in rewardsBox */
-  padding: 8px;             /* internal paddings as requested */
+  padding: 6px;             /* slightly tighter to minimize perceived bottom gap */
   min-height: 0;            /* allow shrinking inside flex column parent */
   overflow: hidden;         /* prevent scroll within rewards bar */
 }
