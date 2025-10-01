@@ -2,7 +2,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { HeaderHUD } from '@/ui/Header/HeaderHUD'
 import { LevelUpModal } from '@/ui/Modal/Modal'
-import { TaskClaimModal } from '@/ui/Modal/TaskClaimModal'
 import { FreeTrialLevelUpModal } from '@/ui/Modal/FreeTrialModal'
 import { normalizeCounters, parsePublicConfig, fetchJsonWithRetry, type CountersNormalized } from '../lib/apiClient'
 import { isMonetagLoaded, loadMonetagSdk, showRewardedInterstitial, categorizeMonetagError } from '../lib/ads/monetag'
@@ -14,6 +13,9 @@ import { ScreenContainer } from '@/ui/ScreenContainer/ScreenContainer'
 import pageStyles from './page.module.css'
 import { EmojiClicker } from '@/ui/Clicker'
 import { RotatingTextRing } from '@/ui/Clicker/RotatingTextRing'
+import { AssetRow } from '@/ui/wallet/components/AssetRow/AssetRow'
+import baseModal from '@/ui/Modal/Modal.module.css'
+import { Button } from '@/ui/Button/Button'
 
 type TapWindow = Window & { __tapConfigCoinsPerTap?: number }
 
@@ -1207,4 +1209,46 @@ export default function Home() {
   )
 }
 
-// inline TaskClaimModal removed in favor of '@/ui/Modal/TaskClaimModal'
+function TaskClaimModal(props: {
+  rewardPayload: Record<string, unknown> | null
+  onClose: () => void
+}) {
+  const { rewardPayload, onClose } = props
+
+  function toNumber(x: unknown): number | null {
+    const n = typeof x === 'number' ? x : typeof x === 'string' ? Number(x) : NaN
+    return Number.isFinite(n) ? n : null
+  }
+
+  const items: { iconSrc: string; iconAlt: string; label: string }[] = []
+  const coins = toNumber(rewardPayload?.coins)
+  if (coins !== null) items.push({ iconSrc: '/ui/wallet/Icon_Golds.Png', iconAlt: 'Coins', label: `+${coins} Coins` })
+  const tickets = toNumber(rewardPayload?.tickets)
+  if (tickets !== null) items.push({ iconSrc: '/ui/header/Whisk_Purple_Ticket.png', iconAlt: 'Tickets', label: `+${tickets} Tickets` })
+  const coinMult = toNumber((rewardPayload as Record<string, unknown> | null)?.coin_multiplier)
+  if (coinMult !== null) items.push({ iconSrc: '/ui/emojis/Icon_Booster.Png', iconAlt: 'Coin Multiplier', label: `x${coinMult} Coin Multiplier` })
+
+  return (
+    <div role="dialog" aria-modal="true" aria-label="Task claimed" className={baseModal.overlay} onClick={onClose}>
+      <div className={baseModal.card} onClick={(e) => e.stopPropagation()}>
+        <div className={baseModal.headerArea}>
+          <div className={baseModal.headline} id="task-claim-headline">Congratulations!</div>
+          <div className={baseModal.title} id="task-claim-title">REWARD</div>
+        </div>
+
+        <div className={baseModal.rewardsBox}>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0, width: '100%' }} aria-label="Rewards list">
+            {items.map((it, idx) => (
+              <AssetRow key={idx} iconSrc={it.iconSrc} iconAlt={it.iconAlt} label={it.label} readonly />
+            ))}
+          </ul>
+          <div style={{ marginTop: 12 }}>
+            <Button variant="confirm" className={baseModal.ctaButton} width="100%" onClick={onClose}>
+              <span className={baseModal.actionLabel}>Back to TAP</span>
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

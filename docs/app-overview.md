@@ -78,6 +78,10 @@
 - Inside Telegram, the avatar row label is derived from the WebApp context: prefer `username` (without leading `@`), then `first_name + last_name`, otherwise fallback to `"Player"`.
 - Outside Telegram or when `initData` is unavailable, the label remains `"Player"`.
 
+### Earn task completion modal
+- Displays reward details using wallet-style rows (`AssetRow`) within a dynamic reward box. The modal height adapts to the reward box.
+- A full-width "Back to TAP" button at the bottom closes the modal, consistent with the Free Trial modal.
+
 ## Schema and migrations
 - `docs/db-schema.sql` is a baseline schema document. Authoritative schema includes additive changes in `supabase/migrations/`.
   - Examples: `ad_events.status` extended with `completed/used`, indexes on `(reward_payload->>'impressionId')`, `claim_level_bonus_v3` (A‑only gating, idempotency, marks ads as used), `level_events.template_id` ensured.

@@ -96,6 +96,7 @@
 | TG-AUTH | Implemented POST /api/v1/auth/tg (validate initData, upsert mapping, set cookie) |
 | TG-AUTH | Added POST /api/v1/auth/dev/allowlist (probe-only; whitelist check; no side effects) |
 | UI-USERNAME-0001 | Main screen shows Telegram-derived username (client-only, inside TG) |
+| UI-TASKMODAL-0001 | Task completion modal uses AssetRow rewards and Back to TAP button |
 | TG-AUTH | Hardened POST /api/v1/auth/dev: supports x-telegram-user-id + whitelist; random dev gated by ENABLE_RANDOM_DEV_USER |
 | UI-AUTH-GATE | Client AuthGate: inside Telegram probe→choice or auto auth; outside Telegram dev affordance gated by NEXT_PUBLIC_ENABLE_OUTSIDE_TG_DEV & ?dev=1 |
 | DOCS-TG-AUTH | Updated api-contracts, app-overview, telegram-integration (Mermaid flow + tutorials), env.example |
