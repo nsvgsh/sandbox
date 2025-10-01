@@ -101,3 +101,4 @@
 | TG-AUTH | Hardened POST /api/v1/auth/dev: supports x-telegram-user-id + whitelist; random dev gated by ENABLE_RANDOM_DEV_USER |
 | UI-AUTH-GATE | Client AuthGate: inside Telegram probe→choice or auto auth; outside Telegram dev affordance gated by NEXT_PUBLIC_ENABLE_OUTSIDE_TG_DEV & ?dev=1 |
 | DOCS-TG-AUTH | Updated api-contracts, app-overview, telegram-integration (Mermaid flow + tutorials), env.example |
+| FT-OPENLINK | Free Trial modal CTA uses Telegram.WebApp.openLink on Telegram (try_instant_view: false) with window.open fallback elsewhere |
