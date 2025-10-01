@@ -102,3 +102,4 @@
 | UI-AUTH-GATE | Client AuthGate: inside Telegram probe→choice or auto auth; outside Telegram dev affordance gated by NEXT_PUBLIC_ENABLE_OUTSIDE_TG_DEV & ?dev=1 |
 | DOCS-TG-AUTH | Updated api-contracts, app-overview, telegram-integration (Mermaid flow + tutorials), env.example |
 | FT-OPENLINK | Free Trial modal CTA uses Telegram.WebApp.openLink on Telegram (try_instant_view: false) with window.open fallback elsewhere |
+| FT-EARN-JSON | Free Trial Earn tile: prefetch redirect (?format=json) + Telegram openLink (try_instant_view: false) with window.open fallback |

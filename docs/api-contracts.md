@@ -41,8 +41,9 @@ Conventions
   - Spend‑once: the matched ad is marked `used` on successful claim.
   - Idempotency: send `X-Idempotency-Key` (recommend using the ad `impressionId`). Duplicate claims with the same key do not grant twice.
   - Errors: 409 `ALREADY_CLAIMED` (task already claimed), 409 `AD_REQUIRED`, 404 `NOT_FOUND`.
-- GET /offer/free-trial/{taskId}/redirect → 302
+- GET /offer/free-trial/{taskId}/redirect → 302 | 200 JSON
   - Reads URL template and source from config; generates UUIDv4 click id; records `ad_events` (`provider='free_trial'`, `placement='earn'`, `status='completed'`, `reward_payload.intent='task:<taskId>'`), then redirects with `_ocid` and `aff_subid`.
+  - When `?format=json` is provided, returns `{ url: string }` instead of redirect.
   - Restricts host to `*.himfls.com`.
   - Errors: 404 `NOT_FOUND` (unknown/inactive task), 503 `CONFIG_MISSING`, 400 `HOST_RESTRICTED|BAD_TEMPLATE`.
 - GET /offer/free-trial/level/{level}/modal-redirect → 302 | 200 JSON

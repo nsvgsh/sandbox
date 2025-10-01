@@ -103,7 +103,30 @@ export function EarnGrid(props: {
                       onClaim?.(id)
                     } else {
                       try { onPartnerOpen?.(id) } catch {}
-                      try { window.open(`/api/v1/offer/free-trial/${id}/redirect`, '_blank', 'noopener,noreferrer') } catch {}
+                      ;(async () => {
+                        try {
+                          const res = await fetch(`/api/v1/offer/free-trial/${id}/redirect?format=json`)
+                          if (res.ok) {
+                            const j = await res.json().catch(() => null) as { url?: string } | null
+                            const finalUrl = j && typeof j.url === 'string' ? j.url : ''
+                            if (finalUrl) {
+                              try {
+                                const w = window as unknown as { Telegram?: { WebApp?: { openLink?: (url: string, opts?: { try_instant_view?: boolean }) => void } } }
+                                const openLink = w?.Telegram?.WebApp?.openLink
+                                if (typeof openLink === 'function') {
+                                  openLink(finalUrl, { try_instant_view: false })
+                                } else {
+                                  window.open(finalUrl, '_blank', 'noopener,noreferrer')
+                                }
+                              } catch { try { window.open(finalUrl, '_blank', 'noopener,noreferrer') } catch {} }
+                            }
+                          } else {
+                            try { window.open(`/api/v1/offer/free-trial/${id}/redirect`, '_blank', 'noopener,noreferrer') } catch {}
+                          }
+                        } catch {
+                          try { window.open(`/api/v1/offer/free-trial/${id}/redirect`, '_blank', 'noopener,noreferrer') } catch {}
+                        }
+                      })()
                     }
                     return
                   }
