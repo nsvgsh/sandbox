@@ -25,18 +25,6 @@
   --bottomnav-background: #0E233D;
   --bottomnav-foreground: var(--theme-foreground);
   --bottomnav-height: 6dvh;
-
-  /* Safe-area fallbacks (Telegram Mini Apps). Use env() if present, else 0px. */
-  --tg-safe-area-inset-top: env(safe-area-inset-top, 0px);
-  --tg-safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
-  --tg-safe-area-inset-left: env(safe-area-inset-left, 0px);
-  --tg-safe-area-inset-right: env(safe-area-inset-right, 0px);
-
-  /* Content safe-area (Bot API 8.0+); fallback to device safe-area. */
-  --tg-content-safe-area-inset-top: var(--tg-safe-area-inset-top);
-  --tg-content-safe-area-inset-bottom: var(--tg-safe-area-inset-bottom);
-  --tg-content-safe-area-inset-left: var(--tg-safe-area-inset-left);
-  --tg-content-safe-area-inset-right: var(--tg-safe-area-inset-right);
 }
 
 html,

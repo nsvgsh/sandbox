@@ -643,6 +643,52 @@ export default function Home() {
     return () => { cancelled = true }
   }, [])
 
+  // Telegram safe-area bridge → expose CSS vars and stable viewport height
+  useEffect(() => {
+    if (!mounted) return
+    type SafeInset = { top?: number; bottom?: number; left?: number; right?: number }
+    type TgWebAppSafe = TgWebApp & {
+      contentSafeAreaInset?: SafeInset
+      safeAreaInset?: SafeInset
+      viewportStableHeight?: number
+      onEvent?: (ev: string, cb: (...args: unknown[]) => void) => void
+      offEvent?: (ev: string, cb: (...args: unknown[]) => void) => void
+    }
+    const w = (typeof window !== 'undefined' ? window : undefined) as WindowWithTelegram & { Telegram?: { WebApp?: TgWebAppSafe } } | undefined
+
+    const applyInsets = () => {
+      try {
+        const tg = w?.Telegram?.WebApp as TgWebAppSafe | undefined
+        const c = tg?.contentSafeAreaInset
+        const s = tg?.safeAreaInset
+        const top = Number((c?.top ?? s?.top) ?? 0)
+        const bottom = Number((c?.bottom ?? s?.bottom) ?? 0)
+        const left = Number((c?.left ?? s?.left) ?? 0)
+        const right = Number((c?.right ?? s?.right) ?? 0)
+        const root = document.documentElement
+        root.style.setProperty('--tg-safe-top', `${Math.max(0, Math.floor(top))}px`)
+        root.style.setProperty('--tg-safe-bottom', `${Math.max(0, Math.floor(bottom))}px`)
+        root.style.setProperty('--tg-safe-left', `${Math.max(0, Math.floor(left))}px`)
+        root.style.setProperty('--tg-safe-right', `${Math.max(0, Math.floor(right))}px`)
+        const stableH = Number(tg?.viewportStableHeight ?? window.innerHeight)
+        if (Number.isFinite(stableH) && stableH > 0) {
+          root.style.setProperty('--tg-viewport-stable-height', `${Math.round(stableH)}px`)
+        }
+      } catch {}
+    }
+
+    applyInsets()
+
+    const onContentSafeAreaChanged = () => applyInsets()
+    const onSafeAreaChanged = () => applyInsets()
+    try { w?.Telegram?.WebApp?.onEvent?.('contentSafeAreaChanged', onContentSafeAreaChanged) } catch {}
+    try { w?.Telegram?.WebApp?.onEvent?.('safeAreaChanged', onSafeAreaChanged) } catch {}
+    return () => {
+      try { w?.Telegram?.WebApp?.offEvent?.('contentSafeAreaChanged', onContentSafeAreaChanged) } catch {}
+      try { w?.Telegram?.WebApp?.offEvent?.('safeAreaChanged', onSafeAreaChanged) } catch {}
+    }
+  }, [mounted])
+
   // Compute dynamic clicker size for ergonomics (thumb-zone sizing)
   useEffect(() => {
     function recalc() {
@@ -864,7 +910,7 @@ export default function Home() {
       fontFamily: 'ui-sans-serif, system-ui',
       maxWidth: undefined,
       margin: undefined,
-      minHeight: 'calc(100dvh - (var(--bottomnav-height, 132px) + var(--tg-content-safe-area-inset-bottom)))'
+      minHeight: 'calc(var(--tg-viewport-stable-height, 100dvh) - (var(--bottomnav-height, 132px) + var(--tg-safe-bottom, env(safe-area-inset-bottom, 0px))))'
     }}>
       {bootScaffold ? (
         <div style={{ padding: 16, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
@@ -926,7 +972,7 @@ export default function Home() {
               </div>
               <AvatarRow />
               <div style={{ marginTop: 8 }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, paddingTop: '10dvh', paddingBottom: 'calc(24px + var(--tg-content-safe-area-inset-bottom))' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, paddingTop: 'calc(10dvh + var(--tg-safe-top, env(safe-area-inset-top, 0px)))', paddingBottom: 'calc(24px + var(--tg-safe-bottom, env(safe-area-inset-bottom, 0px)))' }}>
                   <div style={{ position: 'relative', width: clickerSize, height: clickerSize }}>
                     <RotatingTextRing sizePx={clickerSize} visible={ctaVisible} />
                     <EmojiClicker
@@ -939,7 +985,7 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-              <div style={{ position: 'fixed', left: 0, right: 0, bottom: 'calc(18dvh + var(--tg-content-safe-area-inset-bottom))', display: 'flex', justifyContent: 'center', pointerEvents: 'none', zIndex: 60 }}>
+              <div style={{ position: 'fixed', left: 0, right: 0, bottom: 'calc(18dvh + var(--tg-safe-bottom, env(safe-area-inset-bottom, 0px)))', display: 'flex', justifyContent: 'center', pointerEvents: 'none', zIndex: 60 }}>
                 <div style={{ textAlign: 'center', lineHeight: 1.3 }}>
                   {Number(nextThreshold?.coins ?? 0) > 0 ? (
                     <div style={{ fontSize: 12, opacity: 0.75 }}>

@@ -13,6 +13,7 @@
   height: var(--ring-size);
   opacity: var(--ring-opacity, 1);
   transition: opacity 220ms ease;
+  overflow: visible;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -92,7 +92,7 @@ html, body {
   position: absolute;
   left: 12%;
   right: 12%;
-  bottom: max(2px, var(--tg-content-safe-area-inset-bottom));
+  bottom: max(2px, env(safe-area-inset-bottom));
   height: var(--indicator-height);
   background: transparent;
   border-radius: 999px;

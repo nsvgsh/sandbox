@@ -62,6 +62,7 @@
 | ADS-STATUS-0001 | Normalize ad success: server writes status='completed'; strict claim check |
 | WEB-COOKIES-0001 | Set dev cookie SameSite=None; Secure; added header fallback for Telegram Web |
 | UI-HOME-CTA | Rotating circular CTA text around tap button; idle fade-in/out; reduced-motion respected |
+| UI-RING-0001 | Fixed top clipping of rotating text ring inside Telegram via safe-area bridge and overflow visible |
 | WEB-BUILD-0001 | Fix Vercel build blocker by removing `any` from RotatingTextRing CSS variables |
 | AD-PARTNER-FREE-TRIAL-READY-API | Added GET /api/v1/tasks/{taskId}/ready endpoint |
 | AD-PARTNER-FREE-TRIAL-READY-UI | Earn grid flips CTA to Claim after readiness; partner opens in new tab |
