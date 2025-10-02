@@ -3,7 +3,7 @@ import React, { useEffect, useRef } from 'react'
 
 type TabKey = 'home' | 'offers' | 'wallet'
 
-export function BottomNavShadow({ active, onSelect }: { active: TabKey; onSelect: (k: TabKey) => void }) {
+export function BottomNavShadow({ active, onSelect, earnAttention }: { active: TabKey; onSelect: (k: TabKey) => void; earnAttention?: boolean }) {
   const hostRef = useRef<HTMLDivElement | null>(null)
   const shadowRef = useRef<ShadowRoot | null>(null)
 
@@ -130,12 +130,20 @@ export function BottomNavShadow({ active, onSelect }: { active: TabKey; onSelect
         btn.removeAttribute('aria-current')
         btn.setAttribute('aria-selected', 'false')
       }
+      // Attention cue for EARN tile
+      if (key === 'offers') {
+        if (earnAttention) {
+          btn.setAttribute('data-attention', 'true')
+        } else {
+          btn.removeAttribute('data-attention')
+        }
+      }
     })
     return () => {
       try { window.removeEventListener('resize', recomputeHeight) } catch {}
       try { ro.disconnect() } catch {}
     }
-  }, [active, onSelect])
+  }, [active, onSelect, earnAttention])
 
   return (
     <div

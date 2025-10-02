@@ -103,3 +103,4 @@
 | DOCS-TG-AUTH | Updated api-contracts, app-overview, telegram-integration (Mermaid flow + tutorials), env.example |
 | FT-OPENLINK | Free Trial modal CTA uses Telegram.WebApp.openLink on Telegram (try_instant_view: false) with window.open fallback elsewhere |
 | FT-EARN-JSON | Free Trial Earn tile: prefetch redirect (?format=json) + Telegram openLink (try_instant_view: false) with window.open fallback |
+| EARN-ATTN_earn_tile_attention | add attention cue animation for EARN tile and implement task availability detection in BottomNav |

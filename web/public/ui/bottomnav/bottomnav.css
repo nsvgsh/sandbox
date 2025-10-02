@@ -144,3 +144,20 @@ html, body {
 
 
 
+
+/* Attention cue: subtle shake for EARN tile */
+@keyframes earnShake {
+  0% { transform: translateX(0); }
+  15% { transform: translateX(-2px) rotate(-0.5deg); }
+  30% { transform: translateX(2px) rotate(0.5deg); }
+  45% { transform: translateX(-2px) rotate(-0.5deg); }
+  60% { transform: translateX(2px) rotate(0.5deg); }
+  75% { transform: translateX(-1px) rotate(-0.25deg); }
+  100% { transform: translateX(0); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .imgBtn[data-key="offers"][data-attention="true"] {
+    animation: earnShake 900ms ease-in-out 0s infinite;
+  }
+}

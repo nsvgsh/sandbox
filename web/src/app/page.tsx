@@ -118,6 +118,8 @@ export default function Home() {
   // const [walletTab, setWalletTab] = useState<'withdrawals' | 'activity' | 'airdrop'>('withdrawals')
   const [claimSuccess, setClaimSuccess] = useState<{ taskId: string; rewardPayload: Record<string, unknown> | null } | null>(null)
   const [freeTrialAtLevel, setFreeTrialAtLevel] = useState<{ taskId: string; level: number } | null>(null)
+  const [earnAttention, setEarnAttention] = useState<boolean>(false)
+  const lastSeenAvailableRef = useRef<Set<string>>(new Set())
 
   // CTA ring visibility based on tap activity
   const [ctaVisible, setCtaVisible] = useState<boolean>(true)
@@ -481,6 +483,31 @@ export default function Home() {
       if (!res.ok) return
       const data = await res.json() as { definitions?: TaskDef[] }
       setTasks(data.definitions || [])
+      // Attention: detect new available tasks when outside EARN
+      try {
+        if (activeSection !== 'offers') {
+          const nowAvail = new Set(
+            (Array.isArray(data.definitions) ? data.definitions : [])
+              .filter((t: TaskDef) => t.state === 'available')
+              .map((t: TaskDef) => t.taskId)
+          )
+          // initialize lastSeen from sessionStorage once per session
+          if (lastSeenAvailableRef.current.size === 0) {
+            try {
+              if (userId) {
+                const raw = sessionStorage.getItem(`earn:lastSeenAvailable:${userId}`)
+                if (raw) {
+                  const arr = JSON.parse(raw) as string[]
+                  if (Array.isArray(arr)) arr.forEach((id) => lastSeenAvailableRef.current.add(id))
+                }
+              }
+            } catch {}
+          }
+          let hasNew = false
+          for (const id of nowAvail) { if (!lastSeenAvailableRef.current.has(id)) { hasNew = true; break } }
+          setEarnAttention(hasNew)
+        }
+      } catch {}
       // hydrate unlocks relevant to current tasks
       try {
         const list = (data.definitions || []) as { taskId: string }[]
@@ -903,6 +930,13 @@ export default function Home() {
       if (!offersRefreshedRef.current) {
         offersRefreshedRef.current = true
         void loadTasks()
+        // Mark current available set as seen; stop attention
+        try {
+          const avail = (Array.isArray(tasks) ? tasks : []).filter((t) => t.state === 'available').map((t) => t.taskId)
+          lastSeenAvailableRef.current = new Set(avail)
+          if (userId) sessionStorage.setItem(`earn:lastSeenAvailable:${userId}`, JSON.stringify(avail))
+        } catch {}
+        setEarnAttention(false)
       }
     } else {
       offersRefreshedRef.current = false
@@ -1227,7 +1261,7 @@ export default function Home() {
             <div style={{ marginTop: 6 }}>{debugState?.lastLevel?.bonus_multiplier ?? 'n/a'}</div>
           </div> */}
 
-          <BottomNavShadow active={activeSection} onSelect={setActiveSection} />
+          <BottomNavShadow active={activeSection} onSelect={setActiveSection} earnAttention={earnAttention} />
         </>
       )}
     </main>
