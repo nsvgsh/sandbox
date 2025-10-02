@@ -104,3 +104,4 @@
 | FT-OPENLINK | Free Trial modal CTA uses Telegram.WebApp.openLink on Telegram (try_instant_view: false) with window.open fallback elsewhere |
 | FT-EARN-JSON | Free Trial Earn tile: prefetch redirect (?format=json) + Telegram openLink (try_instant_view: false) with window.open fallback |
 | EARN-ATTN_earn_tile_attention | add attention cue animation for EARN tile and implement task availability detection in BottomNav |
+| EARN-PILL | EARN nav red notification pill: visible when available tasks exist; pulsing; scales with button |

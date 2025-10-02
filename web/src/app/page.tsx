@@ -1261,7 +1261,17 @@ export default function Home() {
             <div style={{ marginTop: 6 }}>{debugState?.lastLevel?.bonus_multiplier ?? 'n/a'}</div>
           </div> */}
 
-          <BottomNavShadow active={activeSection} onSelect={setActiveSection} earnAttention={earnAttention} />
+          <BottomNavShadow
+            active={activeSection}
+            onSelect={setActiveSection}
+            earnAttention={earnAttention}
+            earnHasAvailable={(() => {
+              try {
+                const count = Array.isArray(tasks) ? (tasks.filter((t) => t.state === 'available').length) : 0
+                return count > 0
+              } catch { return false }
+            })()}
+          />
         </>
       )}
     </main>

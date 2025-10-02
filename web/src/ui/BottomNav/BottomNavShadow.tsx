@@ -3,7 +3,7 @@ import React, { useEffect, useRef } from 'react'
 
 type TabKey = 'home' | 'offers' | 'wallet'
 
-export function BottomNavShadow({ active, onSelect, earnAttention }: { active: TabKey; onSelect: (k: TabKey) => void; earnAttention?: boolean }) {
+export function BottomNavShadow({ active, onSelect, earnAttention, earnHasAvailable }: { active: TabKey; onSelect: (k: TabKey) => void; earnAttention?: boolean; earnHasAvailable?: boolean }) {
   const hostRef = useRef<HTMLDivElement | null>(null)
   const shadowRef = useRef<ShadowRoot | null>(null)
 
@@ -60,6 +60,14 @@ export function BottomNavShadow({ active, onSelect, earnAttention }: { active: T
 
         btn.appendChild(bg)
         btn.appendChild(overlay)
+
+        // Notification pill (hidden by default)
+        if (key === 'offers') {
+          const pill = document.createElement('div')
+          pill.className = 'notifPill'
+          pill.setAttribute('aria-hidden', 'true')
+          btn.appendChild(pill)
+        }
 
         btn.setAttribute('data-key', key)
         return btn
@@ -137,13 +145,31 @@ export function BottomNavShadow({ active, onSelect, earnAttention }: { active: T
         } else {
           btn.removeAttribute('data-attention')
         }
+        // Toggle red notification pill
+        try {
+          const pill = btn.querySelector('.notifPill') as HTMLDivElement | null
+          if (pill) {
+            if (earnHasAvailable) {
+              pill.removeAttribute('hidden')
+            } else {
+              pill.setAttribute('hidden', 'true')
+            }
+          }
+          // Accessibility hint in label
+          const baseLabel = btn.getAttribute('aria-label') || 'EARN'
+          if (earnHasAvailable) {
+            btn.setAttribute('aria-label', `${baseLabel} — New items available`)
+          } else {
+            btn.setAttribute('aria-label', 'EARN')
+          }
+        } catch {}
       }
     })
     return () => {
       try { window.removeEventListener('resize', recomputeHeight) } catch {}
       try { ro.disconnect() } catch {}
     }
-  }, [active, onSelect, earnAttention])
+  }, [active, onSelect, earnAttention, earnHasAvailable])
 
   return (
     <div
