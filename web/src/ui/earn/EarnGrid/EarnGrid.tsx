@@ -5,12 +5,27 @@ import { EmptyState } from '../EmptyState/EmptyState'
 import { TileSkeleton } from '../Skeletons/TileSkeleton'
 
 // Deterministic icon selection based on taskId to avoid flicker on re-render
-function pickIconForTask(id: string): 'chest' | 'target' {
+function stableIndex(id: string, n: number): number {
+  if (!n || n <= 0) return 0
   let h = 0
-  for (let i = 0; i < id.length; i++) {
-    h = (h * 31 + id.charCodeAt(i)) | 0
-  }
-  return (h & 1) === 0 ? 'chest' : 'target'
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0
+  const v = h === -2147483648 ? 0 : Math.abs(h)
+  return v % n
+}
+
+const ICONS_FREE_TRIAL = [
+  '/ui/earnicons/Icon_ShopIcon_Gem4.png',
+  '/ui/earnicons/Icon_ShopIcon_SpecialChest.png'
+] as const
+const ICONS_MONETAG = [
+  '/ui/earnicons/Icon_ShopIcon_Gold4.png',
+  '/ui/earnicons/Icon_ShopIcon_Gold3.png'
+] as const
+
+function iconSrcForTask(taskId: string, kind?: string | null): string {
+  const k = (kind || '').toLowerCase()
+  const arr = k === 'free-trial' ? ICONS_FREE_TRIAL : ICONS_MONETAG /* in_app */
+  return arr[stableIndex(taskId, arr.length)]
 }
 
 export type EarnItem = {
@@ -39,7 +54,7 @@ export function EarnGrid(props: {
     return items.map((it, idx) => ({
       id: it.taskId,
       badgeNumber: typeof it.unlockLevel === 'number' ? it.unlockLevel : (idx + 1),
-      icon: pickIconForTask(it.taskId),
+      iconSrc: iconSrcForTask(it.taskId, it.kind),
       ctaLabel: 'Open',
       variant: 'primary',
     }))
@@ -90,7 +105,7 @@ export function EarnGrid(props: {
             const tile: EarnTile = {
               id: it.taskId,
               badgeNumber: typeof it.unlockLevel === 'number' ? it.unlockLevel : (idx + 1),
-              icon: pickIconForTask(it.taskId),
+              iconSrc: iconSrcForTask(it.taskId, it.kind),
               ctaLabel,
               variant,
               disabled: isPartner ? false : disabled,

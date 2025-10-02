@@ -5,14 +5,17 @@ import { Badge } from '../Badge/Badge'
 export type EarnTile = {
   id: string
   badgeNumber: number
-  icon: 'chest' | 'target'
+  icon?: 'chest' | 'target'
+  iconSrc?: string
   ctaLabel?: string
   disabled?: boolean
   variant?: 'primary' | 'confirm' | 'partner'
 }
 
 export function Tile({ tile, onClick }: { tile: EarnTile; onClick?: (id: string) => void }) {
-  const iconSrc = tile.icon === 'target' ? '/ui/earn/Icon_Target.Png' : '/ui/earn/Icon_Chest.Png'
+  const iconSrc = typeof tile.iconSrc === 'string' && tile.iconSrc.length > 0
+    ? tile.iconSrc
+    : (tile.icon === 'target' ? '/ui/earn/Icon_Target.Png' : '/ui/earn/Icon_Chest.Png')
   const variantClass = tile.variant === 'confirm' ? styles.ctaConfirm : (tile.variant === 'partner' ? styles.ctaPartner : styles.ctaPrimary)
   return (
     <div className={styles.root}>
