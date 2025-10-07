@@ -42,5 +42,3 @@ next-env.d.ts
 
 /ops/.pgdata
 /ops/.pg.log
-
-*.sql
