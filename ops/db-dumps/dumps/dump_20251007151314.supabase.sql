@@ -1,8 +1,63 @@
 --
+-- Supabase SQL Editor–ready dump
+-- Generated at 2025-10-07T15:13:14.504Z
+--
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+-- Cleanup — drop objects that will be recreated by this dump
+begin;
+DO $$ BEGIN
+  BEGIN EXECUTE 'DROP FUNCTION IF EXISTS "public"."_next_threshold"(integer)'; EXCEPTION WHEN undefined_function THEN END;
+  BEGIN EXECUTE 'DROP FUNCTION IF EXISTS "public"."_threshold_for_level"(integer)'; EXCEPTION WHEN undefined_function THEN END;
+  BEGIN EXECUTE 'DROP FUNCTION IF EXISTS "public"."apply_reward_event"(uuid, text, text, jsonb, numeric)'; EXCEPTION WHEN undefined_function THEN END;
+  BEGIN EXECUTE 'DROP FUNCTION IF EXISTS "public"."apply_tap_batch"(uuid, uuid, uuid, uuid, bigint, integer, bigint, text)'; EXCEPTION WHEN undefined_function THEN END;
+  BEGIN EXECUTE 'DROP FUNCTION IF EXISTS "public"."claim_level_bonus"(uuid, integer, numeric, uuid)'; EXCEPTION WHEN undefined_function THEN END;
+  BEGIN EXECUTE 'DROP FUNCTION IF EXISTS "public"."claim_level_bonus_v4"(uuid, integer, numeric, uuid, uuid)'; EXCEPTION WHEN undefined_function THEN END;
+  BEGIN EXECUTE 'DROP FUNCTION IF EXISTS "public"."claim_task"(uuid, uuid)'; EXCEPTION WHEN undefined_function THEN END;
+  BEGIN EXECUTE 'DROP FUNCTION IF EXISTS "public"."claim_task_v2"(uuid, uuid, uuid)'; EXCEPTION WHEN undefined_function THEN END;
+  BEGIN EXECUTE 'DROP FUNCTION IF EXISTS "public"."session_start"(uuid)'; EXCEPTION WHEN undefined_function THEN END;
+END $$;
+DO $$ BEGIN
+  BEGIN EXECUTE 'DROP TABLE IF EXISTS "public"."active_effects" CASCADE'; EXCEPTION WHEN undefined_table THEN END;
+  BEGIN EXECUTE 'DROP TABLE IF EXISTS "public"."ad_events" CASCADE'; EXCEPTION WHEN undefined_table THEN END;
+  BEGIN EXECUTE 'DROP TABLE IF EXISTS "public"."attribution_leads" CASCADE'; EXCEPTION WHEN undefined_table THEN END;
+  BEGIN EXECUTE 'DROP TABLE IF EXISTS "public"."dev_whitelist" CASCADE'; EXCEPTION WHEN undefined_table THEN END;
+  BEGIN EXECUTE 'DROP TABLE IF EXISTS "public"."game_config" CASCADE'; EXCEPTION WHEN undefined_table THEN END;
+  BEGIN EXECUTE 'DROP TABLE IF EXISTS "public"."leaderboard_global" CASCADE'; EXCEPTION WHEN undefined_table THEN END;
+  BEGIN EXECUTE 'DROP TABLE IF EXISTS "public"."level_events" CASCADE'; EXCEPTION WHEN undefined_table THEN END;
+  BEGIN EXECUTE 'DROP TABLE IF EXISTS "public"."level_offer_schedule" CASCADE'; EXCEPTION WHEN undefined_table THEN END;
+  BEGIN EXECUTE 'DROP TABLE IF EXISTS "public"."level_reward_templates" CASCADE'; EXCEPTION WHEN undefined_table THEN END;
+  BEGIN EXECUTE 'DROP TABLE IF EXISTS "public"."partner_postbacks" CASCADE'; EXCEPTION WHEN undefined_table THEN END;
+  BEGIN EXECUTE 'DROP TABLE IF EXISTS "public"."reward_events" CASCADE'; EXCEPTION WHEN undefined_table THEN END;
+  BEGIN EXECUTE 'DROP TABLE IF EXISTS "public"."tap_batches" CASCADE'; EXCEPTION WHEN undefined_table THEN END;
+  BEGIN EXECUTE 'DROP TABLE IF EXISTS "public"."task_definitions" CASCADE'; EXCEPTION WHEN undefined_table THEN END;
+  BEGIN EXECUTE 'DROP TABLE IF EXISTS "public"."task_progress" CASCADE'; EXCEPTION WHEN undefined_table THEN END;
+  BEGIN EXECUTE 'DROP TABLE IF EXISTS "public"."telegram_identities" CASCADE'; EXCEPTION WHEN undefined_table THEN END;
+  BEGIN EXECUTE 'DROP TABLE IF EXISTS "public"."user_counters" CASCADE'; EXCEPTION WHEN undefined_table THEN END;
+  BEGIN EXECUTE 'DROP TABLE IF EXISTS "public"."user_profiles" CASCADE'; EXCEPTION WHEN undefined_table THEN END;
+END $$;
+DO $$ BEGIN
+  BEGIN EXECUTE 'DROP SEQUENCE IF EXISTS "public"."level_events_id_seq" CASCADE'; EXCEPTION WHEN undefined_table THEN END;
+  BEGIN EXECUTE 'DROP SEQUENCE IF EXISTS "public"."partner_postbacks_id_seq" CASCADE'; EXCEPTION WHEN undefined_table THEN END;
+END $$;
+commit;
+
+--
 -- PostgreSQL database dump
 --
 
-\restrict 8EeSD28wqK9qwdhdfguZDvOkrJeSeVxGiiJoLa3BsruuNjR2Idlq8I7IKbgsgxg
+
 
 -- Dumped from database version 16.10 (Homebrew)
 -- Dumped by pg_dump version 18.0
@@ -19,81 +74,6 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
-ALTER TABLE IF EXISTS ONLY public.user_counters DROP CONSTRAINT IF EXISTS user_counters_user_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.telegram_identities DROP CONSTRAINT IF EXISTS telegram_identities_user_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.task_progress DROP CONSTRAINT IF EXISTS task_progress_user_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.task_progress DROP CONSTRAINT IF EXISTS task_progress_task_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.tap_batches DROP CONSTRAINT IF EXISTS tap_batches_user_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.reward_events DROP CONSTRAINT IF EXISTS reward_events_user_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.partner_postbacks DROP CONSTRAINT IF EXISTS partner_postbacks_user_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.level_events DROP CONSTRAINT IF EXISTS level_events_user_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.leaderboard_global DROP CONSTRAINT IF EXISTS leaderboard_global_user_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.attribution_leads DROP CONSTRAINT IF EXISTS attribution_leads_user_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.ad_events DROP CONSTRAINT IF EXISTS ad_events_user_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.active_effects DROP CONSTRAINT IF EXISTS active_effects_user_id_fkey;
-ALTER TABLE IF EXISTS ONLY public.active_effects DROP CONSTRAINT IF EXISTS active_effects_source_reward_event_id_fkey;
-DROP INDEX IF EXISTS public.uq_level_reward_templates_active;
-DROP INDEX IF EXISTS public.idx_telegram_identities_user;
-DROP INDEX IF EXISTS public.idx_tap_batches_user_seq;
-DROP INDEX IF EXISTS public.idx_tap_batches_user_created;
-DROP INDEX IF EXISTS public.idx_partner_postbacks_user_provider_goal;
-DROP INDEX IF EXISTS public.idx_level_events_user_created;
-DROP INDEX IF EXISTS public.idx_leaderboard_level;
-DROP INDEX IF EXISTS public.idx_ad_events_user_intent;
-DROP INDEX IF EXISTS public.idx_ad_events_user_impression;
-DROP INDEX IF EXISTS public.idx_ad_events_user_created;
-DROP INDEX IF EXISTS public.idx_ad_events_impression;
-ALTER TABLE IF EXISTS ONLY public.user_profiles DROP CONSTRAINT IF EXISTS user_profiles_pkey;
-ALTER TABLE IF EXISTS ONLY public.user_counters DROP CONSTRAINT IF EXISTS user_counters_pkey;
-ALTER TABLE IF EXISTS ONLY public.telegram_identities DROP CONSTRAINT IF EXISTS telegram_identities_pkey;
-ALTER TABLE IF EXISTS ONLY public.task_progress DROP CONSTRAINT IF EXISTS task_progress_pkey;
-ALTER TABLE IF EXISTS ONLY public.task_definitions DROP CONSTRAINT IF EXISTS task_definitions_pkey;
-ALTER TABLE IF EXISTS ONLY public.tap_batches DROP CONSTRAINT IF EXISTS tap_batches_pkey;
-ALTER TABLE IF EXISTS ONLY public.reward_events DROP CONSTRAINT IF EXISTS reward_events_pkey;
-ALTER TABLE IF EXISTS ONLY public.partner_postbacks DROP CONSTRAINT IF EXISTS partner_postbacks_user_id_provider_goal_key;
-ALTER TABLE IF EXISTS ONLY public.partner_postbacks DROP CONSTRAINT IF EXISTS partner_postbacks_pkey;
-ALTER TABLE IF EXISTS ONLY public.level_reward_templates DROP CONSTRAINT IF EXISTS level_reward_templates_pkey;
-ALTER TABLE IF EXISTS ONLY public.level_offer_schedule DROP CONSTRAINT IF EXISTS level_offer_schedule_task_id_key;
-ALTER TABLE IF EXISTS ONLY public.level_offer_schedule DROP CONSTRAINT IF EXISTS level_offer_schedule_pkey;
-ALTER TABLE IF EXISTS ONLY public.level_events DROP CONSTRAINT IF EXISTS level_events_pkey;
-ALTER TABLE IF EXISTS ONLY public.leaderboard_global DROP CONSTRAINT IF EXISTS leaderboard_global_pkey;
-ALTER TABLE IF EXISTS ONLY public.game_config DROP CONSTRAINT IF EXISTS game_config_pkey;
-ALTER TABLE IF EXISTS ONLY public.dev_whitelist DROP CONSTRAINT IF EXISTS dev_whitelist_pkey;
-ALTER TABLE IF EXISTS ONLY public.attribution_leads DROP CONSTRAINT IF EXISTS attribution_leads_pkey;
-ALTER TABLE IF EXISTS ONLY public.ad_events DROP CONSTRAINT IF EXISTS ad_events_pkey;
-ALTER TABLE IF EXISTS ONLY public.active_effects DROP CONSTRAINT IF EXISTS active_effects_user_id_type_source_reward_event_id_key;
-ALTER TABLE IF EXISTS ONLY public.active_effects DROP CONSTRAINT IF EXISTS active_effects_pkey;
-ALTER TABLE IF EXISTS public.partner_postbacks ALTER COLUMN id DROP DEFAULT;
-ALTER TABLE IF EXISTS public.level_events ALTER COLUMN id DROP DEFAULT;
-DROP TABLE IF EXISTS public.user_profiles;
-DROP TABLE IF EXISTS public.user_counters;
-DROP TABLE IF EXISTS public.telegram_identities;
-DROP TABLE IF EXISTS public.task_progress;
-DROP TABLE IF EXISTS public.task_definitions;
-DROP TABLE IF EXISTS public.tap_batches;
-DROP TABLE IF EXISTS public.reward_events;
-DROP SEQUENCE IF EXISTS public.partner_postbacks_id_seq;
-DROP TABLE IF EXISTS public.partner_postbacks;
-DROP TABLE IF EXISTS public.level_reward_templates;
-DROP TABLE IF EXISTS public.level_offer_schedule;
-DROP SEQUENCE IF EXISTS public.level_events_id_seq;
-DROP TABLE IF EXISTS public.level_events;
-DROP TABLE IF EXISTS public.leaderboard_global;
-DROP TABLE IF EXISTS public.game_config;
-DROP TABLE IF EXISTS public.dev_whitelist;
-DROP TABLE IF EXISTS public.attribution_leads;
-DROP TABLE IF EXISTS public.ad_events;
-DROP TABLE IF EXISTS public.active_effects;
-DROP FUNCTION IF EXISTS public.session_start(p_user_id uuid);
-DROP FUNCTION IF EXISTS public.claim_task_v2(p_user_id uuid, p_task_id uuid, p_idempotency_key uuid);
-DROP FUNCTION IF EXISTS public.claim_task(p_user_id uuid, p_task_id uuid);
-DROP FUNCTION IF EXISTS public.claim_level_bonus_v4(p_user_id uuid, p_level integer, p_bonus_multiplier numeric, p_idempotency_key uuid, p_impression_id uuid);
-DROP FUNCTION IF EXISTS public.claim_level_bonus(p_user_id uuid, p_level integer, p_bonus_multiplier numeric, p_idempotency_key uuid);
-DROP FUNCTION IF EXISTS public.apply_tap_batch(p_user_id uuid, p_batch_id uuid, p_session_id uuid, p_session_epoch uuid, p_client_seq bigint, p_taps integer, p_coins_delta bigint, p_checksum text);
-DROP FUNCTION IF EXISTS public.apply_reward_event(p_user_id uuid, p_source_type text, p_source_ref text, p_base_payload jsonb, p_multiplier numeric);
-DROP FUNCTION IF EXISTS public._threshold_for_level(p_level integer);
-DROP FUNCTION IF EXISTS public._next_threshold(p_level integer);
-DROP EXTENSION IF EXISTS pgcrypto;
 --
 -- Name: pgcrypto; Type: EXTENSION; Schema: -; Owner: -
 --
@@ -924,213 +904,168 @@ ALTER TABLE ONLY public.partner_postbacks ALTER COLUMN id SET DEFAULT nextval('p
 -- Data for Name: active_effects; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.active_effects (effect_id, user_id, type, magnitude, expires_at, source_reward_event_id, created_at) FROM stdin;
-\.
 
 
 --
 -- Data for Name: ad_events; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.ad_events (id, user_id, session_id, provider, placement, status, reward_payload, created_at) FROM stdin;
-\.
 
 
 --
 -- Data for Name: attribution_leads; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.attribution_leads (user_id, campaign_id, first_seen_at, meta) FROM stdin;
-\.
 
 
 --
 -- Data for Name: dev_whitelist; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.dev_whitelist (tg_user_id, notes, created_at) FROM stdin;
-\.
 
 
 --
 -- Data for Name: game_config; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.game_config (key, value) FROM stdin;
-thresholds_poly	{"a0": 156, "a1": 800, "a2": 195, "a3": 7.36}
-monetag_enabled	true
-monetag_zone_id	"9667281"
-monetag_sdk_url	"//munqu.com/sdk.js"
-unlock_policy	"any"
-log_failed_ad_events	true
-free_trial_url_template	"https://himfls.com/track/Mzc2LjAuMy4zLjAuMC4wLjAuMC4wLjAuMA?_ocid={CLICKID}&aff_subid={SOURCE}"
-free_trial_source	"tap-app"
-propeller_enabled	true
-propeller_postback_base_url	"http://ad.propellerads.com/conversion.php"
-propeller_aid	"3857131"
-propeller_tid	"145944"
-propeller_pid	""
-ad_ttl_seconds	10
-coins_per_tap	100
-hud_tween_ms	160
-thresholds	{"base": 10, "growth": "linear", "batch_min_interval_ms": 500}
-tap_agg	{"tween_ms_max": 180, "tween_ms_min": 80, "flush_threshold": 2}
-ingest	{"clamp_soft": true, "max_taps_per_batch": 5}
-level_bonus_policy	{"coins": "multiply", "tickets": "add", "coin_multiplier": "multiply"}
-\.
+INSERT INTO public.game_config VALUES
+	('thresholds_poly', '{"a0": 156, "a1": 800, "a2": 195, "a3": 7.36}'),
+	('monetag_enabled', 'true'),
+	('monetag_zone_id', '"9667281"'),
+	('monetag_sdk_url', '"//munqu.com/sdk.js"'),
+	('unlock_policy', '"any"'),
+	('log_failed_ad_events', 'true'),
+	('free_trial_url_template', '"https://himfls.com/track/Mzc2LjAuMy4zLjAuMC4wLjAuMC4wLjAuMA?_ocid={CLICKID}&aff_subid={SOURCE}"'),
+	('free_trial_source', '"tap-app"'),
+	('propeller_enabled', 'true'),
+	('propeller_postback_base_url', '"http://ad.propellerads.com/conversion.php"'),
+	('propeller_aid', '"3857131"'),
+	('propeller_tid', '"145944"'),
+	('propeller_pid', '""'),
+	('ad_ttl_seconds', '10'),
+	('coins_per_tap', '100'),
+	('hud_tween_ms', '160'),
+	('thresholds', '{"base": 10, "growth": "linear", "batch_min_interval_ms": 500}'),
+	('tap_agg', '{"tween_ms_max": 180, "tween_ms_min": 80, "flush_threshold": 2}'),
+	('ingest', '{"clamp_soft": true, "max_taps_per_batch": 5}'),
+	('level_bonus_policy', '{"coins": "multiply", "tickets": "add", "coin_multiplier": "multiply"}');
 
 
 --
 -- Data for Name: leaderboard_global; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.leaderboard_global (user_id, level, updated_at) FROM stdin;
-33d054c2-1ced-461b-bfba-64ef19ad5744	2	2025-10-07 16:15:50.990178+03
-\.
 
 
 --
 -- Data for Name: level_events; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.level_events (id, user_id, level, base_reward, reward_payload, bonus_offered, bonus_multiplier, ad_event_id, created_at, template_id) FROM stdin;
-1	33d054c2-1ced-461b-bfba-64ef19ad5744	1	0	{}	f	\N	\N	2025-10-07 16:15:45.065448+03	\N
-2	33d054c2-1ced-461b-bfba-64ef19ad5744	2	0	{"coins": 0, "tickets": 25, "coin_multiplier": 1.28}	t	\N	\N	2025-10-07 16:15:48.315235+03	258d2862-6c62-4bdc-a164-c6175106d8e0
-\.
 
 
 --
 -- Data for Name: level_offer_schedule; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.level_offer_schedule (level, active, skip_base_reward, partner_key, payload, updated_at, task_id) FROM stdin;
-1	t	t	free_trial	{}	2025-10-07 16:15:23.731803+03	7d1ac119-00af-4ac6-be6a-e1488fba0a32
-4	t	t	free_trial	{}	2025-10-07 16:15:23.731803+03	bd3b169c-ec35-4bf4-a5d1-ed2bc0d017e5
-7	t	t	free_trial	{}	2025-10-07 16:15:23.731803+03	ab7db760-4be1-4534-ad3e-7b7fa02825cb
-\.
+INSERT INTO public.level_offer_schedule VALUES
+	(1, true, true, 'free_trial', '{}', '2025-10-07 18:13:04.163596+03', 'af3acfd3-6a31-431a-8a37-7a5ddd589271'),
+	(4, true, true, 'free_trial', '{}', '2025-10-07 18:13:04.163596+03', '2b9cd4cb-bbbd-49b1-80f6-73ea7955291d'),
+	(7, true, true, 'free_trial', '{}', '2025-10-07 18:13:04.163596+03', 'a610e930-96fe-4653-bc40-8707532dd645');
 
 
 --
 -- Data for Name: level_reward_templates; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.level_reward_templates (template_id, level, season_id, segment, active, payload, updated_at) FROM stdin;
-d0d98652-d481-4225-b773-889dcff63a1b	1	\N	\N	t	{"coins": 0, "tickets": 11, "coin_multiplier": 1.21}	2025-10-07 16:15:23.731803+03
-258d2862-6c62-4bdc-a164-c6175106d8e0	2	\N	\N	t	{"coins": 0, "tickets": 25, "coin_multiplier": 1.28}	2025-10-07 16:15:23.731803+03
-4c3a7906-cef2-4bb7-89a9-fe55aae9a916	3	\N	\N	t	{"coins": 0, "tickets": 45, "coin_multiplier": 1.35}	2025-10-07 16:15:23.731803+03
-b95b7553-5e93-44e7-b46b-3f71246aca48	4	\N	\N	t	{"coins": 0, "tickets": 69, "coin_multiplier": 1.42}	2025-10-07 16:15:23.731803+03
-ce636db0-f9be-4abb-8ae3-730d29508039	5	\N	\N	t	{"coins": 0, "tickets": 99, "coin_multiplier": 1.49}	2025-10-07 16:15:23.731803+03
-71fb6217-bc97-4926-aaf3-e79695310f9d	6	\N	\N	t	{"coins": 0, "tickets": 135, "coin_multiplier": 1.56}	2025-10-07 16:15:23.731803+03
-d1c638e2-ca89-4ea3-9340-a9481059d158	7	\N	\N	t	{"coins": 0, "tickets": 175, "coin_multiplier": 1.56}	2025-10-07 16:15:23.731803+03
-478e89fa-749f-4ba0-982b-6e8dba61bc7d	8	\N	\N	t	{"coins": 0, "tickets": 219, "coin_multiplier": 1.63}	2025-10-07 16:15:23.731803+03
-d5ba0656-a4a8-4574-a77c-a42e2bbc8cac	9	\N	\N	t	{"coins": 0, "tickets": 267, "coin_multiplier": 1.7}	2025-10-07 16:15:23.731803+03
-1c71fac4-fd41-4234-a280-689e498b4990	10	\N	\N	t	{"coins": 0, "tickets": 321, "coin_multiplier": 1.77}	2025-10-07 16:15:23.731803+03
-6951e6b1-70fa-425e-b977-4620b9c20a0c	11	\N	\N	t	{"coins": 0, "tickets": 381, "coin_multiplier": 1.84}	2025-10-07 16:15:23.731803+03
-2d89a478-7c79-4bca-877f-8db03f8c7172	12	\N	\N	t	{"coins": 0, "tickets": 429, "coin_multiplier": 1.91}	2025-10-07 16:15:23.731803+03
-c26d805b-4ef3-4fec-a246-c09d0f78b07c	13	\N	\N	t	{"coins": 0, "tickets": 481, "coin_multiplier": 1.98}	2025-10-07 16:15:23.731803+03
-7b4d7167-f04d-4562-8214-f04722fe3f93	14	\N	\N	t	{"coins": 0, "tickets": 541, "coin_multiplier": 2.05}	2025-10-07 16:15:23.731803+03
-465437fb-a896-4ae8-b01a-638739723e47	15	\N	\N	t	{"coins": 0, "tickets": 609, "coin_multiplier": 2.12}	2025-10-07 16:15:23.731803+03
-\.
+INSERT INTO public.level_reward_templates VALUES
+	('f8d326e5-5f99-42ff-819a-20bde12a35d6', 1, NULL, NULL, true, '{"coins": 0, "tickets": 11, "coin_multiplier": 1.21}', '2025-10-07 18:13:04.163596+03'),
+	('a85d5e32-59dd-4048-9d7f-053744eca90e', 2, NULL, NULL, true, '{"coins": 0, "tickets": 25, "coin_multiplier": 1.28}', '2025-10-07 18:13:04.163596+03'),
+	('ecc6dc4f-5e88-46d8-b2e2-113bc9c2726c', 3, NULL, NULL, true, '{"coins": 0, "tickets": 45, "coin_multiplier": 1.35}', '2025-10-07 18:13:04.163596+03'),
+	('5e32a26f-26e6-45e6-a2ea-7d37d9242a8e', 4, NULL, NULL, true, '{"coins": 0, "tickets": 69, "coin_multiplier": 1.42}', '2025-10-07 18:13:04.163596+03'),
+	('5dcd9155-dd7d-49ec-90d5-1357cd2bb82d', 5, NULL, NULL, true, '{"coins": 0, "tickets": 99, "coin_multiplier": 1.49}', '2025-10-07 18:13:04.163596+03'),
+	('c20b252c-2630-4f24-a5f8-e0e35b41aa8a', 6, NULL, NULL, true, '{"coins": 0, "tickets": 135, "coin_multiplier": 1.56}', '2025-10-07 18:13:04.163596+03'),
+	('50861057-b913-4538-951a-5373c3866ca1', 7, NULL, NULL, true, '{"coins": 0, "tickets": 175, "coin_multiplier": 1.56}', '2025-10-07 18:13:04.163596+03'),
+	('4b08a6f5-dcff-43f1-b62a-1cca11d1082d', 8, NULL, NULL, true, '{"coins": 0, "tickets": 219, "coin_multiplier": 1.63}', '2025-10-07 18:13:04.163596+03'),
+	('26272543-7aaa-4c25-a617-52457a871198', 9, NULL, NULL, true, '{"coins": 0, "tickets": 267, "coin_multiplier": 1.7}', '2025-10-07 18:13:04.163596+03'),
+	('2a6f6370-9c6c-41ef-a097-e1f635ee3c5d', 10, NULL, NULL, true, '{"coins": 0, "tickets": 321, "coin_multiplier": 1.77}', '2025-10-07 18:13:04.163596+03'),
+	('e34a1308-811c-46e8-b4d0-84622c992dad', 11, NULL, NULL, true, '{"coins": 0, "tickets": 381, "coin_multiplier": 1.84}', '2025-10-07 18:13:04.163596+03'),
+	('47b0254f-1a6a-48d7-945e-bf32296e2872', 12, NULL, NULL, true, '{"coins": 0, "tickets": 429, "coin_multiplier": 1.91}', '2025-10-07 18:13:04.163596+03'),
+	('756f26bc-fe1c-4041-bae1-f97e13610e83', 13, NULL, NULL, true, '{"coins": 0, "tickets": 481, "coin_multiplier": 1.98}', '2025-10-07 18:13:04.163596+03'),
+	('fa9a0638-4deb-41c2-b3d9-42b6872c5017', 14, NULL, NULL, true, '{"coins": 0, "tickets": 541, "coin_multiplier": 2.05}', '2025-10-07 18:13:04.163596+03'),
+	('46bffb67-dc00-460d-bcff-f96ca1de4147', 15, NULL, NULL, true, '{"coins": 0, "tickets": 609, "coin_multiplier": 2.12}', '2025-10-07 18:13:04.163596+03');
 
 
 --
 -- Data for Name: partner_postbacks; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.partner_postbacks (id, user_id, provider, subid, goal, url, status, http_code, response_hash, attempts, created_at, sent_at) FROM stdin;
-\.
 
 
 --
 -- Data for Name: reward_events; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.reward_events (id, user_id, source_type, source_ref_id, base_payload, multiplier_applied, policy_key, effective_payload, coins_delta, tickets_delta, coin_multiplier_delta, status, idempotency_key, created_at) FROM stdin;
-\.
 
 
 --
 -- Data for Name: tap_batches; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.tap_batches (batch_id, user_id, session_id, client_seq, taps, coins_delta, checksum, status, error_code, created_at, applied_at) FROM stdin;
-36ed6934-984c-417b-baa0-8dd16c296f5f	33d054c2-1ced-461b-bfba-64ef19ad5744	32a192b7-27a8-4343-8ba2-5c8a486e4ef1	1	2	0	sha256:dev	applied	\N	2025-10-07 16:15:43.274429+03	\N
-765e06cc-52ff-4434-9302-f9aabb799ff1	33d054c2-1ced-461b-bfba-64ef19ad5744	32a192b7-27a8-4343-8ba2-5c8a486e4ef1	2	5	0	sha256:dev	applied	\N	2025-10-07 16:15:43.831739+03	\N
-614ea6de-dd28-4094-9985-3185582726c7	33d054c2-1ced-461b-bfba-64ef19ad5744	32a192b7-27a8-4343-8ba2-5c8a486e4ef1	3	4	0	sha256:dev	applied	\N	2025-10-07 16:15:44.432752+03	\N
-b9422d76-993a-4a43-ba91-51dfe8022e8c	33d054c2-1ced-461b-bfba-64ef19ad5744	32a192b7-27a8-4343-8ba2-5c8a486e4ef1	4	4	0	sha256:dev	applied	\N	2025-10-07 16:15:45.065448+03	\N
-60a74b3a-9022-4c83-994e-f811cffa5509	33d054c2-1ced-461b-bfba-64ef19ad5744	32a192b7-27a8-4343-8ba2-5c8a486e4ef1	5	1	0	sha256:dev	applied	\N	2025-10-07 16:15:45.713032+03	\N
-b9a521c8-11e7-4292-8cca-3f38ef3e6308	33d054c2-1ced-461b-bfba-64ef19ad5744	32a192b7-27a8-4343-8ba2-5c8a486e4ef1	6	2	0	sha256:dev	applied	\N	2025-10-07 16:15:47.004983+03	\N
-4fab162c-6085-4a73-899c-3bed9e130eff	33d054c2-1ced-461b-bfba-64ef19ad5744	32a192b7-27a8-4343-8ba2-5c8a486e4ef1	7	4	0	sha256:dev	applied	\N	2025-10-07 16:15:47.612725+03	\N
-723b2937-f1fc-4ac6-9414-b0ef8196df6b	33d054c2-1ced-461b-bfba-64ef19ad5744	32a192b7-27a8-4343-8ba2-5c8a486e4ef1	8	4	0	sha256:dev	applied	\N	2025-10-07 16:15:48.315235+03	\N
-c1608715-af92-4c68-bd6d-ba0b74e9350c	33d054c2-1ced-461b-bfba-64ef19ad5744	32a192b7-27a8-4343-8ba2-5c8a486e4ef1	9	2	0	sha256:dev	applied	\N	2025-10-07 16:15:50.389124+03	\N
-3682b85d-aef9-4e18-8bbc-5a4d84dab69d	33d054c2-1ced-461b-bfba-64ef19ad5744	32a192b7-27a8-4343-8ba2-5c8a486e4ef1	10	4	0	sha256:dev	applied	\N	2025-10-07 16:15:50.990178+03	\N
-\.
 
 
 --
 -- Data for Name: task_definitions; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.task_definitions (task_id, unlock_level, kind, reward_payload, verification, active, created_at) FROM stdin;
-d2902150-9357-4f8e-bb57-0921d1ee034c	1	in_app	{"tickets": 2, "coin_multiplier": 1.21}	none	t	2025-10-07 16:15:23.731803+03
-719ce2a5-092f-4836-bc7b-64beddeb8470	1	free-trial	{"tickets": 3, "coin_multiplier": 1.23}	none	t	2025-10-07 16:15:23.731803+03
-b2e156d1-50f6-4a0a-882e-56c25925127e	1	in_app	{"tickets": 2, "coin_multiplier": 1.21}	none	t	2025-10-07 16:15:23.731803+03
-feeaf6d4-e80f-4ed1-9e07-4191f574b666	2	in_app	{"tickets": 3, "coin_multiplier": 1.29}	none	t	2025-10-07 16:15:23.731803+03
-0e9b2f82-2879-4a93-a30e-bf6f9a30f564	3	in_app	{"tickets": 4, "coin_multiplier": 1.37}	none	t	2025-10-07 16:15:23.731803+03
-aaf10783-5bf3-4d9e-8b5f-608c2ecf4358	4	free-trial	{"tickets": 7, "coin_multiplier": 1.45}	none	t	2025-10-07 16:15:23.731803+03
-662e1f18-b655-4701-9106-d02075ca8c14	5	in_app	{"tickets": 8, "coin_multiplier": 1.53}	none	t	2025-10-07 16:15:23.731803+03
-7c5cc354-0065-4439-9286-f6af2c9d8173	6	in_app	{"tickets": 9, "coin_multiplier": 1.61}	none	t	2025-10-07 16:15:23.731803+03
-6864dab3-77c4-4c42-865e-644ff8cd72db	7	free-trial	{"tickets": 12, "coin_multiplier": 1.59}	none	t	2025-10-07 16:15:23.731803+03
-34f93117-b5ea-40e5-9afc-80eb05aa3419	8	in_app	{"tickets": 12, "coin_multiplier": 1.64}	none	t	2025-10-07 16:15:23.731803+03
-892746dc-a74b-4856-b930-f8415e3772b0	9	in_app	{"tickets": 12, "coin_multiplier": 1.72}	none	t	2025-10-07 16:15:23.731803+03
-a4c51428-a729-46f5-acf6-2c4bf0729ebc	10	in_app	{"tickets": 12, "coin_multiplier": 1.81}	none	t	2025-10-07 16:15:23.731803+03
-ed32bc5e-9119-4afa-bfc2-128d75254590	11	in_app	{"tickets": 12, "coin_multiplier": 1.9}	none	t	2025-10-07 16:15:23.731803+03
-9c96b4b0-8b75-429e-9624-d3cdc322fb62	12	in_app	{"tickets": 12, "coin_multiplier": 1.99}	none	t	2025-10-07 16:15:23.731803+03
-37db64b3-c3a2-4f8d-b165-2e9cbf83e861	13	in_app	{"tickets": 12, "coin_multiplier": 2.09}	none	t	2025-10-07 16:15:23.731803+03
-d77d227c-f88e-4f9f-9b09-d7f4fd0998f2	14	in_app	{"tickets": 12, "coin_multiplier": 2.19}	none	t	2025-10-07 16:15:23.731803+03
-587b3029-1f15-4e8e-ba38-e7763238834c	15	in_app	{"tickets": 12, "coin_multiplier": 2.29}	none	t	2025-10-07 16:15:23.731803+03
-\.
+INSERT INTO public.task_definitions VALUES
+	('d2902150-9357-4f8e-bb57-0921d1ee034c', 1, 'in_app', '{"tickets": 2, "coin_multiplier": 1.21}', 'none', true, '2025-10-07 18:13:04.163596+03'),
+	('719ce2a5-092f-4836-bc7b-64beddeb8470', 1, 'free-trial', '{"tickets": 3, "coin_multiplier": 1.23}', 'none', true, '2025-10-07 18:13:04.163596+03'),
+	('b2e156d1-50f6-4a0a-882e-56c25925127e', 1, 'in_app', '{"tickets": 2, "coin_multiplier": 1.21}', 'none', true, '2025-10-07 18:13:04.163596+03'),
+	('feeaf6d4-e80f-4ed1-9e07-4191f574b666', 2, 'in_app', '{"tickets": 3, "coin_multiplier": 1.29}', 'none', true, '2025-10-07 18:13:04.163596+03'),
+	('0e9b2f82-2879-4a93-a30e-bf6f9a30f564', 3, 'in_app', '{"tickets": 4, "coin_multiplier": 1.37}', 'none', true, '2025-10-07 18:13:04.163596+03'),
+	('aaf10783-5bf3-4d9e-8b5f-608c2ecf4358', 4, 'free-trial', '{"tickets": 7, "coin_multiplier": 1.45}', 'none', true, '2025-10-07 18:13:04.163596+03'),
+	('662e1f18-b655-4701-9106-d02075ca8c14', 5, 'in_app', '{"tickets": 8, "coin_multiplier": 1.53}', 'none', true, '2025-10-07 18:13:04.163596+03'),
+	('7c5cc354-0065-4439-9286-f6af2c9d8173', 6, 'in_app', '{"tickets": 9, "coin_multiplier": 1.61}', 'none', true, '2025-10-07 18:13:04.163596+03'),
+	('6864dab3-77c4-4c42-865e-644ff8cd72db', 7, 'free-trial', '{"tickets": 12, "coin_multiplier": 1.59}', 'none', true, '2025-10-07 18:13:04.163596+03'),
+	('34f93117-b5ea-40e5-9afc-80eb05aa3419', 8, 'in_app', '{"tickets": 12, "coin_multiplier": 1.64}', 'none', true, '2025-10-07 18:13:04.163596+03'),
+	('892746dc-a74b-4856-b930-f8415e3772b0', 9, 'in_app', '{"tickets": 12, "coin_multiplier": 1.72}', 'none', true, '2025-10-07 18:13:04.163596+03'),
+	('a4c51428-a729-46f5-acf6-2c4bf0729ebc', 10, 'in_app', '{"tickets": 12, "coin_multiplier": 1.81}', 'none', true, '2025-10-07 18:13:04.163596+03'),
+	('ed32bc5e-9119-4afa-bfc2-128d75254590', 11, 'in_app', '{"tickets": 12, "coin_multiplier": 1.9}', 'none', true, '2025-10-07 18:13:04.163596+03'),
+	('9c96b4b0-8b75-429e-9624-d3cdc322fb62', 12, 'in_app', '{"tickets": 12, "coin_multiplier": 1.99}', 'none', true, '2025-10-07 18:13:04.163596+03'),
+	('37db64b3-c3a2-4f8d-b165-2e9cbf83e861', 13, 'in_app', '{"tickets": 12, "coin_multiplier": 2.09}', 'none', true, '2025-10-07 18:13:04.163596+03'),
+	('d77d227c-f88e-4f9f-9b09-d7f4fd0998f2', 14, 'in_app', '{"tickets": 12, "coin_multiplier": 2.19}', 'none', true, '2025-10-07 18:13:04.163596+03'),
+	('587b3029-1f15-4e8e-ba38-e7763238834c', 15, 'in_app', '{"tickets": 12, "coin_multiplier": 2.29}', 'none', true, '2025-10-07 18:13:04.163596+03');
 
 
 --
 -- Data for Name: task_progress; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.task_progress (user_id, task_id, state, claimed_at) FROM stdin;
-\.
 
 
 --
 -- Data for Name: telegram_identities; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.telegram_identities (tg_user_id, user_id, first_name, last_name, username, photo_url, created_at, updated_at) FROM stdin;
-\.
 
 
 --
 -- Data for Name: user_counters; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.user_counters (user_id, coins, tickets, coin_multiplier, level, total_taps, session_epoch, current_session_id, last_applied_seq, updated_at, non_progress_coins) FROM stdin;
-33d054c2-1ced-461b-bfba-64ef19ad5744	3368	25	1.2800	2	32	35080abd-ea47-404f-ae48-5633e4b4872b	32a192b7-27a8-4343-8ba2-5c8a486e4ef1	10	2025-10-07 16:15:50.990178+03	0
-\.
 
 
 --
 -- Data for Name: user_profiles; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.user_profiles (user_id, created_at, locale, attribution_campaign_id) FROM stdin;
-33d054c2-1ced-461b-bfba-64ef19ad5744	2025-10-07 16:15:41.970017+03	\N	\N
-\.
 
 
 --
 -- Name: level_events_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.level_events_id_seq', 2, true);
+SELECT pg_catalog.setval('public.level_events_id_seq', 1, false);
 
 
 --
@@ -1485,5 +1420,5 @@ ALTER TABLE ONLY public.user_counters
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 8EeSD28wqK9qwdhdfguZDvOkrJeSeVxGiiJoLa3BsruuNjR2Idlq8I7IKbgsgxg
+
 
