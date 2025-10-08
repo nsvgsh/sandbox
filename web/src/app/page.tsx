@@ -19,6 +19,7 @@ import { Button } from '@/ui/Button/Button'
 import { buildLadderWindow, crossedLevels, type LadderEntry, type Snapshot } from '../lib/ladder'
 import { ModalQueue, type ModalItem } from '../lib/modalQueue'
 import { logEvent } from '../lib/telemetry'
+import { readCachedSnapshot, writeCachedSnapshot } from '../lib/snapshotCache'
 
 type TapWindow = Window & { __tapConfigCoinsPerTap?: number }
 
@@ -341,6 +342,19 @@ export default function Home() {
 
   async function loadSnapshotAndBuildLadder() {
     try {
+      // 1) Try cache immediately
+      const cached = readCachedSnapshot()
+      if (cached) {
+        setSnapshot(cached)
+        const base = baseCountersRef.current
+        if (base) {
+          ladderRef.current = buildLadderWindow({ coins: Number(base.coins || 0), level: Number(base.level || 0) }, cached, 12)
+          const first = Array.isArray(ladderRef.current) ? ladderRef.current[0] : undefined
+          if (first && typeof first.thresholdCoins === 'number') setNextThreshold({ level: first.level, coins: first.thresholdCoins })
+        }
+        try { void logEvent({ name: 'snapshot_loaded_cache', data: { configVersion: cached.configVersion } }) } catch {}
+      }
+      // 2) Refresh from network in background
       const res = await fetch('/api/v1/config/snapshot', { method: 'GET' })
       if (!res.ok) return
       const snap = (await res.json()) as Snapshot
@@ -353,6 +367,7 @@ export default function Home() {
         if (first && typeof first.thresholdCoins === 'number') setNextThreshold({ level: first.level, coins: first.thresholdCoins })
         try { void logEvent({ name: 'ladder_built', data: { fromLevel: Number(base.level || 0), nextLevel: first?.level } }) } catch {}
       }
+      writeCachedSnapshot(snap)
     } catch {}
   }
 
@@ -700,42 +715,7 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId])
 
-  // Decide which modal to show exactly once per leveledUp value
-  useEffect(() => {
-    if (!leveledUp) return
-    if (decisionForLevelRef.current === leveledUp && levelModalDecision !== 'unknown') return
-    decisionForLevelRef.current = leveledUp
-    setLevelModalDecision('unknown')
-    setFreeTrialAtLevel(null)
-    void (async () => {
-      // Decide via level-based ready endpoint (decoupled from tasks)
-      try {
-        const res = await fetch(`/api/v1/offer/free-trial/level/${leveledUp}/ready`)
-        if (res.ok) {
-          const j = await res.json() as { ready?: boolean; taskId?: string }
-          if (j?.ready && typeof j.taskId === 'string') {
-            setPendingBonusConfirm(false)
-            setFreeTrialAtLevel({ taskId: j.taskId, level: leveledUp })
-            setLevelModalDecision('free_trial')
-          } else {
-            setLevelModalDecision('regular')
-          }
-        } else {
-          setLevelModalDecision('regular')
-        }
-      } catch { setLevelModalDecision('regular') }
-      // fetch level header (optional, does not affect decision)
-      try {
-        const res = await fetch('/api/v1/level/last')
-        if (res.ok) {
-          const data = await res.json().catch(() => null)
-          if (data && typeof data.level === 'number') {
-            setDebugState((s) => ({ ...(s || { counters: null, lastLevel: null, leaderboard: null, config: [] as { key: string; value: unknown }[] }), lastLevel: { level: data.level, reward_payload: data.rewardPayload, bonus_multiplier: null } }))
-          }
-        }
-      } catch {}
-    })()
-  }, [leveledUp])
+  // Removed legacy per-event server decisioning; ladder is the sole source.
 
   // Tick for countdown while waiting for Claim x2
   useEffect(() => {
@@ -896,14 +876,23 @@ export default function Home() {
     if (toSend <= 0) return
     inflightRef.current = true
     const nextSeq = clientSeq + 1
-    const { ok, json, status } = await fetchJsonWithRetry<unknown>('/api/v1/ingest/taps', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ taps: toSend, clientSeq: nextSeq, sessionId: session.sessionId, sessionEpoch: session.sessionEpoch }),
-    }, {
-      retry429DelayMs: batchMinIntervalMs,
-      onOutdated: async () => { await resumeOrStartSession() },
-    })
+    let ok = false
+    let json: unknown = null
+    let status = 0
+    try {
+      const r = await fetchJsonWithRetry<unknown>('/api/v1/ingest/taps', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ taps: toSend, clientSeq: nextSeq, sessionId: session.sessionId, sessionEpoch: session.sessionEpoch }),
+      }, {
+        retry429DelayMs: batchMinIntervalMs,
+        onOutdated: async () => { await resumeOrStartSession() },
+      })
+      ok = r.ok; json = r.json; status = r.status as number
+    } catch {
+      // network error; treat as retryable
+      ok = false; status = 0
+    }
     if (ok) {
       const data = json as { counters: unknown; nextThreshold?: NextThreshold; leveledUp?: { level: number } | null }
       const c = normalizeCounters(data.counters)
@@ -947,14 +936,22 @@ export default function Home() {
       if (toSend <= 0) return
       inflightRef.current = true
       const nextSeq = clientSeq + 1
-      const { ok, json, status } = await fetchJsonWithRetry<unknown>('/api/v1/ingest/taps', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ taps: toSend, clientSeq: nextSeq, sessionId: session.sessionId, sessionEpoch: session.sessionEpoch }),
-      }, {
-        retry429DelayMs: batchMinIntervalMs,
-        onOutdated: async () => { await resumeOrStartSession() },
-      })
+      let ok = false
+      let json: unknown = null
+      let status = 0
+      try {
+        const r = await fetchJsonWithRetry<unknown>('/api/v1/ingest/taps', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ taps: toSend, clientSeq: nextSeq, sessionId: session.sessionId, sessionEpoch: session.sessionEpoch }),
+        }, {
+          retry429DelayMs: batchMinIntervalMs,
+          onOutdated: async () => { await resumeOrStartSession() },
+        })
+        ok = r.ok; json = r.json; status = r.status as number
+      } catch {
+        ok = false; status = 0
+      }
       if (ok) {
         const data = json as { counters: unknown; nextThreshold?: NextThreshold; leveledUp?: { level: number } | null }
         const c = normalizeCounters(data.counters)
@@ -969,6 +966,12 @@ export default function Home() {
         // ensure display is at least base coins
         setDisplayCoins((prev) => (prev < c.coins ? c.coins : prev))
       } else {
+        // status 0: transient network error → retry later without notice
+        if (status === 0) {
+          lastFlushAtRef.current = Date.now()
+          inflightRef.current = false
+          return
+        }
         // keep pending taps; show notice only for non-retryable errors
         if (status !== 429 && status !== 409 && status !== 0) {
           try {
