@@ -129,7 +129,7 @@ export default function Home() {
   const ladderRef = useRef<LadderEntry[] | null>(null)
   const modalQueueRef = useRef(new ModalQueue())
   const prevDisplayCoinsRef = useRef<number>(0)
-  const [activeModal, setActiveModal] = useState<{ id: string; kind: 'base_reward' | 'free_trial'; level: number; payload?: Record<string, unknown> } | null>(null)
+  const [activeModal, setActiveModal] = useState<ModalItem | null>(null)
   const [queueVersion, setQueueVersion] = useState<number>(0)
 
   // CTA ring visibility based on tap activity
@@ -378,13 +378,12 @@ export default function Home() {
     const head = modalQueueRef.current.peek()
     if (!head) return
     const item = head as ModalItem
+    setActiveModal(item)
     if (item.kind === 'free_trial') {
-      setActiveModal({ id: item.id, kind: 'free_trial', level: item.level, payload: item.payload })
-      try { void logEvent({ name: 'modal_shown', data: { kind: 'free_trial', level: item.level, payload: item.payload, taskId: (item as { taskId?: string }).taskId ?? null } }) } catch {}
+      try { void logEvent({ name: 'modal_shown', data: { kind: 'free_trial', level: item.level, payload: item.payload ?? null, taskId: (item as { taskId?: string }).taskId ?? null } }) } catch {}
     } else if (item.kind === 'base_reward') {
-      setActiveModal({ id: item.id, kind: 'base_reward', level: item.level, payload: item.payload })
-      // visible items (label copy inferred in UI), non-visible (raw payload):
-      try { void logEvent({ name: 'modal_shown', data: { kind: 'base_reward', level: item.level, payload: item.payload ?? null } }) } catch {}
+      const br = item as unknown as { displayMultiplier?: number | null; displayTickets?: number; displayCoins?: number; currentMultiplierAtEnqueue?: number }
+      try { void logEvent({ name: 'modal_shown', data: { kind: 'base_reward', level: item.level, payload: (item as { payload?: Record<string, unknown> }).payload ?? null, displayMultiplier: br.displayMultiplier ?? null, displayTickets: br.displayTickets ?? null, displayCoins: br.displayCoins ?? null, currentMultiplierAtEnqueue: br.currentMultiplierAtEnqueue ?? null } }) } catch {}
     }
   }, [activeModal, queueVersion])
 
@@ -1296,13 +1295,13 @@ export default function Home() {
                 level={activeModal.level}
                 rewards={(() => {
                   // Render frozen values to prevent post-ack flicker
-                  const frozenTickets = typeof (activeModal as { displayTickets?: number }).displayTickets === 'number'
+                  const isBR = activeModal && activeModal.kind === 'base_reward'
+                  const frozenTickets = isBR && typeof (activeModal as { displayTickets?: number }).displayTickets === 'number'
                     ? (activeModal as { displayTickets?: number }).displayTickets as number
-                    : (() => { const rp = (activeModal.payload || null) as Record<string, unknown> | null; return Number(rp?.tickets ?? 0) })()
-                  const frozenMultiplier = (activeModal as { displayMultiplier?: number | null }).displayMultiplier
-                  const baseMult = typeof frozenMultiplier === 'number'
-                    ? frozenMultiplier
-                    : Number(baseCountersRef.current?.coinMultiplier ?? counters?.coinMultiplier ?? 1)
+                    : (() => { const rp = (activeModal as { payload?: Record<string, unknown> }).payload || null as Record<string, unknown> | null; return Number(rp?.tickets ?? 0) })()
+                  const frozenMultiplier = isBR ? (activeModal as { displayMultiplier?: number | null }).displayMultiplier : null
+                  const currentAtEnqueue = isBR ? Number((activeModal as { currentMultiplierAtEnqueue?: number }).currentMultiplierAtEnqueue ?? 1) : Number(baseCountersRef.current?.coinMultiplier ?? counters?.coinMultiplier ?? 1)
+                  const baseMult = typeof frozenMultiplier === 'number' ? frozenMultiplier : currentAtEnqueue
                   return { multiplier: baseMult, tickets: frozenTickets }
                 })()}
                 onClaimBase={async () => { closeCurrentModal(); await loadCounters() }}
