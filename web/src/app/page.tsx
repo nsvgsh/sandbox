@@ -130,6 +130,7 @@ export default function Home() {
   const modalQueueRef = useRef(new ModalQueue())
   const prevDisplayCoinsRef = useRef<number>(0)
   const [activeModal, setActiveModal] = useState<{ id: string; kind: 'base_reward' | 'free_trial'; level: number; payload?: Record<string, unknown> } | null>(null)
+  const [queueVersion, setQueueVersion] = useState<number>(0)
 
   // CTA ring visibility based on tap activity
   const [ctaVisible, setCtaVisible] = useState<boolean>(true)
@@ -384,13 +385,14 @@ export default function Home() {
       setActiveModal({ id: item.id, kind: 'base_reward', level: item.level, payload: item.payload })
       try { void logEvent({ name: 'modal_shown', data: { kind: 'base_reward', level: item.level } }) } catch {}
     }
-  }, [activeModal])
+  }, [activeModal, queueVersion])
 
   function closeCurrentModal() {
     try { if (activeModal) void logEvent({ name: 'modal_closed', data: { kind: activeModal.kind, level: activeModal.level } }) } catch {}
     // remove the head item and advance
     modalQueueRef.current.dequeue()
     setActiveModal(null)
+    setQueueVersion((v) => v + 1)
   }
 
   async function tap() {
@@ -415,6 +417,7 @@ export default function Home() {
                 modalQueueRef.current.enqueue({ id, kind: 'base_reward', level: entry.level, payload: entry.payload as Record<string, unknown> | undefined })
               }
               try { void logEvent({ name: 'modal_enqueued', data: { kind: entry.kind, level: entry.level, threshold: entry.thresholdCoins } }) } catch {}
+              setQueueVersion((v) => v + 1)
             }
           }
         }
