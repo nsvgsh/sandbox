@@ -18,6 +18,7 @@ import baseModal from '@/ui/Modal/Modal.module.css'
 import { Button } from '@/ui/Button/Button'
 import { buildLadderWindow, crossedLevels, type LadderEntry, type Snapshot } from '../lib/ladder'
 import { ModalQueue, type ModalItem } from '../lib/modalQueue'
+import { logEvent } from '../lib/telemetry'
 
 type TapWindow = Window & { __tapConfigCoinsPerTap?: number }
 
@@ -310,6 +311,7 @@ export default function Home() {
     setClientSeq(0)
     if (typeof window !== 'undefined') window.localStorage.setItem('session', JSON.stringify(data))
     await loadCounters()
+    try { void logEvent({ name: 'session_started' }) } catch {}
     // Attempt to fetch snapshot after counters baseline is known
     try { if (!snapshot) await loadSnapshotAndBuildLadder() } catch {}
   }
@@ -332,6 +334,7 @@ export default function Home() {
       try {
         const first = Array.isArray(ladderRef.current) ? ladderRef.current[0] : undefined
         if (first && typeof first.thresholdCoins === 'number') setNextThreshold({ level: first.level, coins: first.thresholdCoins })
+        try { void logEvent({ name: 'ladder_built', data: { fromLevel: Number(base.level || 0), nextLevel: first?.level } }) } catch {}
       } catch {}
     } catch {}
   }
@@ -342,11 +345,13 @@ export default function Home() {
       if (!res.ok) return
       const snap = (await res.json()) as Snapshot
       setSnapshot(snap)
+      try { void logEvent({ name: 'snapshot_loaded', data: { configVersion: snap.configVersion } }) } catch {}
       const base = baseCountersRef.current
       if (base) {
         ladderRef.current = buildLadderWindow({ coins: Number(base.coins || 0), level: Number(base.level || 0) }, snap, 12)
         const first = Array.isArray(ladderRef.current) ? ladderRef.current[0] : undefined
         if (first && typeof first.thresholdCoins === 'number') setNextThreshold({ level: first.level, coins: first.thresholdCoins })
+        try { void logEvent({ name: 'ladder_built', data: { fromLevel: Number(base.level || 0), nextLevel: first?.level } }) } catch {}
       }
     } catch {}
   }
@@ -359,12 +364,15 @@ export default function Home() {
     const item = head as ModalItem
     if (item.kind === 'free_trial') {
       setActiveModal({ id: item.id, kind: 'free_trial', level: item.level, payload: item.payload })
+      try { void logEvent({ name: 'modal_shown', data: { kind: 'free_trial', level: item.level } }) } catch {}
     } else if (item.kind === 'base_reward') {
       setActiveModal({ id: item.id, kind: 'base_reward', level: item.level, payload: item.payload })
+      try { void logEvent({ name: 'modal_shown', data: { kind: 'base_reward', level: item.level } }) } catch {}
     }
   }, [activeModal])
 
   function closeCurrentModal() {
+    try { if (activeModal) void logEvent({ name: 'modal_closed', data: { kind: activeModal.kind, level: activeModal.level } }) } catch {}
     // remove the head item and advance
     modalQueueRef.current.dequeue()
     setActiveModal(null)
@@ -391,6 +399,7 @@ export default function Home() {
               } else {
                 modalQueueRef.current.enqueue({ id, kind: 'base_reward', level: entry.level, payload: entry.payload as Record<string, unknown> | undefined })
               }
+              try { void logEvent({ name: 'modal_enqueued', data: { kind: entry.kind, level: entry.level, threshold: entry.thresholdCoins } }) } catch {}
             }
           }
         }
@@ -908,7 +917,9 @@ export default function Home() {
       setDisplayCoins((prev) => (prev < c.coins ? c.coins : prev))
       prevDisplayCoinsRef.current = Number(c.coins || 0)
       try { rebuildLadderWindowFromState() } catch {}
+      try { void logEvent({ name: 'ack_applied', data: { level: c.level, coins: c.coins, multiplier: c.coinMultiplier, tapsSent: toSend } }) } catch {}
     } else {
+      try { void logEvent({ name: 'ack_error', data: { status, tapsSent: toSend } }) } catch {}
       if (status !== 429 && status !== 409 && status !== 0) {
         try {
           const errText = typeof (json as { error?: unknown })?.error === 'string' ? (json as { error?: string }).error! : 'Something went wrong. Please try again.'
