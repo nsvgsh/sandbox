@@ -415,7 +415,23 @@ export default function Home() {
               if (entry.kind === 'free_trial') {
                 modalQueueRef.current.enqueue({ id, kind: 'free_trial', level: entry.level, payload: entry.payload as Record<string, unknown> | undefined, taskId: (entry as unknown as { taskId?: string }).taskId })
               } else {
-                modalQueueRef.current.enqueue({ id, kind: 'base_reward', level: entry.level, payload: entry.payload as Record<string, unknown> | undefined })
+                const rp = (entry.payload || null) as Record<string, unknown> | null
+                const tickets = typeof rp?.tickets === 'number' ? rp.tickets : Number(rp?.tickets ?? 0)
+                const coins = typeof rp?.coins === 'number' ? rp.coins : Number(rp?.coins ?? 0)
+                const tplAbs = typeof rp?.coin_multiplier === 'number' ? rp.coin_multiplier as number : null
+                const currentMult = Number(baseCountersRef.current?.coinMultiplier ?? counters?.coinMultiplier ?? 1)
+                // last-wins resolution: if multiple base-reward levels crossed this tick, only the last gets a display multiplier
+                const isLastOfBatch = crossed[crossed.length - 1]?.level === entry.level
+                modalQueueRef.current.enqueue({
+                  id,
+                  kind: 'base_reward',
+                  level: entry.level,
+                  payload: entry.payload as Record<string, unknown> | undefined,
+                  currentMultiplierAtEnqueue: currentMult,
+                  displayMultiplier: isLastOfBatch ? (tplAbs ?? null) : null,
+                  displayTickets: tickets,
+                  displayCoins: coins,
+                })
               }
               try { void logEvent({ name: 'modal_enqueued', data: { kind: entry.kind, level: entry.level, threshold: entry.thresholdCoins } }) } catch {}
               setQueueVersion((v) => v + 1)
@@ -1279,10 +1295,15 @@ export default function Home() {
               <LevelUpModal
                 level={activeModal.level}
                 rewards={(() => {
-                  const rp = (activeModal.payload || null) as Record<string, unknown> | null
-                  const tickets = typeof rp?.tickets === 'number' ? rp.tickets : Number(rp?.tickets ?? 0)
-                  const baseMult = Number(baseCountersRef.current?.coinMultiplier ?? counters?.coinMultiplier ?? 1)
-                  return { multiplier: baseMult, tickets }
+                  // Render frozen values to prevent post-ack flicker
+                  const frozenTickets = typeof (activeModal as { displayTickets?: number }).displayTickets === 'number'
+                    ? (activeModal as { displayTickets?: number }).displayTickets as number
+                    : (() => { const rp = (activeModal.payload || null) as Record<string, unknown> | null; return Number(rp?.tickets ?? 0) })()
+                  const frozenMultiplier = (activeModal as { displayMultiplier?: number | null }).displayMultiplier
+                  const baseMult = typeof frozenMultiplier === 'number'
+                    ? frozenMultiplier
+                    : Number(baseCountersRef.current?.coinMultiplier ?? counters?.coinMultiplier ?? 1)
+                  return { multiplier: baseMult, tickets: frozenTickets }
                 })()}
                 onClaimBase={async () => { closeCurrentModal(); await loadCounters() }}
                 onStartAd={startLevelBonus}

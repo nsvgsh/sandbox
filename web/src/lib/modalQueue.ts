@@ -1,4 +1,14 @@
-export type BaseRewardModal = { id: string; kind: 'base_reward'; level: number; payload?: Record<string, unknown> }
+export type BaseRewardModal = {
+  id: string;
+  kind: 'base_reward';
+  level: number;
+  payload?: Record<string, unknown>;
+  // Frozen view-model fields to keep UI stable post-ack
+  currentMultiplierAtEnqueue: number;
+  displayMultiplier?: number | null; // absolute multiplier to display after claim (last-wins); null/undefined = unchanged
+  displayTickets?: number; // from payload, frozen
+  displayCoins?: number; // from payload, frozen
+}
 export type FreeTrialModal = { id: string; kind: 'free_trial'; level: number; partner?: string; payload?: Record<string, unknown>; taskId?: string }
 export type X2OfferModal = { id: string; kind: 'x2_offer'; level: number }
 export type ModalItem = BaseRewardModal | FreeTrialModal | X2OfferModal
