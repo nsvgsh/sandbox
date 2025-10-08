@@ -2,6 +2,7 @@ export const runtime = 'nodejs'
 import { NextResponse } from 'next/server'
 import { withClient } from '../../../../../lib/db'
 import { createHash } from 'crypto'
+import type { PoolClient } from 'pg'
 
 type ThresholdsPoly = { a0?: number; a1?: number; a2?: number; a3?: number }
 
@@ -28,7 +29,7 @@ function sha256Hex(input: string): string { return createHash('sha256').update(i
 
 export async function GET() {
   try {
-    const payload = await withClient(async (c: any) => {
+    const payload = await withClient(async (c: PoolClient) => {
       // game_config keys
       const cfgKeys = [
         'coins_per_tap',
@@ -50,9 +51,10 @@ export async function GET() {
          where active is true
          order by level, updated_at desc`
       )
-      const levelRewardTemplates = (tplRes.rows || [])
-        .map((r: { level: unknown; payload: unknown }) => ({ level: Number((r as any).level || 0), payload: (r as any).payload as Record<string, unknown> }))
-        .sort((a: { level: number }, b: { level: number }) => a.level - b.level)
+      type TemplateRow = { level: number | string; payload: Record<string, unknown> }
+      const levelRewardTemplates = ((tplRes.rows || []) as TemplateRow[])
+        .map((r) => ({ level: Number(r.level || 0), payload: r.payload || {} }))
+        .sort((a, b) => a.level - b.level)
 
       // Offer schedule: active only (free_trial or future partners)
       const schRes = await c.query(
@@ -60,16 +62,24 @@ export async function GET() {
          from level_offer_schedule
          where active is true`
       )
-      const levelOfferSchedule = (schRes.rows || [])
-        .map((r: { level?: unknown; active?: unknown; skip_base_reward?: unknown; partner_key?: unknown; payload?: unknown; task_id?: unknown }) => ({
-          level: Number((r as any).level || 0),
-          active: Boolean((r as any).active ?? true),
-          skip_base_reward: Boolean((r as any).skip_base_reward ?? true),
-          partner: String((r as any).partner_key || 'free_trial'),
-          payload: (((r as any).payload || {}) as Record<string, unknown>),
-          taskId: (r as any).task_id ? String((r as any).task_id) : undefined,
+      type ScheduleRow = {
+        level: number | string
+        active: boolean | null
+        skip_base_reward: boolean | null
+        partner_key: string | null
+        payload: Record<string, unknown> | null
+        task_id: string | null
+      }
+      const levelOfferSchedule = ((schRes.rows || []) as ScheduleRow[])
+        .map((r) => ({
+          level: Number(r.level || 0),
+          active: Boolean(r.active ?? true),
+          skip_base_reward: Boolean(r.skip_base_reward ?? true),
+          partner: String(r.partner_key || 'free_trial'),
+          payload: (r.payload || {}) as Record<string, unknown>,
+          taskId: r.task_id ? String(r.task_id) : undefined,
         }))
-        .sort((a: { level: number }, b: { level: number }) => a.level - b.level)
+        .sort((a, b) => a.level - b.level)
 
       const coinsPerTap = Number((cfgMap.get('coins_per_tap') as unknown) ?? 1)
       const thresholdsPoly = (cfgMap.get('thresholds_poly') as ThresholdsPoly) || {}
