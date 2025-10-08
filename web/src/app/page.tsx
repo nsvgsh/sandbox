@@ -380,10 +380,11 @@ export default function Home() {
     const item = head as ModalItem
     if (item.kind === 'free_trial') {
       setActiveModal({ id: item.id, kind: 'free_trial', level: item.level, payload: item.payload })
-      try { void logEvent({ name: 'modal_shown', data: { kind: 'free_trial', level: item.level } }) } catch {}
+      try { void logEvent({ name: 'modal_shown', data: { kind: 'free_trial', level: item.level, payload: item.payload, taskId: (item as { taskId?: string }).taskId ?? null } }) } catch {}
     } else if (item.kind === 'base_reward') {
       setActiveModal({ id: item.id, kind: 'base_reward', level: item.level, payload: item.payload })
-      try { void logEvent({ name: 'modal_shown', data: { kind: 'base_reward', level: item.level } }) } catch {}
+      // visible items (label copy inferred in UI), non-visible (raw payload):
+      try { void logEvent({ name: 'modal_shown', data: { kind: 'base_reward', level: item.level, payload: item.payload ?? null } }) } catch {}
     }
   }, [activeModal, queueVersion])
 
@@ -412,7 +413,7 @@ export default function Home() {
             for (const entry of crossed) {
               const id = (globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2)) as string
               if (entry.kind === 'free_trial') {
-                modalQueueRef.current.enqueue({ id, kind: 'free_trial', level: entry.level, payload: entry.payload as Record<string, unknown> | undefined })
+                modalQueueRef.current.enqueue({ id, kind: 'free_trial', level: entry.level, payload: entry.payload as Record<string, unknown> | undefined, taskId: (entry as unknown as { taskId?: string }).taskId })
               } else {
                 modalQueueRef.current.enqueue({ id, kind: 'base_reward', level: entry.level, payload: entry.payload as Record<string, unknown> | undefined })
               }
