@@ -16,6 +16,8 @@ import { RotatingTextRing } from '@/ui/Clicker/RotatingTextRing'
 import { AssetRow } from '@/ui/wallet/components/AssetRow/AssetRow'
 import baseModal from '@/ui/Modal/Modal.module.css'
 import { Button } from '@/ui/Button/Button'
+import { buildLadderWindow, crossedLevels, type LadderEntry, type Snapshot } from '../lib/ladder'
+import { ModalQueue, type ModalItem } from '../lib/modalQueue'
 
 type TapWindow = Window & { __tapConfigCoinsPerTap?: number }
 
@@ -120,6 +122,12 @@ export default function Home() {
   const [freeTrialAtLevel, setFreeTrialAtLevel] = useState<{ taskId: string; level: number } | null>(null)
   const [earnAttention, setEarnAttention] = useState<boolean>(false)
   const lastSeenAvailableRef = useRef<Set<string>>(new Set())
+  // Ladder + FIFO modal queue scaffold
+  const [snapshot, setSnapshot] = useState<Snapshot | null>(null)
+  const ladderRef = useRef<LadderEntry[] | null>(null)
+  const modalQueueRef = useRef(new ModalQueue())
+  const prevDisplayCoinsRef = useRef<number>(0)
+  const [activeModal, setActiveModal] = useState<{ id: string; kind: 'base_reward' | 'free_trial'; level: number; payload?: Record<string, unknown> } | null>(null)
 
   // CTA ring visibility based on tap activity
   const [ctaVisible, setCtaVisible] = useState<boolean>(true)
@@ -302,6 +310,8 @@ export default function Home() {
     setClientSeq(0)
     if (typeof window !== 'undefined') window.localStorage.setItem('session', JSON.stringify(data))
     await loadCounters()
+    // Attempt to fetch snapshot after counters baseline is known
+    try { if (!snapshot) await loadSnapshotAndBuildLadder() } catch {}
   }
 
   function deriveDisplayCoins(base: CountersNormalized | null, pending: number): number {
@@ -312,6 +322,54 @@ export default function Home() {
     return coins + delta
   }
 
+  function rebuildLadderWindowFromState() {
+    try {
+      if (!snapshot) return
+      const base = baseCountersRef.current
+      if (!base) return
+      ladderRef.current = buildLadderWindow({ coins: Number(base.coins || 0), level: Number(base.level || 0) }, snapshot, 12)
+      // Optionally drive footer from ladder
+      try {
+        const first = Array.isArray(ladderRef.current) ? ladderRef.current[0] : undefined
+        if (first && typeof first.thresholdCoins === 'number') setNextThreshold({ level: first.level, coins: first.thresholdCoins })
+      } catch {}
+    } catch {}
+  }
+
+  async function loadSnapshotAndBuildLadder() {
+    try {
+      const res = await fetch('/api/v1/config/snapshot', { method: 'GET' })
+      if (!res.ok) return
+      const snap = (await res.json()) as Snapshot
+      setSnapshot(snap)
+      const base = baseCountersRef.current
+      if (base) {
+        ladderRef.current = buildLadderWindow({ coins: Number(base.coins || 0), level: Number(base.level || 0) }, snap, 12)
+        const first = Array.isArray(ladderRef.current) ? ladderRef.current[0] : undefined
+        if (first && typeof first.thresholdCoins === 'number') setNextThreshold({ level: first.level, coins: first.thresholdCoins })
+      }
+    } catch {}
+  }
+
+  // Drive modal presentation from FIFO queue (never merge)
+  useEffect(() => {
+    if (activeModal) return
+    const head = modalQueueRef.current.peek()
+    if (!head) return
+    const item = head as ModalItem
+    if (item.kind === 'free_trial') {
+      setActiveModal({ id: item.id, kind: 'free_trial', level: item.level, payload: item.payload })
+    } else if (item.kind === 'base_reward') {
+      setActiveModal({ id: item.id, kind: 'base_reward', level: item.level, payload: item.payload })
+    }
+  }, [activeModal])
+
+  function closeCurrentModal() {
+    // remove the head item and advance
+    modalQueueRef.current.dequeue()
+    setActiveModal(null)
+  }
+
   async function tap() {
     if (!session) return
     touchActivity()
@@ -319,6 +377,25 @@ export default function Home() {
       const next = p + 1
       const base = baseCountersRef.current
       const target = deriveDisplayCoins(base, next)
+      // Detect threshold crossings using precomputed ladder and append modals (FIFO)
+      try {
+        const prev = Number(prevDisplayCoinsRef.current || 0)
+        const ladder = ladderRef.current
+        if (ladder && ladder.length > 0) {
+          const crossed = crossedLevels(prev, target, ladder)
+          if (Array.isArray(crossed) && crossed.length > 0) {
+            for (const entry of crossed) {
+              const id = (globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2)) as string
+              if (entry.kind === 'free_trial') {
+                modalQueueRef.current.enqueue({ id, kind: 'free_trial', level: entry.level, payload: entry.payload as Record<string, unknown> | undefined })
+              } else {
+                modalQueueRef.current.enqueue({ id, kind: 'base_reward', level: entry.level, payload: entry.payload as Record<string, unknown> | undefined })
+              }
+            }
+          }
+        }
+        prevDisplayCoinsRef.current = target
+      } catch {}
       setDisplayCoins((prev) => (target < prev ? prev : target))
       try {
         const threshold = Math.max(1, effectiveFlushRef.current || flushThresholdRef.current || 1)
@@ -457,8 +534,10 @@ export default function Home() {
       baseCountersRef.current = c
       // Reset display to at least server value
       setDisplayCoins((prev) => (prev < c.coins ? c.coins : prev))
+      prevDisplayCoinsRef.current = Number(c.coins || 0)
     }
     setNextThreshold(data.nextThreshold as NextThreshold)
+    try { if (!snapshot) await loadSnapshotAndBuildLadder(); else rebuildLadderWindowFromState() } catch {}
   }
 
   async function refreshDebug() {
@@ -827,6 +906,8 @@ export default function Home() {
       setNextThreshold(data?.nextThreshold ?? null)
       setPendingTaps((p) => Math.max(0, p - toSend))
       setDisplayCoins((prev) => (prev < c.coins ? c.coins : prev))
+      prevDisplayCoinsRef.current = Number(c.coins || 0)
+      try { rebuildLadderWindowFromState() } catch {}
     } else {
       if (status !== 429 && status !== 409 && status !== 0) {
         try {
@@ -1125,8 +1206,76 @@ export default function Home() {
               />
             </div>
           )}
-          {typeof leveledUp === 'number' && levelModalDecision !== 'unknown' && (
-            levelModalDecision === 'free_trial' && freeTrialAtLevel ? (
+          {activeModal && activeModal.kind === 'free_trial' ? (
+            <FreeTrialLevelUpModal
+              level={activeModal.level}
+              onOpen={async () => {
+                try {
+                  const res = await fetch(`/api/v1/offer/free-trial/level/${activeModal.level}/modal-redirect?format=json`)
+                  if (res.ok) {
+                    const j = await res.json().catch(() => null) as { url?: string } | null
+                    const finalUrl = j && typeof j.url === 'string' ? j.url : ''
+                    if (finalUrl) {
+                      try {
+                        const w = window as unknown as { Telegram?: { WebApp?: { openLink?: (url: string, opts?: { try_instant_view?: boolean }) => void } } }
+                        const openLink = w?.Telegram?.WebApp?.openLink
+                        if (typeof openLink === 'function') {
+                          openLink(finalUrl, { try_instant_view: false })
+                        } else {
+                          window.open(finalUrl, '_blank', 'noopener,noreferrer')
+                        }
+                      } catch { try { window.open(finalUrl, '_blank', 'noopener,noreferrer') } catch {} }
+                    }
+                  } else {
+                    // Fallback to 302 path if JSON not available
+                    try { window.open(`/api/v1/offer/free-trial/level/${activeModal.level}/modal-redirect`, '_blank', 'noopener,noreferrer') } catch {}
+                  }
+                } catch {
+                  // Network error fallback to 302 path
+                  try { window.open(`/api/v1/offer/free-trial/level/${activeModal.level}/modal-redirect`, '_blank', 'noopener,noreferrer') } catch {}
+                }
+              }}
+              onClose={async () => { closeCurrentModal(); await loadCounters(); }}
+              ctaLabel={'Open'}
+            />
+          ) : activeModal && activeModal.kind === 'base_reward' ? (
+            pendingBonusConfirm ? (
+              <LevelUpModal
+                level={activeModal.level}
+                rewards={(() => {
+                  const rp = (activeModal.payload || null) as Record<string, unknown> | null
+                  const tickets = typeof rp?.tickets === 'number' ? rp.tickets : Number(rp?.tickets ?? 0)
+                  const baseMult = Number(baseCountersRef.current?.coinMultiplier ?? counters?.coinMultiplier ?? 1)
+                  return { multiplier: baseMult * 2, tickets: tickets * 2 }
+                })()}
+                onClaimBase={async () => { await claimLevelBonusX2(); closeCurrentModal() }}
+                onStartAd={async () => { setPendingBonusConfirm(false); closeCurrentModal(); await loadCounters() }}
+                claimLabel={(() => {
+                  const secs = bonusExpiresAt ? Math.max(0, Math.ceil((bonusExpiresAt - nowTick) / 1000)) : null
+                  return secs !== null ? `Claim x2 (${secs}s)` : 'Claim x2'
+                })()}
+                bonusLabel={'Skip'}
+                singleAction={true}
+              />
+            ) : (
+              <LevelUpModal
+                level={activeModal.level}
+                rewards={(() => {
+                  const rp = (activeModal.payload || null) as Record<string, unknown> | null
+                  const tickets = typeof rp?.tickets === 'number' ? rp.tickets : Number(rp?.tickets ?? 0)
+                  const baseMult = Number(baseCountersRef.current?.coinMultiplier ?? counters?.coinMultiplier ?? 1)
+                  return { multiplier: baseMult, tickets }
+                })()}
+                onClaimBase={async () => { closeCurrentModal(); await loadCounters() }}
+                onStartAd={startLevelBonus}
+                claimLabel={'Claim'}
+                bonusLabel={'BONUS'}
+              />
+            )
+          ) : (
+            // Fallback to legacy server-driven decision if queue is empty
+            (typeof leveledUp === 'number' && levelModalDecision !== 'unknown') && (
+              levelModalDecision === 'free_trial' && freeTrialAtLevel ? (
               <FreeTrialLevelUpModal
                 level={leveledUp}
                 onOpen={async () => {
@@ -1158,39 +1307,39 @@ export default function Home() {
                 onClose={async () => { setLeveledUp(null); setFreeTrialAtLevel(null); await loadCounters(); }}
                 ctaLabel={'Open'}
               />
-            ) : pendingBonusConfirm ? (
-              <LevelUpModal
-                level={leveledUp}
-                rewards={(() => {
-                  const rp = debugState?.lastLevel?.reward_payload as Record<string, unknown> | null
-                  const tickets = typeof rp?.tickets === 'number' ? rp.tickets : Number(rp?.tickets ?? 0)
-                  const baseMult = Number(baseCountersRef.current?.coinMultiplier ?? counters?.coinMultiplier ?? 1)
-                  // for bonus modal we display the potential x2 multiplier effect numerically
-                  return { multiplier: baseMult * 2, tickets: tickets * 2 }
-                })()}
-                onClaimBase={claimLevelBonusX2}
-                onStartAd={async () => { setPendingBonusConfirm(false); setLeveledUp(null); setBonusImpressionId(null); setBonusExpiresAt(null); await loadCounters() }}
-                claimLabel={(() => {
-                  const secs = bonusExpiresAt ? Math.max(0, Math.ceil((bonusExpiresAt - nowTick) / 1000)) : null
-                  return secs !== null ? `Claim x2 (${secs}s)` : 'Claim x2'
-                })()}
-                bonusLabel={'Skip'}
-                singleAction={true}
-              />
-            ) : (
-              <LevelUpModal
-                level={leveledUp}
-                rewards={(() => {
-                  const rp = debugState?.lastLevel?.reward_payload as Record<string, unknown> | null
-                  const tickets = typeof rp?.tickets === 'number' ? rp.tickets : Number(rp?.tickets ?? 0)
-                  const baseMult = Number(baseCountersRef.current?.coinMultiplier ?? counters?.coinMultiplier ?? 1)
-                  return { multiplier: baseMult, tickets }
-                })()}
-                onClaimBase={async () => { setLeveledUp(null); await loadCounters() }}
-                onStartAd={startLevelBonus}
-                claimLabel={'Claim'}
-                bonusLabel={'BONUS'}
-              />
+              ) : pendingBonusConfirm ? (
+                <LevelUpModal
+                  level={leveledUp}
+                  rewards={(() => {
+                    const rp = debugState?.lastLevel?.reward_payload as Record<string, unknown> | null
+                    const tickets = typeof rp?.tickets === 'number' ? rp.tickets : Number(rp?.tickets ?? 0)
+                    const baseMult = Number(baseCountersRef.current?.coinMultiplier ?? counters?.coinMultiplier ?? 1)
+                    return { multiplier: baseMult * 2, tickets: tickets * 2 }
+                  })()}
+                  onClaimBase={claimLevelBonusX2}
+                  onStartAd={async () => { setPendingBonusConfirm(false); setLeveledUp(null); setBonusImpressionId(null); setBonusExpiresAt(null); await loadCounters() }}
+                  claimLabel={(() => {
+                    const secs = bonusExpiresAt ? Math.max(0, Math.ceil((bonusExpiresAt - nowTick) / 1000)) : null
+                    return secs !== null ? `Claim x2 (${secs}s)` : 'Claim x2'
+                  })()}
+                  bonusLabel={'Skip'}
+                  singleAction={true}
+                />
+              ) : (
+                <LevelUpModal
+                  level={leveledUp}
+                  rewards={(() => {
+                    const rp = debugState?.lastLevel?.reward_payload as Record<string, unknown> | null
+                    const tickets = typeof rp?.tickets === 'number' ? rp.tickets : Number(rp?.tickets ?? 0)
+                    const baseMult = Number(baseCountersRef.current?.coinMultiplier ?? counters?.coinMultiplier ?? 1)
+                    return { multiplier: baseMult, tickets }
+                  })()}
+                  onClaimBase={async () => { setLeveledUp(null); await loadCounters() }}
+                  onStartAd={startLevelBonus}
+                  claimLabel={'Claim'}
+                  bonusLabel={'BONUS'}
+                />
+              )
             )
           )}
 
