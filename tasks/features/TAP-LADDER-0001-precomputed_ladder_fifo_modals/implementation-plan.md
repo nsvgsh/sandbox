@@ -27,6 +27,8 @@
 ## Documentation Impact
 - Add `docs/app-overview.md` section: Ladder-driven decisions and FIFO modal queue.
 - API contract doc for `/api/v1/config/snapshot`.
+- Add preview telemetry guidance to `docs/deploy-pipeline.md`.
+- Confirm: frozen modal view-models and last-wins semantics are documented.
 
 ## Risks & Mitigations
 - Math drift: unit tests for parity; snapshot hash; quick resync.

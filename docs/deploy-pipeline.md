@@ -1,3 +1,15 @@
+## Preview telemetry
+
+In preview environments, the client mirrors telemetry to the console and posts to `/api/v1/telemetry`. Useful event names and order of interest:
+
+- `snapshot_loaded_cache` → `snapshot_loaded` → `ladder_built` (from L0)
+- `modal_enqueued` → `modal_shown` → `modal_closed`
+- `ack_applied` (coins, multiplier, level, tapsSent)
+
+Filters:
+- Vercel logs: search for `"event":"telemetry"` or `"event":"telemetry_client"`.
+- Expected thresholds: verify polynomial floors and last‑wins multiplier behavior during overshoot.
+
 # Deploy pipeline
 
 ## Hosting

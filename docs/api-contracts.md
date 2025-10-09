@@ -1,3 +1,26 @@
+### GET /api/v1/config/snapshot
+
+Returns a session-scoped configuration snapshot used by the client to build the ladder and make local decisions.
+
+Response JSON:
+```
+{
+  "configVersion": "<sha256>",
+  "coinsPerTap": number,
+  "thresholdsPoly": { "a0"?: number, "a1"?: number, "a2"?: number, "a3"?: number },
+  "levelRewardTemplates": [ { "level": number, "payload": object } ],
+  "levelOfferSchedule": [ { "level": number, "active": boolean, "skip_base_reward": boolean, "partner": string, "payload": object, "taskId"?: string } ],
+  "ingest": object,
+  "tapAgg": object,
+  "policy": { "levelBonus": object, "ad_ttl_seconds": number, "claim_ttl_seconds": number }
+}
+```
+
+Notes:
+- Only active rows are returned; for templates/schedule, the latest per level is used.
+- `configVersion` is a stable hash of the payload for cache control.
+- The client uses cache-first, then refreshes in background. No per-event fetch is required for level-up decisions.
+
 # API contracts (/v1)
 
 Conventions

@@ -1,3 +1,68 @@
+## Decisioning Model – Snapshot, Ladder, FIFO Modals (Current)
+
+This app now uses a client-first decision model for level-ups and reward modals. The server remains the source of truth; the client removes per-event fetch latency.
+
+- Snapshot (cache-first, then network refresh)
+  - Data: `coins_per_tap`, `thresholds_poly`, active `level_reward_templates`, active `level_offer_schedule`, `ingest`, `tap_agg`, policies.
+  - Endpoint: `GET /api/v1/config/snapshot` returns `{ configVersion, ... }`.
+  - Cache: last good snapshot is used immediately; then a background refresh updates the cache.
+
+- Ladder
+  - Compute absolute thresholds using polynomial + floor, independent of base rewards.
+  - Precompute a window (next N levels) with modal types: free‑trial (skip base reward) vs base‑reward (template payload).
+
+- Optimistic HUD
+  - Taps update HUD coins immediately: `floor(taps × coins_per_tap × current_multiplier)`.
+  - Level preview is allowed; multiplier is applied only after server ack.
+
+- FIFO Modal Queue
+  - On threshold crossings (prev→curr HUD), append exactly one modal per crossed level; never merge.
+  - Mid‑modal new crossings append behind the current modal.
+
+- Frozen Modal View‑Model (no post‑ack flicker)
+  - Base‑reward modal content is frozen at enqueue:
+    - `displayTickets`/`displayCoins`: from template payload.
+    - `displayMultiplier`: absolute multiplier shown only on the last base‑reward in a multi‑level overshoot (last‑wins), otherwise omitted.
+    - The modal never re‑reads live counters, so numbers don’t change after ack.
+  - Free‑trial modal has no progression changes; CTA only.
+
+- Server Ack (unchanged)
+  - `apply_tap_batch` computes earned coins, loops thresholds, applies base rewards, and sets coin_multiplier as absolute last‑wins across the batch; returns `leveled_up` and `next_threshold`.
+  - Client rebases HUD/counters after ack and refreshes the ladder window. The current modal remains unchanged.
+
+### Error Handling
+- Rate limiting: backoff and retry per `batch_min_interval_ms`.
+- Seq rewind/superseded: resync counters/session; rebuild ladder.
+- Transient network errors: flusher retries; telemetry buffers and flushes on `online`.
+
+### Overshoot Semantics
+- If several base‑reward levels are crossed in one burst, only the last base‑reward modal shows the absolute multiplier (last‑wins). Earlier base‑reward modals show coins/tickets only.
+
+### Final Flow (Mermaid)
+
+```mermaid
+flowchart TD
+  A[App launch] --> B[session_start]
+  B --> C[Fetch snapshot]
+  C --> D[cache configVersion]
+  D --> E[Precompute ladder window]
+  E --> F{Tap}
+  F --> G[HUD coins++ immediately]
+  G --> H{HUD.coins >= next_threshold?}
+  H -- yes --> I[Crossed levels via ladder]
+  I --> J[Append one modal per level (FIFO)]
+  H -- no --> J
+  F --> A1[Aggregate taps]
+  A1 --> A2{Flush?}
+  A2 -- yes --> N[apply_tap_batch]
+  N --> L{Ack}
+  L -- applied --> M[Rebase counters/multiplier/level]
+  M --> R[Confirm queued modals; refresh ladder]
+  R --> S{Crossings while modal open?}
+  S -- yes --> T[Append to queue]
+  S -- no --> U[Continue]
+```
+
 # App overview
 
 ## Components
