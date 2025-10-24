@@ -20,14 +20,14 @@
   ],
   "free_trial": [
     { "level": 1, "active": true, "skip_base_reward": true, "payload": {} },
-    { "level": 4, "active": true, "skip_base_reward": true, "payload": {} },
-    { "level": 7, "active": true, "skip_base_reward": true, "payload": {} }
+    { "level": 3, "active": true, "skip_base_reward": true, "payload": {} },
+    { "level": 4, "active": true, "skip_base_reward": true, "payload": {} }
   ],
   "tasks": [
-    { "task_id": "d2902150-9357-4f8e-bb57-0921d1ee034c", "unlock_level": 1, "kind": "in_app", "reward_payload": { "coin_multiplier": 1.21, "tickets": 2 }, "verification": "none", "active": true },
     { "task_id": "719ce2a5-092f-4836-bc7b-64beddeb8470", "unlock_level": 1, "kind": "free-trial", "reward_payload": { "coin_multiplier": 1.23, "tickets": 3 }, "verification": "none", "active": true },
-    { "task_id": "b2e156d1-50f6-4a0a-882e-56c25925127e", "unlock_level": 1, "kind": "in_app", "reward_payload": { "coin_multiplier": 1.21, "tickets": 2 }, "verification": "none", "active": true },
-    { "task_id": "feeaf6d4-e80f-4ed1-9e07-4191f574b666", "unlock_level": 2, "kind": "in_app", "reward_payload": { "coin_multiplier": 1.29, "tickets": 3 }, "verification": "none", "active": true },
+    { "task_id": "d2902150-9357-4f8e-bb57-0921d1ee034c", "unlock_level": 1, "kind": "in_app", "reward_payload": { "coin_multiplier": 1.21, "tickets": 2 }, "verification": "none", "active": true },
+    { "task_id": "feeaf6d4-e80f-4ed1-9e07-4191f574b666", "unlock_level": 2, "kind": "free-trial", "reward_payload": { "coin_multiplier": 1.29, "tickets": 3 }, "verification": "none", "active": true },
+    { "task_id": "503b15f2-fb33-4a53-b2e9-67dd9fe14261", "unlock_level": 3, "kind": "free-trial", "reward_payload": { "coin_multiplier": 1.37, "tickets": 4 }, "verification": "none", "active": true },
     { "task_id": "0e9b2f82-2879-4a93-a30e-bf6f9a30f564", "unlock_level": 3, "kind": "in_app", "reward_payload": { "coin_multiplier": 1.37, "tickets": 4 }, "verification": "none", "active": true },
     { "task_id": "aaf10783-5bf3-4d9e-8b5f-608c2ecf4358", "unlock_level": 4, "kind": "free-trial", "reward_payload": { "coin_multiplier": 1.45, "tickets": 7 }, "verification": "none", "active": true },
     { "task_id": "662e1f18-b655-4701-9106-d02075ca8c14", "unlock_level": 5, "kind": "in_app", "reward_payload": { "coin_multiplier": 1.53, "tickets": 8 }, "verification": "none", "active": true },

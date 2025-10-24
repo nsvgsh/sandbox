@@ -39,6 +39,7 @@ export async function GET() {
         'level_bonus_policy',
         'ad_ttl_seconds',
         'claim_ttl_seconds',
+        'free_trial_variants',
       ]
       const cfgRes = await c.query('select key, value from game_config where key = any($1::text[])', [cfgKeys])
       const cfgMap = new Map<string, unknown>()
@@ -89,6 +90,15 @@ export async function GET() {
       const adTtlSeconds = Number((cfgMap.get('ad_ttl_seconds') as unknown) ?? 180)
       const claimTtlSeconds = Number((cfgMap.get('claim_ttl_seconds') as unknown) ?? 180)
 
+      // Public view of free_trial variants: expose only ids
+      const rawFtVariants = cfgMap.get('free_trial_variants') as unknown
+      let freeTrialPublic: { variants: string[] } | undefined
+      try {
+        const arr = Array.isArray(rawFtVariants) ? rawFtVariants : (rawFtVariants && typeof rawFtVariants === 'object' ? (rawFtVariants as unknown as any[]) : [])
+        const ids = Array.isArray(arr) ? arr.map((v) => (v && typeof v === 'object' ? String((v as any).id || '') : '')).filter((s) => !!s) : []
+        if (ids.length > 0) freeTrialPublic = { variants: ids }
+      } catch {}
+
       const base = {
         coinsPerTap,
         thresholdsPoly,
@@ -97,6 +107,7 @@ export async function GET() {
         ingest,
         tapAgg,
         policy: { levelBonus: levelBonusPolicy, ad_ttl_seconds: adTtlSeconds, claim_ttl_seconds: claimTtlSeconds },
+        ...(freeTrialPublic ? { freeTrial: freeTrialPublic } : {}),
       }
       const configVersion = sha256Hex(stableStringify(base))
       return { configVersion, ...base }

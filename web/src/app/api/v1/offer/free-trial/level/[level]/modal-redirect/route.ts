@@ -37,20 +37,39 @@ export async function GET(req: NextRequest) {
       )
       if (!sched[0]) throw new Error('NOT_FOUND')
 
-      // read config
+      // read config: optional variants + fallback
+      const vlistQ = await c.query("select value from game_config where key='free_trial_variants'")
       const tplq = await c.query("select value from game_config where key='free_trial_url_template'")
       const srcq = await c.query("select value from game_config where key='free_trial_source'")
-      const template = String(tplq.rows[0]?.value || '').replace(/^"|"$/g, '')
-      const source = String(srcq.rows[0]?.value || '').replace(/^"|"$/g, '')
-      if (!template || !source) throw new Error('CONFIG_MISSING')
+      const rawVariants = (vlistQ.rows[0]?.value ?? null) as unknown
+      const variants: Array<{ id: string; url_template: string; allowed_hosts?: string[]; source?: string }> = Array.isArray(rawVariants) ? (rawVariants as any[]) : []
+      const fallbackTemplate = String(tplq.rows[0]?.value || '').replace(/^"|"$/g, '')
+      const fallbackSource = String(srcq.rows[0]?.value || '').replace(/^"|"$/g, '')
+      if (!fallbackTemplate || !fallbackSource) throw new Error('CONFIG_MISSING')
 
+      const variantId = (new URL(req.url)).searchParams.get('variant') || ''
       const clickId = randomUUID()
-      const finalUrl = buildRedirectUrl(template, clickId, source)
+      const selected = variants.find((v) => String(v?.id || '') === variantId)
+      let finalUrl: string
+      if (selected && typeof selected.url_template === 'string' && selected.url_template) {
+        const useSource = typeof selected.source === 'string' && selected.source ? selected.source : fallbackSource
+        finalUrl = buildRedirectUrl(selected.url_template, clickId, useSource)
+        let parsed: URL
+        try { parsed = new URL(finalUrl) } catch { finalUrl = '' }
+        const hosts = Array.isArray(selected.allowed_hosts) ? selected.allowed_hosts : []
+        if (!finalUrl || hosts.length === 0 || !hosts.some((h) => parsed.hostname === h || parsed.hostname.endsWith('.' + h))) {
+          finalUrl = buildRedirectUrl(fallbackTemplate, clickId, fallbackSource)
+        }
+      } else {
+        finalUrl = buildRedirectUrl(fallbackTemplate, clickId, fallbackSource)
+      }
 
-      // Allow only himfls.com
+      // Safety host enforcement (accept legacy himfls.com or x.trc85.com)
       let parsed: URL
       try { parsed = new URL(finalUrl) } catch { throw new Error('BAD_TEMPLATE') }
-      if (!parsed.hostname.endsWith('himfls.com')) throw new Error('HOST_RESTRICTED')
+      const isHimfls = parsed.hostname.endsWith('himfls.com')
+      const accepted = isHimfls || parsed.hostname.endsWith('x.trc85.com')
+      if (!accepted) throw new Error('HOST_RESTRICTED')
 
       // Record ad-like event for MODAL placement (non-claimable, no task intent)
       await c.query(

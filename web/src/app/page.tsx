@@ -347,6 +347,7 @@ export default function Home() {
       const cached = readCachedSnapshot()
       if (cached) {
         setSnapshot(cached)
+        try { (window as unknown as { __tapSnapshot?: unknown }).__tapSnapshot = cached } catch {}
         const base = baseCountersRef.current
         if (base) {
           ladderRef.current = buildLadderWindow({ coins: Number(base.coins || 0), level: Number(base.level || 0) }, cached, 12)
@@ -360,6 +361,7 @@ export default function Home() {
       if (!res.ok) return
       const snap = (await res.json()) as Snapshot
       setSnapshot(snap)
+      try { (window as unknown as { __tapSnapshot?: unknown }).__tapSnapshot = snap } catch {}
       try { void logEvent({ name: 'snapshot_loaded', data: { configVersion: snap.configVersion } }) } catch {}
       const base = baseCountersRef.current
       if (base) {
@@ -1244,7 +1246,9 @@ export default function Home() {
               level={activeModal.level}
               onOpen={async () => {
                 try {
-                  const res = await fetch(`/api/v1/offer/free-trial/level/${activeModal.level}/modal-redirect?format=json`)
+                  const variants = (snapshot as unknown as { freeTrial?: { variants?: string[] } })?.freeTrial?.variants || []
+                  const v = Array.isArray(variants) && variants.length > 0 ? variants[Math.floor(Math.random() * variants.length)] : null
+                  const res = await fetch(`/api/v1/offer/free-trial/level/${activeModal.level}/modal-redirect?format=json${v ? `&variant=${encodeURIComponent(v)}` : ''}`)
                   if (res.ok) {
                     const j = await res.json().catch(() => null) as { url?: string } | null
                     const finalUrl = j && typeof j.url === 'string' ? j.url : ''
@@ -1261,7 +1265,7 @@ export default function Home() {
                     }
                   } else {
                     // Fallback to 302 path if JSON not available
-                    try { window.open(`/api/v1/offer/free-trial/level/${activeModal.level}/modal-redirect`, '_blank', 'noopener,noreferrer') } catch {}
+                    try { window.open(`/api/v1/offer/free-trial/level/${activeModal.level}/modal-redirect${v ? `?variant=${encodeURIComponent(v)}` : ''}`, '_blank', 'noopener,noreferrer') } catch {}
                   }
                 } catch {
                   // Network error fallback to 302 path
@@ -1317,8 +1321,10 @@ export default function Home() {
               <FreeTrialLevelUpModal
                 level={leveledUp}
                 onOpen={async () => {
+                  const variants2 = (snapshot as unknown as { freeTrial?: { variants?: string[] } })?.freeTrial?.variants || []
+                  const v2 = Array.isArray(variants2) && variants2.length > 0 ? variants2[Math.floor(Math.random() * variants2.length)] : null
                   try {
-                    const res = await fetch(`/api/v1/offer/free-trial/level/${leveledUp}/modal-redirect?format=json`)
+                  const res = await fetch(`/api/v1/offer/free-trial/level/${leveledUp}/modal-redirect?format=json${v2 ? `&variant=${encodeURIComponent(v2)}` : ''}`)
                     if (res.ok) {
                       const j = await res.json().catch(() => null) as { url?: string } | null
                       const finalUrl = j && typeof j.url === 'string' ? j.url : ''
@@ -1335,11 +1341,11 @@ export default function Home() {
                       }
                     } else {
                       // Fallback to 302 path if JSON not available
-                      try { window.open(`/api/v1/offer/free-trial/level/${leveledUp}/modal-redirect`, '_blank', 'noopener,noreferrer') } catch {}
+                      try { window.open(`/api/v1/offer/free-trial/level/${leveledUp}/modal-redirect${v2 ? `?variant=${encodeURIComponent(v2)}` : ''}`, '_blank', 'noopener,noreferrer') } catch {}
                     }
                   } catch {
                     // Network error fallback to 302 path
-                    try { window.open(`/api/v1/offer/free-trial/level/${leveledUp}/modal-redirect`, '_blank', 'noopener,noreferrer') } catch {}
+                    try { window.open(`/api/v1/offer/free-trial/level/${leveledUp}/modal-redirect${v2 ? `?variant=${encodeURIComponent(v2)}` : ''}`, '_blank', 'noopener,noreferrer') } catch {}
                   }
                 }}
                 onClose={async () => { setLeveledUp(null); setFreeTrialAtLevel(null); await loadCounters(); }}

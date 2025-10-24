@@ -119,8 +119,11 @@ export function EarnGrid(props: {
                     } else {
                       try { onPartnerOpen?.(id) } catch {}
                       ;(async () => {
+                        const w = window as unknown as { __tapSnapshot?: { freeTrial?: { variants?: string[] } } }
+                        const variants = (w.__tapSnapshot?.freeTrial?.variants || []) as string[]
+                        const v = Array.isArray(variants) && variants.length > 0 ? variants[Math.floor(Math.random() * variants.length)] : null
                         try {
-                          const res = await fetch(`/api/v1/offer/free-trial/${id}/redirect?format=json`)
+                          const res = await fetch(`/api/v1/offer/free-trial/${id}/redirect?format=json${v ? `&variant=${encodeURIComponent(v)}` : ''}`)
                           if (res.ok) {
                             const j = await res.json().catch(() => null) as { url?: string } | null
                             const finalUrl = j && typeof j.url === 'string' ? j.url : ''
@@ -136,10 +139,10 @@ export function EarnGrid(props: {
                               } catch { try { window.open(finalUrl, '_blank', 'noopener,noreferrer') } catch {} }
                             }
                           } else {
-                            try { window.open(`/api/v1/offer/free-trial/${id}/redirect`, '_blank', 'noopener,noreferrer') } catch {}
+                            try { window.open(`/api/v1/offer/free-trial/${id}/redirect${v ? `?variant=${encodeURIComponent(v)}` : ''}`, '_blank', 'noopener,noreferrer') } catch {}
                           }
                         } catch {
-                          try { window.open(`/api/v1/offer/free-trial/${id}/redirect`, '_blank', 'noopener,noreferrer') } catch {}
+                          try { window.open(`/api/v1/offer/free-trial/${id}/redirect${v ? `?variant=${encodeURIComponent(v)}` : ''}`, '_blank', 'noopener,noreferrer') } catch {}
                         }
                       })()
                     }
