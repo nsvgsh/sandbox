@@ -94,8 +94,15 @@ export async function GET() {
       const rawFtVariants = cfgMap.get('free_trial_variants') as unknown
       let freeTrialPublic: { variants: string[] } | undefined
       try {
-        const arr = Array.isArray(rawFtVariants) ? rawFtVariants : (rawFtVariants && typeof rawFtVariants === 'object' ? (rawFtVariants as unknown as any[]) : [])
-        const ids = Array.isArray(arr) ? arr.map((v) => (v && typeof v === 'object' ? String((v as any).id || '') : '')).filter((s) => !!s) : []
+        const arr: unknown[] = Array.isArray(rawFtVariants) ? rawFtVariants : []
+        const ids: string[] = []
+        for (const item of arr) {
+          if (item && typeof item === 'object') {
+            const obj = item as Record<string, unknown>
+            const idVal = obj.id
+            if (typeof idVal === 'string' && idVal.length > 0) ids.push(idVal)
+          }
+        }
         if (ids.length > 0) freeTrialPublic = { variants: ids }
       } catch {}
 

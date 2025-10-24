@@ -40,7 +40,17 @@ export async function GET(req: NextRequest) {
       const tplq = await c.query("select value from game_config where key='free_trial_url_template'")
       const srcq = await c.query("select value from game_config where key='free_trial_source'")
       const rawVariants = (vlistQ.rows[0]?.value ?? null) as unknown
-      const variants: Array<{ id: string; url_template: string; allowed_hosts?: string[]; source?: string }> = Array.isArray(rawVariants) ? (rawVariants as any[]) : []
+      const variants: Array<{ id: string; url_template: string; allowed_hosts?: string[]; source?: string }> = Array.isArray(rawVariants)
+        ? (rawVariants as unknown[]).map((v) => {
+            const obj = (v && typeof v === 'object') ? (v as Record<string, unknown>) : {}
+            return {
+              id: typeof obj.id === 'string' ? obj.id : '',
+              url_template: typeof obj.url_template === 'string' ? obj.url_template : '',
+              allowed_hosts: Array.isArray(obj.allowed_hosts) ? (obj.allowed_hosts as unknown[]).filter((h) => typeof h === 'string') as string[] : [],
+              source: typeof obj.source === 'string' ? obj.source : undefined,
+            }
+          })
+        : []
       const fallbackTemplate = String(tplq.rows[0]?.value || '').replace(/^"|"$/g, '')
       const fallbackSource = String(srcq.rows[0]?.value || '').replace(/^"|"$/g, '')
       if (!fallbackTemplate || !fallbackSource) throw new Error('CONFIG_MISSING')
